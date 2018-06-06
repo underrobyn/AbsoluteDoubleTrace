@@ -1,0 +1,116 @@
+html, body {
+	padding:0;
+	margin:0;
+	background:#8719ff;
+	background:-webkit-linear-gradient(to top, #FFAF7B, #d88f93, #8719ff);
+	background:linear-gradient(to top, #c66a57, #bb7783, #6607cd);
+	color:#fff;
+	font-family:"Segoe UI",sans-serif;
+	font-weight:100;
+}
+body {
+	text-align:center;
+	min-width:550px;
+	min-height:400px;
+	height:100vh;
+	width:100vw;
+}
+#title {
+	font-size:2.7em;
+	font-weight:900;
+	height:16vh;
+	line-height:16vh;
+	padding:0;
+	margin:0;
+	background-color:rgba(0,0,0,0.2);
+}
+.msg {
+	font-size:1.8em;
+}
+label{
+	font-size:1.5em;
+}
+#feat_desc {
+	font-size:1.4em;
+}
+button {
+	background-color:transparent;
+	color:#fff !important;
+	box-shadow:inset 0 0 0 1px #fff;
+	transition:background-color 0.2s ease-in-out;
+	border:0;
+	border-radius:0;
+	cursor:pointer;
+	display:inline-block;
+	font-family:Helvetica, sans-serif;
+	font-weight:500;
+	height:3em;
+	line-height:3em;
+	padding:0 1em;
+	text-align:center;
+	text-decoration:none;
+	text-transform:uppercase;
+	white-space:nowrap;
+}
+button:hover,button:focus{
+	background-color:rgba(0,0,0,0.4);
+}
+input[type="text"],textarea {
+	display:inline-block;
+	width:100%;
+	max-width:80vw;
+	height:1.7em;
+	padding:6px 12px;
+	font-size:1em;
+	line-height:1em !important;
+	color:#555;
+	background-color:#fff;
+	background-image:none;
+	border:0px solid #ccc;
+	border-radius:0;
+	-webkit-box-shadow:inset 0 1px 1px rgba(0, 0, 0, .075);
+	box-shadow:inset 0 1px 1px rgba(0, 0, 0, .075);
+	-webkit-transition:border-color ease-in-out .15s, -webkit-box-shadow ease-in-out .15s;
+	-o-transition:border-color ease-in-out .15s, box-shadow ease-in-out .15s;
+	transition:border-color ease-in-out .15s, box-shadow ease-in-out .15s;
+}
+textarea{
+	height:32vh !important;
+	font-size:1.3em !important;
+}
+ul{
+	list-style-type:none;
+	font-size:1.8em;
+}
+#page_form{
+	width:95%;
+	padding:3.5% 3%;
+}
+#sections{
+	width:25%;
+	float:left;
+}
+#options {
+	margin-bottom:2%;
+}
+#current_section{
+	width:70%;
+	margin-left:25%;
+}
+.section_toggle{
+	width:100%;
+	height:21vh;
+	line-height:21vh;
+	font-size:2em;
+	color:#fff;
+	background-color:rgba(0,0,0,0.2);
+	cursor:pointer;
+	float:left;
+}
+.section_toggle:hover{
+	color:#fff;
+	background-color:rgba(0,0,0,0.5);
+}
+.smsg{
+	font-size:1.4em;
+}

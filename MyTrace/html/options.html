@@ -1,0 +1,623 @@
+<!DOCTYPE HTML>
+<html lang="en">
+	<head>
+		<title>Trace</title>
+
+		<meta charset="utf-8">
+		<meta http-equiv="content-type" content="text/html;charset=UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+		<link rel="stylesheet" type="text/css" href="../css/options.css" media="all" />
+		<link rel="stylesheet" type="text/css" href="../css/themedata.css" media="all" />
+
+	</head>
+	<body>
+
+		<!--
+			Trace Version 1.9
+			By Jake Mcneill
+
+			Website:	https://absolutedouble.co.uk/
+			Github:		https://github.com/jake-cryptic/
+			Changelog: 	https://absolutedouble.co.uk/trace/information.html
+
+			Copyright AbsoluteDouble Trace 2018
+		-->
+
+		<script src="../js/script.theme.js"></script>
+
+		<div id="overlay_message">
+			<div id="overlay_cont">
+				<span id="overlay_close">&times;</span>
+				<div id="drop_message">
+					<h1>Thanks for installing Trace!</h1>
+					<div class="bigtext">
+						By default, the following settings are on:
+						<ul>
+							<li>Web Request Controller</li>
+							<li>Crypto Currency Mining Protection</li>
+							<li>Regular Bad TLD Protection</li>
+							<li>Canvas Fingerprint Protection</li>
+							<li>WebRTC Protection</li>
+							<li>TracePage</li>
+							<li>Protection Statistics</li>
+							<li>Error Reporting</li>
+						</ul>
+						You can change these in the "settings" section.<br />
+						Domain whitelisting can be enabled under &quot;settings&quot;<br />
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<div id="e_msg" class="hidden">
+			<h2>Trace failed to load</h2>
+			<p id="fail_reason">Unknown.</p>
+		</div>
+
+		<div id="ux" class="blurred">
+			<div id="nav">
+				<div class="side_el" tabindex="1" data-load="home">Trace</div>
+				<div class="side_el" tabindex="1" data-load="statistics">Statistics</div>
+				<div class="side_el" tabindex="1" data-load="settings">Settings</div>
+				<div class="side_el" tabindex="1" data-load="extra">Extra</div>
+				<div class="side_el" tabindex="1" data-load="whitelist">Whitelist</div>
+				<div class="side_el" tabindex="1" data-load="privacy">Privacy</div>
+			</div>
+			<div id="main">
+
+				<!--
+					Main
+				-->
+				<div id="home" class="view">
+					<div class="sect_header s" id="home_title">Trace Dashboard</div>
+					<div class="sect_cont">
+						<span class="title" id="trace_main_title">Loading Trace Dashboard...</span>
+						<div id="trace_info">
+							Loading text...
+						</div><br />
+						<div class="sect_adv">
+							<div class="sect_adv_header">&nbsp;Premium Status</div>
+							<div class="sect_adv_cont" id="premium_status">
+								Loading data...
+							</div>
+						</div>
+						<div class="sect_adv">
+							<div class="sect_adv_header">&nbsp;Trace Tip</div>
+							<div class="sect_adv_cont" id="user_tip">
+								Loading data...
+							</div>
+						</div>
+					</div>
+				</div>
+				
+				<!--
+					Statistics
+				-->
+				<div id="statistics" class="view hidden">
+					<div class="sect_header">Trace | Statistics</div>
+					<div class="sect_cont_nopad" id="statistics_blur">
+						<div id="graph_controls">
+							<select id="graph_datacontrol" class="graph_ctrl" title="Select timeframe for statistics">
+								<option value="1">Today's Data</option>
+								<option value="2">Past 2 Days</option>
+								<option value="3">Past 3 Days</option>
+								<option value="4">Past 4 Days</option>
+								<option value="5">Past 5 Days</option>
+								<option value="6">Past 6 Days</option>
+								<option value="7">Past Week</option>
+							</select><select id="graph_contbreakdown" class="graph_ctrl" title="Select whether to show types or totals">
+								<option value="type">Show types</option>
+								<option value="total">Show total</option>
+							</select>
+						</div>
+						<div id="graph_container">
+							<canvas id="graph"></canvas>
+						</div>
+						<button id="stats_download">Download Statistics Data</button>
+						<button id="stats_wipe">Delete Statistics</button>
+					</div>
+				</div>
+				
+				<!--
+					Settings Section
+				-->
+				<div id="settings" class="view hidden">
+					<div class="sect_header s">Trace | Settings</div>
+					<div class="sect_cont_semipad" id="settings_cont">
+						<div id="settings_dynsect">
+							<!-- These are Trace's protection settings -->
+							<table id="trace_stracefeature">
+								<thead>
+									<tr>
+										<th colspan="3" class="setting_title" data-content="settings_stracefeature" tabindex="0">&nbsp;Trace Features</th>
+									</tr>
+								</thead>
+								<tbody id="settings_stracefeature">
+									<tr id="row_webctrl">
+										<td class="setting_info" tabindex="0" data-info="info_webctrl">Web Request Controller</td>
+										<td class="setting_toggle" tabindex="0" data-toggle="Pref_WebController">Fetching Status...</td>
+										<td class="setting_config" tabindex="0" data-config="Pref_WebController">Advanced</td>
+									</tr>
+									<tr id="info_webctrl" class="hiddensettinginfo">
+										<td colspan="3">
+											<span>Web Request Controller</span><br />
+											This advanced feature allows you to control all web requests your browser makes. Use it to block tracking servers, common known tracking javascript filenames as well as
+											removing URL parameters that are used for tracking. This is one of the most effective ways to block Tracking and it is <strong>highly recommended</strong> you enable it.
+										</td>
+									</tr>
+									<tr id="row_domainwhite">
+										<td class="setting_info" tabindex="0" data-info="info_domainwhite">Whitelist</td>
+										<td id="whitelist_toggle" class="setting_toggle" tabindex="0" data-toggle="Pref_WebController.Whitelist" colspan="2">Fetching Status...</td>
+									</tr>
+									<tr id="info_domainwhite" class="hiddensettinginfo">
+										<td colspan="3">
+											<span>Domain Whitelisting</span><br />
+											This will allow you to exempt websites from Trace's domain blocking feature.<br />
+											This is a new feature and is currently very basic, it will get more advanced in future updates.<br />
+										</td>
+									</tr>
+									<tr id="row_traceblocked">
+										<td class="setting_info" tabindex="0" data-info="info_traceblocked">Trace 'Blocked' Page</td>
+										<td class="setting_toggle" tabindex="0" data-toggle="Pref_WebController.showBlocked" colspan="2">Fetching Status...</td>
+									</tr>
+									<tr id="info_traceblocked" class="hiddensettinginfo">
+										<td colspan="3">
+											<span>Trace 'Blocked' Page</span><br />
+											Choose whether to show Trace blocked page when directly accessing a blocked site.<br />
+											This option gives you more information about why the page was blocked as well as more options for the page.
+										</td>
+									</tr>
+									<tr id="row_canvasfinger">
+										<td class="setting_info" tabindex="0" data-info="info_canvasfinger">Canvas Fingerprint Protection</td>
+										<td class="setting_toggle" tabindex="0" data-toggle="Pref_CanvasFingerprint" colspan="2">Fetching Status...</td>
+									</tr>
+									<tr id="info_canvasfinger" class="hiddensettinginfo">
+										<td colspan="3">
+											<span>Canvas Fingerprinting Protection</span><br />
+											This feature will, simply put: generate a new canvas ID every minute to make it impossible to properly identify you as you browse the web.<br />
+											Canvas Fingerprinting is a relatively new tracking technology and it has started to be more widely used as time has gone on.<br /><br />
+											To see this in action visit <a href="https://panopticlick.eff.org/" title="EFF Panopticlick">https://panopticlick.eff.org/</a> and check
+											the 'Hash of canvas fingerprint', you should see it change every minute.
+										</td>
+									</tr>
+									<tr id="row_networkinfo">
+										<td class="setting_info" tabindex="0" data-info="info_networkinfo">Network Information API</td>
+										<!--<td class="setting_config" tabindex="0" data-config="Pref_NetworkInformation">Configure</td>-->
+										<td class="isetting_toggle" tabindex="0" data-toggle="Pref_NetworkInformation" colspan="2">Fetching Status...</td>
+									</tr>
+									<tr id="info_networkinfo" class="hiddensettinginfo">
+										<td colspan="3">
+											<span>Network Information API</span><br />
+											navigator.connection returns information about your current internet connection speed,<br /> if you don't want sites knowing that enable this to return the same value every time.<br />
+											More configuration options coming soon.
+										</td>
+									</tr>
+									<tr id="row_batteryapi">
+										<td class="setting_info" tabindex="0" data-info="info_batteryapi">Battery API Protection<strong> (New)</strong></td>
+										<td class="isetting_toggle" tabindex="0" data-toggle="Pref_BatteryApi" colspan="2">Fetching Status...</td>
+									</tr>
+									<tr id="info_batteryapi" class="hiddensettinginfo">
+										<td colspan="3">
+											<span>JS Battery API Protection</span><br />
+											This is just another data point that can be used to fingerprint you. It can tell a website about your battery percent, charging state and from that it can be inferred you're
+											using a laptop, phone or tablet. Disabling this API shouldn't affect websites too much.
+										</td>
+									</tr>
+									<tr id="row_webrtc">
+										<td class="setting_info" tabindex="0" data-info="info_webrtc">WebRTC Protection</td>
+										<td class="setting_toggle" tabindex="0" data-toggle="Pref_WebRTC">Fetching Status...</td>
+										<td class="setting_config" tabindex="0" data-config="Pref_WebRTC">Configure</td>
+									</tr>
+									<tr id="info_webrtc" class="hiddensettinginfo">
+										<td colspan="3">
+											<span>WebRTC Protection</span><br />
+											Protects against WebRTC Local IP Address Leaks<br />
+											This is important because without it, websites can see your computers local IP address which is often a very good unique identifier for them to use to track you.<br />
+											Check your protection is working: https://diafygi.github.io/webrtc-ips/
+										</td>
+									</tr>
+									<tr id="row_pingblock">
+										<td class="setting_info" tabindex="0" data-info="info_pingblock">Ping Protection</td>
+										<td class="isetting_toggle" tabindex="0" data-toggle="Pref_PingBlock">Fetching Status...</td>
+										<td class="setting_config" tabindex="0" data-config="Pref_PingBlock">Configure</td>
+									</tr>
+									<tr id="info_pingblock" class="hiddensettinginfo">
+										<td colspan="3">
+											<span>Ping protection</span><br />
+											This will render the navigator.sendBeacon function unusable and also disable "ping" requests.<br /><br />
+											This function was specifically designed for tracking, it is used to send a small amount of data, usually
+											when the page is unloading or links have been clicked to a target server. By enabling this, those requests are cancelled before they are sent.
+										</td>
+									</tr>
+								</tbody>
+							</table>
+
+							<!-- These are Trace's protection settings -->
+							<table id="trace_straceadvanced">
+								<thead>
+									<tr>
+										<th colspan="3" class="setting_title" data-content="settings_straceadvanced" tabindex="0">&nbsp;Advanced Features</th>
+									</tr>
+								</thead>
+								<tbody id="settings_straceadvanced">
+									<tr id="row_audiofinger">
+										<td class="setting_info" tabindex="0" data-info="info_audiofinger">Audio Fingerprint Protection</td>
+										<td class="setting_toggle" tabindex="0" data-toggle="Pref_AudioFingerprint">Fetching Status...</td>
+										<td class="setting_config" tabindex="0" data-config="Pref_AudioFingerprint">Configure</td>
+									</tr>
+									<tr id="info_audiofinger" class="hiddensettinginfo">
+										<td colspan="3">
+											<span>Audio Fingerprinting Protection</span><br />
+											This will cause the Audio Context API to not work at all.<br />So as a result sounds <em>could</em> fail to play on some sites, in most cases it will be fine, but if you are using websites that
+											are for MIDI or have some form of Audio analysis on them then this <em>may</em> cause them to not work.<br />In some cases this protection may break some sites due to causing errors in code, even
+											ones which aren't related to music/sound.<br /><strong>This feature should only be used by users who know what they're doing.</strong><br /><br />
+											Check protection at: <a href="https://audiofingerprint.openwpm.com" title="Audio Fingerprint Protection test">https://audiofingerprint.openwpm.com</a>
+										</td>
+									</tr>
+									<tr id="row_chromeheader">
+										<td class="setting_info" tabindex="0" data-info="info_chromeheader">Google Header Removal</td>
+										<td class="setting_toggle" tabindex="0" data-toggle="Pref_GoogleHeader">Fetching Status...</td>
+										<td class="setting_config" tabindex="0" data-config="Pref_GoogleHeader">Configure</td>
+									</tr>
+									<tr id="info_chromeheader" class="hiddensettinginfo">
+										<td colspan="3">
+											<span>Removal of Google Headers</span><br />
+											Removing these headers makes you less trackable when using Google services and the Chrome Browser whilst also saving a tiny bit of bandwidth.<br /><br />
+											<strong><u>Please note:</u></strong><br />When this feature was being tested it was found that X-Client-Data would only be removed about half of the time.<br />
+											This is due to Chrome not allowing to modify it when it is connecting to certain domains. Removing some of these headers (Notably X-Client-Data) can also cause strange behaviour on Google Sites.<br /><br />
+											<strong>Information: </strong><a href="https://www.google.co.uk/chrome/browser/privacy/whitepaper.html#variations" target="noopener">https://www.google.co.uk/chrome/browser/privacy/whitepaper.html#variations</a>
+										</td>
+									</tr>
+									<tr id="row_refererheader" style="display: none">
+										<td class="setting_info" tabindex="0" data-info="info_refererheader">Referer Controller <strong>(Beta)</strong></td>
+										<td class="setting_toggle" tabindex="0" data-toggle="Pref_ReferHeader">Fetching Status...</td>
+										<td class="setting_config" tabindex="0" data-config="Pref_ReferHeader">Configure</td>
+									</tr>
+									<tr id="info_refererheader" class="hiddensettinginfo">
+										<td colspan="3">
+											<span>HTTP "Referer" Header Removal</span><br />
+											Stops sending the HTTP referer header which tells a website which site referred you. This can break some sites!<br />
+											<blockquote>From Wikipedia: Referer logging is used to allow websites and web servers to identify where people are visiting them from, for promotional or statistical purposes</blockquote>
+											<strong>Some websites don't like it when browsers don't send the HTTP referer header, so please keep that in mind when enabling this.</strong>
+										</td>
+									</tr>
+									<!--<tr id="row_cookieeater">
+										<td class="setting_info" tabindex="0" data-info="info_cookieeater">Tracking Cookie Eater</td>
+										<td class="setting_toggle" tabindex="0" data-toggle="Pref_CookieEater">Fetching Status...</td>
+										<td class="setting_config" tabindex="0" data-config="Pref_CookieEater">Configure</td>
+									</tr>
+									<tr id="info_cookieeater" class="hiddensettinginfo">
+										<td colspan="3">
+											<span>Tracking Cookie Killer</span><br /><br />
+
+										</td>
+									</tr>-->
+									<tr id="row_uarandom">
+										<td class="setting_info" tabindex="0" data-info="info_uarandom">User Agent Randomiser</td>
+										<td class="setting_toggle" tabindex="0" data-toggle="Pref_UserAgent">Fetching Status...</td>
+										<td class="setting_config" tabindex="0" data-config="Pref_UserAgent">Configure</td>
+									</tr>
+									<tr id="info_uarandom" class="hiddensettinginfo">
+										<td colspan="3">
+											<span>User Agent Randomisation</span><br />
+											User-Agent Randomisation protection protects you by changing your HTTP User-Agent every 15 seconds.<br />
+											A User-Agent is a string of text sent to every website you visit telling it what OS and Browser you're using and their versions.<br />
+											Whilst this information can be used to show you relevant information for your computer it can also be used to identify you, by changing it very often
+											you make yourself harder to track online.<br /><br /><strong>This feature has been known to break some websites in some cases and on others cause popups about the OS or Browser.</strong>
+										</td>
+									</tr>
+									<tr id="row_ipheadspoof">
+										<td class="setting_info" tabindex="0" data-info="info_ipheadspoof">Proxy IP Header Spoofing</td>
+										<td class="isetting_toggle" tabindex="0" data-toggle="Pref_IPSpoof">Fetching Status...</td>
+										<td class="setting_config" tabindex="0" data-config="Pref_IPSpoof">Configure</td>
+									</tr>
+									<tr id="info_ipheadspoof" class="hiddensettinginfo">
+										<td colspan="3">
+											<span>Proxy IP Header Spoofing</span><br />
+											IP Spoofing is done by telling the site you're connecting to that you are a proxy doing the request on behalf of
+											another computer. In some cases the site will then take the IP in the headers as your IP, making the IP spoof successful.<br />
+											This can break some sites and is by no means anywhere near as secure as a VPN, to properly spoof your IP you need a VPN.
+											Please also note that the site you are connecting to will still see your IP as the connecting IP.<br />
+										</td>
+									</tr>
+									<tr id="row_screenres" style="display:none">
+										<td class="setting_info" tabindex="0" data-info="info_screenres">Screen resolution tracking</td>
+										<td class="isetting_toggle" tabindex="0" data-toggle="Pref_PluginHide" colspan="2">Fetching Status...</td>
+									</tr>
+									<tr id="info_screenres" class="hiddensettinginfo">
+										<td colspan="3">
+											<span>Screen variable randomisation</span><br />
+											Javscript has an object called &quot;screen&quot; that provides websites with information about your screen resolution. This can be used to track you as it's a piece of information at is
+											mostly constant.<br />Enabling this setting will add a random offset between -10 and +10 to most values in the object on each page reload.<br />To see this setting in action check the
+											&quot;screen resolution&quot; on <a href="https://browserleaks.com/javascript" target="_blank">BrowserLeaks.com</a>.<br /><br />
+										</td>
+									</tr>
+									<tr id="row_navplugin">
+										<td class="setting_info" tabindex="0" data-info="info_navplugin">JS Plugin Hide</td>
+										<td class="isetting_toggle" tabindex="0" data-toggle="Pref_PluginHide" colspan="2">Fetching Status...</td>
+									</tr>
+									<tr id="info_navplugin" class="hiddensettinginfo">
+										<td colspan="3">
+											<span>JS Plugin Hide</span><br />
+											This feature will hide plugins from websites by returning an empty string when navigator.plugins is accessed. This can break some sites and make others look
+											a bit weird, but it's a good privacy enhancement if you enable it.<br /><br />This doesn't stop the plugins working, just stops a list of them being accessible to webpages.
+											<br /><strong>Please note: </strong> You should only enable this if you know what you're doing as it can cause problems on many websites.
+										</td>
+									</tr>
+									<tr id="row_etagremove">
+										<td class="setting_info" tabindex="0" data-info="info_etagremove">E-Tag Tracking Protection</td>
+										<td class="setting_toggle" tabindex="0" data-toggle="Pref_ETagTrack" colspan="2">Fetching Status...</td>
+									</tr>
+									<tr id="info_etagremove" class="hiddensettinginfo">
+										<td colspan="3">
+											<span>Removal of HTTP E-Tag Headers</span><br />
+											This will stop the E-Tag header from working.<br />
+											This header has been seen creating respawnable tracking cookies on quite a few websites.<br />
+											Its main use is for cache but it can be just as easily used as another method to fingerprint your browser as demoed here:<br />
+											<a href="https://lucb1e.com/rp/cookielesscookies/" title="E-Tag Tracking Demo">https://lucb1e.com/rp/cookielesscookies/</a><br />
+										</td>
+									</tr>
+								</tbody>
+							</table>
+
+							<!-- These are the settings for Chrome that Trace changes -->
+							<table id="trace_sbrowser">
+								<thead>
+									<tr>
+										<th colspan="3" class="setting_title" data-content="settings_sbrowserfeature" tabindex="0">&nbsp;Browser Settings</th>
+									</tr>
+								</thead>
+								<tbody id="settings_sbrowserfeature">
+									<tr id="row_netpredict">
+										<td class="setting_info" tabindex="0" data-info="info_netpredict">Network Prediction</td>
+										<td class="direct_toggle" tabindex="0" data-toggle="pref_netpredict">Fetching Status...</td>
+									</tr>
+									<tr id="info_netpredict" class="hiddensettinginfo">
+										<td colspan="3">
+											<span>Disable Network Prediction</span><br />
+											Stops chrome allowing sites to perform DNS lookups, SSL/TLS handshakes and TCP connections preemptively.<br />
+											By setting this to "Protected" you are actively slowing down your browsing experience.. Only by a few milliseconds though.
+										</td>
+									</tr>
+									<tr id="row_alterrpage">
+										<td class="setting_info" tabindex="0" data-info="info_alterrpage">Alternate Error Pages</td>
+										<td class="direct_toggle" tabindex="0" data-toggle="pref_alterrpage">Fetching Status...</td>
+									</tr>
+									<tr id="info_alterrpage" class="hiddensettinginfo">
+										<td colspan="3">
+											<span>Disable Alternate Error Pages</span><br />
+											When unprotected, Chrome uses a web service to help resolve navigation errors and may log information about you.
+										</td>
+									</tr>
+									<tr id="row_autofill">
+										<td class="setting_info" tabindex="0" data-info="info_autofill">WebForm Autofill</td>
+										<td class="direct_toggle" tabindex="0" data-toggle="pref_autofill">Fetching Status...</td>
+									</tr>
+									<tr id="info_autofill" class="hiddensettinginfo">
+										<td colspan="3">
+											<span>Disable Autofill for HTML Forms</span><br />
+											Recently advertisers and tracking companies were found to have been hiding hidden form elements in webpages to trick browsers and password managers into autofilling form information which would then
+											be sent off to a server, since this information almost always remains the same, it's a perfect way to track users.<br /><br />
+											By setting this setting to "Protected" you will lose the convenience of autofill but be protected further against trackers, be sure to also check that you don't have a password manager automatically filling in
+											forms and other text boxes around the web without your knowledge.
+										</td>
+									</tr>
+									<tr id="row_sbextendedrep">
+										<td class="setting_info" tabindex="0" data-info="info_sbextendedrep">Safe Browsing Extended Reporting</td>
+										<td class="direct_toggle" tabindex="0" data-toggle="pref_sbextendedrep">Fetching Status...</td>
+									</tr>
+									<tr id="info_sbextendedrep" class="hiddensettinginfo">
+										<td colspan="3">
+											<span>Disable Safe Browsing Extended Reporting</span><br />
+											When unprotected, Chrome will send additional information to Google when SafeBrowsing blocks a page, such as the content of the blocked page, your IP address and
+											the time of the request.
+										</td>
+									</tr>
+									<tr id="row_hyperlinkaudit">
+										<td class="setting_info" tabindex="0" data-info="info_hyperlinkaudit">Hyperlink Auditing</td>
+										<td class="direct_toggle" tabindex="0" data-toggle="pref_hyperlinkaudit">Fetching Status...</td>
+									</tr>
+									<tr id="info_hyperlinkaudit" class="hiddensettinginfo">
+										<td colspan="3">
+											<span>Hyperlink Auditing Protection</span><br />
+											Hyperlink Auditing is a tool used by websites to log what links you click on a page. Enabling this setting is <strong>highly recommended</strong>.<br />
+											This setting can be changed in the "flags" page of your browser but for ease of access it has been added to Trace's settings.
+										</td>
+									</tr>
+									<tr id="row_referheader">
+										<td class="setting_info" tabindex="0" data-info="info_referheader">HTTP Referer Header <strong></strong></td>
+										<td class="direct_toggle" tabindex="0" data-toggle="pref_referheader">Fetching Status...</td>
+									</tr>
+									<tr id="info_referheader" class="hiddensettinginfo">
+										<td colspan="3">
+											<span>HTTP "Referer" Header Removal</span><br />
+											Stops sending the HTTP referer header which tells a website which site referred you. This can break some sites!<br />
+											<blockquote>From Wikipedia: Referer logging is used to allow websites and web servers to identify where people are visiting them from, for promotional or statistical purposes</blockquote>
+											<strong>Some websites don't like it when browsers don't send the HTTP referer header, so please keep that in mind when enabling this.</strong>
+										</td>
+									</tr>
+								</tbody>
+							</table>
+
+							<!-- These are settings for Trace itself -->
+							<table id="trace_straceinternal">
+								<thead>
+									<tr>
+										<th colspan="3" class="setting_title" data-content="settings_stracesetting" tabindex="0">&nbsp;Trace Options</th>
+									</tr>
+								</thead>
+								<tbody id="settings_stracesetting">
+									<tr id="row_protstats">
+										<td class="setting_info" tabindex="0" data-info="info_protstats">Protection Statistics</td>
+										<td class="trace_toggle" tabindex="0" data-toggle="Main_Trace.ProtectionStats" id="setting_protstats">Fetching Status...</td>
+									</tr>
+									<tr id="info_protstats" class="hiddensettinginfo">
+										<td colspan="3">
+											<span>Protection Statistics</span><br />
+											Enabling this will save statistics about Trace such as how many web requests Trace blocked each day.<br />
+											None of this data is ever uploaded to our servers. It's locally stored in your browser and can be deleted by you at any time from the "Statistics" pane.
+										</td>
+									</tr>
+									<tr id="row_brownotif">
+										<td class="setting_info" tabindex="0" data-info="info_brownotif">Browser Notifications</td>
+										<td class="trace_toggle" tabindex="0" data-toggle="Main_Trace.BrowserNotifications" id="setting_brownotif">Fetching Status...</td>
+									</tr>
+									<tr id="info_brownotif" class="hiddensettinginfo">
+										<td colspan="3">
+											<span>Browser Notifications</span><br />
+											Enabling this will allow Trace to show notifications when events occur, such as protection errors and blocklist updates.
+										</td>
+									</tr>
+									<tr id="row_domaincache">
+										<td class="setting_info" tabindex="0" data-info="info_domaincache">Cache Blocklist</td>
+										<td class="trace_toggle" tabindex="0" data-toggle="Main_Trace.DomainCache">Fetching Status...</td>
+									</tr>
+									<tr id="info_domaincache" class="hiddensettinginfo">
+										<td colspan="3">
+											<span>Blocklist Caching</span><br />
+											<strong>We recommend that this is kept enabled.</strong><br /><br />
+											This makes it so that the blocklist will only get an update when there is one. It saves bandwidth and decreases the time taken to enable domain blocking.
+										</td>
+									</tr>
+									<tr id="row_keyboardcommand">
+										<td class="setting_info" tabindex="0" data-info="info_keyboardcommand">Keyboard Shortcuts</td>
+										<td class="trace_toggle" tabindex="0" data-toggle="Main_Trace.KeyboardCommand">Fetching Status...</td>
+									</tr>
+									<tr id="info_keyboardcommand" class="hiddensettinginfo">
+										<td colspan="3">
+											<span>Keyboard Shortcuts</span><br />
+											Use Ctrl+Shift+E to Toggle the Web Controller<br />
+											Use Ctrl+Shift+X to open the Trace Dashboard<br />
+										</td>
+									</tr>
+									<tr id="row_errorstat">
+										<td class="setting_info" tabindex="0" data-info="info_errorstat">Error Reporting</td>
+										<td class="trace_toggle" tabindex="0" data-toggle="Main_Trace.ErrorReporting">Fetching Status...</td>
+									</tr>
+									<tr id="info_errorstat" class="hiddensettinginfo">
+										<td colspan="3">
+											<span>Error Reporting</span><br />
+											<strong>We recommend that this is kept enabled.</strong><br /><br />
+											This collects data about Trace, e.g. when it crashes, settings which have been enabled etc. and sends it to the AbsoluteDouble server where it is stored for a week to debug and improve Trace.<br />
+											<em>No personally identifiable information is collected or stored when this is enabled!</em><br /><br />
+											All information is transmitted over HTTPS.
+										</td>
+									</tr>
+									<tr id="row_customui" style="display: none">
+										<td class="setting_info" tabindex="0" data-info="info_customui">Customise Interface</td>
+										<td class="setting_config" tabindex="0" data-config="Main_Interface">Configure</td>
+									</tr>
+									<tr id="info_customui" class="hiddensettinginfo">
+										<td colspan="3">
+											<span>UI Customisation</span><br />
+											Change how the Trace User Interface looks
+										</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+					</div>
+				</div>
+
+				<!--
+					Extra
+				-->
+				<div id="extra" class="view hidden">
+					<div class="sect_header s">Trace | Domain Settings</div>
+					<div class="sect_cont_semipad">
+						<div class="sect_adv">
+							<div class="sect_adv_header" data-cont="btld_block">&nbsp;Bad TLD Protection</div>
+							<div class="sect_adv_cont" id="btld_block">
+								A Top Level Domain or "TLD" is the classification of domain, e.g. ".com" is a TLD which tells the user the site is "commercial".<br /><br />
+								In recent years, a lot of new TLDs have popped up, some are very cheap and easy to buy in bulk, or are not very well policed, and so companies and individuals have taken advantage of
+								them and used them to house Tracking domains or even Malware Domains.<br /><br />It is recommended you enable this and set it to 'regular', the higher the setting, the more domains blocked.
+								This most likely will not affect your browsing experience, but if you notice sites on odd TLDs getting blocked you may wish to turn it off.<br />
+								<em><a href="https://www.symantec.com/connect/blogs/shady-tld-research-gdn-and-our-2016-wrap" title="Symantec Shady TLD Research Blog Post">Source 1,</a></em>
+								<em><a href="https://www.rsaconference.com/writable/presentations/file_upload/mash-r05-this_doesn_t_end_well_the_tld_explosion.pdf" title="RSA Conference Presentation">Source 2</a></em><br /><br />
+								<button id="adv_settingstld" class="larger_button">Settings</button>
+								<button id="adv_blockbadtld" class="larger_button setting_toggle" data-toggle="Pref_WebController.tld">Disabled</button>
+							</div>
+						</div>
+
+						<div class="sect_adv" id="urlCleanBlock">
+							<div class="sect_adv_header" data-cont="burl_cleaner">&nbsp;URL Tracking Cleaner (Experimental)</div>
+							<div class="sect_adv_cont" id="burl_cleaner">
+								URL query strings (The bits after the question mark) and fragments (The bits after the hash) are often used to track you, the most common ones you'll see are ones that start with <code>utm_</code>, these parameters are vital for most websites but some of them
+								often contain information about you such as where you came from, the ad you clicked, or some form of identifier.<br />
+								Enabling this setting will allow Trace to remove or randomise these parameters so that you are much harder to track.<br /><br />
+								<button id="adv_urlcleaner_settings" class="larger_button">Settings</button>
+								<button id="adv_urlcleaner_toggle" class="larger_button setting_toggle" data-toggle="Pref_WebController.urlCleaner">Disabled</button>
+							</div>
+						</div>
+
+						<div class="sect_adv">
+							<div class="sect_adv_header" data-cont="tracepage_injectopt">&nbsp;TracePage</div>
+							<div class="sect_adv_cont" id="tracepage_injectopt">
+								This setting must be enabled to allow Trace to inject code into webpages, this can be used to disable certain functions used by tracking companies, so even if tracking code is somehow loaded,
+								it won't actually do much harm because of Trace's mitigations.<br />Many features require this to be enabled. Features include, Canvas &amp; Audio Fingerprinting protection, Ping protection,
+								Plugin hiding, Network information API protection and the user agent randomiser.<br /><br />
+								<button id="adv_allowinjects" class="larger_button isetting_toggle" data-toggle="Pref_TracePage">Disabled</button>
+							</div>
+						</div>
+					</div>
+				</div>
+
+
+				<!--
+					Whitelist Section
+				-->
+				<div id="whitelist" class="view hidden">
+					<div class="sect_header s">Whitelist</div>
+					<div class="sect_cont">
+						<div id="wl_container">
+							<div id="wl_editor">
+								<div id="wl_biglist"></div>
+								<div id="wl_ctrl">
+									<div id="wl_controls">
+										<button id="wlctrl_refresh">Refresh List</button>
+										<button id="wlctrl_update">Save Changes</button>
+										<button id="wlctrl_adddom">Add Domain</button>
+									</div>
+									<div id="wl_scontrols" class="faded">
+										<button id="wlctrl_remdom" disabled>Remove Domain</button>
+										<button id="wlctrl_editdom" disabled>Edit Domain</button>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<!--
+					Privacy Section
+				-->
+				<div id="privacy" class="view hidden">
+					<div class="sect_header s">AbsoluteDouble and your privacy</div>
+					<div class="sect_cont">
+						<strong>Last Updated:</strong> 2018-05-12 00:54<br /><br />
+						When reporting URLs, only the URL, current browser (e.g. Chrome/Firefox) and message you write will be sent to the server and recorded. No other information about that transaction is stored.<br /><br />
+						<strong>Error reporting is optional</strong>, but when it is turned on, only information about the code will be sent to the AbsoluteDouble servers, this is so errors can be recreated and solved in future updates.<br /><br />
+						Any and all information is only stored for the length of time it is needed and will be deleted after 1 month at the most. Trace will attempt to make secure <strong>HTTPS connections</strong> to servers when downloading blocklists
+						and uploading reports. If you have any questions or concerns at all regarding your privacy or Trace in general, please email me. <strong>Trace does not and will never collect your browsing data.</strong><br /><br />
+						<u>Use of Cloudflare</u><br />
+						Like many websites, AbsoluteDouble uses Cloudflare, please make sure you agree to their privacy policy before browsing this website.
+						If you do not agree to the privacy policy and still wish to use Trace, you can turn off error reporting and the web request controller to stop all communication with absolutedouble.co.uk.<br /><br />
+						<u>Regarding Trace Premium</u><br />It is possible for us to see your name and PayPal email address when you buy Trace Premium due to how PayPal works and when you buy Trace Premium we will store your code on the server but will not store
+						your email on the server. Please be sure to read Paypal's Privacy Policy before purchasing Trace Premium.<br /><br />
+						<em>- AbsoluteDouble</em> (<a href="mailto:absolutedouble@gmail.com" title="Contact Email">absolutedouble@gmail.com</a>)<br /><br />
+						<a href="https://absolutedouble.co.uk/trace/information.html" title="Trace Changelog">Trace Changelog</a>
+					</div>
+				</div>
+				
+			</div>
+		</div>
+
+		<script src="../js/lib.jquery.js"></script>
+		<script src="../js/lib.longclick.js"></script>
+		<script src="../js/lib.json3.js"></script>
+		<script src="../js/lib.chart.js"></script>
+		<script src="../js/script.data.js"></script>
+		<script src="../js/script.options.js" defer></script>
+
+	</body>
+</html>

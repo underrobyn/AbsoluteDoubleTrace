@@ -1,0 +1,91 @@
+{
+	"manifest_version":2,
+
+	"name":"Trace",
+	"short_name":"Trace",
+  	"author":"AbsoluteDouble",
+	"description":"Browse online without leaving a Trace, because who wants to be tracked?",
+	"minimum_chrome_version":"28",
+	"version":"1.9",
+  	"homepage_url":"https://absolutedouble.co.uk/trace/",
+	"options_ui": {
+	  	"page":"html/options.html",
+	  	"chrome_style":false,
+	  	"open_in_tab":true
+	},
+  	"incognito":"spanning",
+	"applications": {
+		"gecko": {
+			"id":"trace@absolutedouble.co.uk",
+			"strict_min_version":"42.0"
+		}
+	},
+
+	"browser_action": {
+		"default_icon": {
+		  	"32": "icons/trace_32.png",
+		  	"64": "icons/trace_64.png",
+		  	"128": "icons/trace_128.png",
+		 	"256": "icons/trace_256.png"
+		},
+		"default_title": "Report site",
+		"default_popup": "html/page_report.html"
+	},
+	"commands": {
+		"ToggleTraceWeb":{
+			"suggested_key":{
+			  	"default":"Ctrl+Shift+E",
+			  	"mac":"Command+Shift+E"
+			},
+		  	"description": "Toggle Web Controller"
+		},
+		"ForceBlocklistUpdate": {
+		  	"suggested_key": {
+				"default":"Ctrl+Shift+F",
+				"mac":"Command+Shift+F"
+		  	},
+		  	"description": "Force the blocklist to update"
+		}
+  	},
+	"icons": {
+		"32": "icons/trace_32.png",
+		"64": "icons/trace_64.png",
+		"128": "icons/trace_128.png",
+		"256": "icons/trace_256.png"
+	},
+	"permissions": [
+	  	"activeTab",
+		"alarms",
+		"notifications",
+		"privacy",
+		"storage",
+	  	"tabs",
+		"webRequest",
+		"webRequestBlocking",
+		"<all_urls>"
+	],
+	"background": {
+		"scripts": [
+		  	"js/lib.json3.js",
+		  	"js/lib.jscookie.js",
+			"js/lib.jquery.js",
+		  	"js/script.background.js",
+		  	"js/script.data.js"
+		],
+	  	"persistent":true
+	},
+  	"content_scripts":[
+	  	{
+			"all_frames":true,
+			"js":["js/script.page.js"],
+			"matches":["http://*/*","https://*/*"],
+		  	"match_about_blank":false,
+			"run_at":"document_start"
+		}
+	],
+  	"web_accessible_resources": [
+		"html/blocked.html",
+	  	"js/script.blocked.js"
+  	],
+  	"content_security_policy":"default-src 'none'; style-src 'unsafe-inline'; object-src 'self'; script-src 'self'; connect-src https://absolutedouble.co.uk https://raw.githubusercontent.com"
+}

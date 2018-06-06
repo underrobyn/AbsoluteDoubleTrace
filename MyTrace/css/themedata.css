@@ -1,0 +1,39 @@
+/* Trace Default */
+.tracedefault_theme{
+	background:#8719ff;
+	background:-webkit-linear-gradient(to top, #FFAF7B, #d88f93, #8719ff);
+	background:linear-gradient(to top, #c66a57, #bb7783, #6607cd);
+}
+.tracedefault_timealteration1 {
+	background:-webkit-linear-gradient(to top, #c56a43, #ba0929, #154e86);
+	background:linear-gradient(to top, #c56a43, #ba0929, #154e86);
+}
+.tracedefault_timealteration2 {
+	background:-webkit-linear-gradient(to top, #440c25, #a03158, #6d190e);
+	background:linear-gradient(to top, #440c25, #a03158, #6d190e)
+}
+.tracedefault_timealteration3 {
+	background:-webkit-linear-gradient(to top, #6e1250, #8e133e, #3604bf);
+	background:linear-gradient(to top, #6e1250, #8e133e, #3604bf);
+}
+
+/* Trace Greyscale */
+.tracegreyscale_theme{
+	background: #434343;
+	background:-webkit-linear-gradient(to top, #535353, #595959);
+	background:linear-gradient(to top, #535353, #595959);
+}
+.tracegreyscale_theme .checkbox_cont input:checked ~ .ccheck {
+	background-color: #5a5a5a;
+}
+
+/* Trace Light */
+.tracelight_theme{
+	background:#ffffff;
+	background:-webkit-linear-gradient(to top, #ffffff, #efefef);
+	background:linear-gradient(to top, #ffffff, #efefef);
+	color:#1a1a1a;
+}
+.tracelight_theme button{
+	background-color:rgba(0,0,0,0.4);
+}
