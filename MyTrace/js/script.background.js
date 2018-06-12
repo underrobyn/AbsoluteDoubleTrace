@@ -2326,6 +2326,13 @@ var Trace = {
 							}
 						}
 					}
+
+					// Fix for 1.8.12 - 1.8.15 clients (Remove in 2.0)
+					if (prefs.Main_Interface.Theme.name === "default"){
+						prefs.Main_Interface.Theme.name = "tracedefault";
+						changes = true;
+					}
+
 					if (changes === true){
 						console.log("[prefd]-> Preferences repaired and saved.");
 						Trace.v.s.set(prefs);

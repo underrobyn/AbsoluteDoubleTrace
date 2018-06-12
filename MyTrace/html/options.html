@@ -13,7 +13,7 @@
 	<body>
 
 		<!--
-			Trace Version 1.9
+			Trace Version 1.9.1
 			By Jake Mcneill
 
 			Website:	https://absolutedouble.co.uk/
@@ -320,16 +320,18 @@
 											Please also note that the site you are connecting to will still see your IP as the connecting IP.<br />
 										</td>
 									</tr>
-									<tr id="row_screenres" style="display:none">
-										<td class="setting_info" tabindex="0" data-info="info_screenres">Screen resolution tracking</td>
-										<td class="isetting_toggle" tabindex="0" data-toggle="Pref_PluginHide" colspan="2">Fetching Status...</td>
+									<tr id="row_screenres">
+										<td class="setting_info" tabindex="0" data-info="info_screenres">Screen Resolution Tracking</td>
+										<td class="isetting_toggle" tabindex="0" data-toggle="Pref_ScreenRes" colspan="2">Fetching Status...</td>
 									</tr>
 									<tr id="info_screenres" class="hiddensettinginfo">
 										<td colspan="3">
-											<span>Screen variable randomisation</span><br />
-											Javscript has an object called &quot;screen&quot; that provides websites with information about your screen resolution. This can be used to track you as it's a piece of information at is
-											mostly constant.<br />Enabling this setting will add a random offset between -10 and +10 to most values in the object on each page reload.<br />To see this setting in action check the
-											&quot;screen resolution&quot; on <a href="https://browserleaks.com/javascript" target="_blank">BrowserLeaks.com</a>.<br /><br />
+											<span>JS Screen Variable Randomisation</span><br />
+											Javscript has an object called &quot;screen&quot; that provides websites with information about your screen resolution.<br /> This can be used to track you because it's a piece of information that always
+											stays constant unless you change your screen resolution in your display settings, which often isn't the best idea.<br />Enabling this setting will add a random offset between -10 and +10 to
+											most values in the object on each page reload.<br />This won't stop websites measuring the height and width of the HTML body.<br /><br />To see this setting in action check the &quot;screen resolution&quot; on
+											<a href="https://browserleaks.com/javascript" target="_blank">BrowserLeaks.com</a> and for more information, see:
+											<a href="https://web.archive.org/web/20171107213802/http://www.b3rn3d.com/blog/2014/05/29/fingerprinting-resolution/" title="b3rn3d.com" hreflang="en">Fingerprinting Resolution</a>
 										</td>
 									</tr>
 									<tr id="row_navplugin">
@@ -614,7 +616,6 @@
 
 		<script src="../js/lib.jquery.js"></script>
 		<script src="../js/lib.longclick.js"></script>
-		<script src="../js/lib.json3.js"></script>
 		<script src="../js/lib.chart.js"></script>
 		<script src="../js/script.data.js"></script>
 		<script src="../js/script.options.js" defer></script>

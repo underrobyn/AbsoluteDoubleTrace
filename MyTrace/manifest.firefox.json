@@ -6,7 +6,7 @@
   	"author":"AbsoluteDouble",
 	"description":"Browse online without leaving a Trace, because who wants to be tracked?",
 	"minimum_chrome_version":"28",
-	"version":"1.9",
+	"version":"1.9.1",
   	"homepage_url":"https://absolutedouble.co.uk/trace/",
 	"options_ui": {
 	  	"page":"html/options.html",
@@ -14,12 +14,6 @@
 	  	"open_in_tab":true
 	},
   	"incognito":"spanning",
-	"applications": {
-		"gecko": {
-			"id":"trace@absolutedouble.co.uk",
-			"strict_min_version":"42.0"
-		}
-	},
 
 	"browser_action": {
 		"default_icon": {
@@ -66,7 +60,6 @@
 	],
 	"background": {
 		"scripts": [
-		  	"js/lib.json3.js",
 		  	"js/lib.jscookie.js",
 			"js/lib.jquery.js",
 		  	"js/script.background.js",

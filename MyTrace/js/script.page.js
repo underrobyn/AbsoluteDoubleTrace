@@ -14,6 +14,7 @@ var TracePage = {
 		BlockBattery:{enabled:true},
 		BlockNetInfo:{enabled:true},
 		RandUserAgent:{enabled:true},
+		BlockScreenRes:{enabled:true},
 		BlockReferHeader:{enabled:false,mainFunction:"remove",jsVariable:{enabled:true,method:"remove"}},
 		BlockAudioFinger:{enabled:true,audioBuffer:{enabled:false},audioData:{enabled:false},audioOfflineMain:{enabled:true},audioMain:{enabled:true}},
 		BlockCanvasFinger:{enabled:true,customRGBA:{enabled:false,rgba:[0,0,0,0]}},
@@ -82,9 +83,9 @@ var TracePage = {
 			TracePage.protectBatteryFunction();
 		}
 
-		//if (TracePage.currentPrefs.BlockBattery.enabled === true){
-			//TracePage.protectScreenRes();
-		//}
+		if (TracePage.currentPrefs.BlockScreenRes.enabled === true){
+			TracePage.protectScreenRes();
+		}
 
 		if (TracePage.currentPrefs.RandUserAgent.enabled === true){
 			chrome.runtime.sendMessage({msg: "uaReq"},function(response) {
@@ -108,6 +109,7 @@ var TracePage = {
 				"Pref_PingBlock",
 				"Pref_PluginHide",
 				"Pref_BatteryApi",
+				"Pref_ScreenRes",
 				"Pref_UserAgent",
 				"Pref_NetworkInformation",
 				"Pref_WebRTC",
@@ -120,6 +122,7 @@ var TracePage = {
 					BlockPing:prefs.Pref_PingBlock,
 					BlockPlugin:prefs.Pref_PluginHide,
 					BlockBattery:prefs.Pref_BatteryApi,
+					BlockScreenRes:prefs.Pref_ScreenRes,
 					RandUserAgent:prefs.Pref_UserAgent,
 					BlockNetInfo:prefs.Pref_NetworkInformation,
 					BlockWebRTC:prefs.Pref_WebRTC,
