@@ -95,6 +95,7 @@ var Trace = {
 		s:(/Edge/.test(navigator.userAgent) ? browser.storage.local : chrome.storage.local),
 		blocklistURL:"https://absolutedouble.co.uk/trace/app/weblist.php",
 		blocklistFallback:"https://raw.githubusercontent.com/jake-cryptic/hmfp_lists/master/fallback.json",
+		blocklistOffline:chrome.extension.getURL("data/blocklist.json"),
 		blocklistBase:"https://absolutedouble.co.uk/trace/app/weblist.php?p=",
 		notifIcon:"icons/trace_256.png",
 		uaSettings:{
@@ -285,6 +286,9 @@ var Trace = {
 			// Any pre-header modifications start here
 			if (Trace.p.Current.Pref_UserAgent.enabled === true || Trace.p.Current.Pref_GoogleHeader.enabled === true || Trace.p.Current.Pref_IPSpoof.enabled === true)
 				Trace.f.StartHeaderModification();
+
+			// Cookie
+			Trace.g.CookieEater.ProtectionToggle();
 
 			// Any post-header modifications start here
 			if (Trace.p.Current.Pref_ETagTrack.enabled === true)
@@ -986,7 +990,6 @@ var Trace = {
 			file:[],
 			query:[]
 		},
-		whitelist:[],
 		PingBlocker:function(d){
 			if (d.type === "ping" && d.tabId < 0){
 				Trace.s.LogStat(d.type);
@@ -1357,10 +1360,49 @@ var Trace = {
 			BadCookieList:function(){
 
 			},
-			RemoveBadCookies:function(cookiestr){
+			RemoveSendBadCookies:function(cookiestr){
 				var newCookieStr = cookiestr;
-
+				window.biscuit = cookiestr;
+				console.log(Cookies.getJSON());
 				return newCookieStr;
+			},
+			RemoveRecvBadCookies:function(cookiestr){
+				var newCookieStr = cookiestr;
+				window.biscuit = cookiestr;
+				console.warn(Cookies.getJSON());
+				return newCookieStr;
+			},
+			ProtectionToggle:function(){
+				return;
+				chrome.webRequest.onBeforeSendHeaders.addListener(
+					function(details){
+						for (var i=0;i<details.requestHeaders.length;++i){
+							headerName = details.requestHeaders[i].name.toString().toLowerCase();
+							if (headerName === "cookie"){
+								headerVal = details.requestHeaders[i].value.toString();
+								console.log(Trace.g.CookieEater.RemoveSendBadCookies(headerVal));
+								console.log(headerName,headerVal);
+							}
+						}
+					},
+					{urls:["<all_urls>"]},
+					["blocking","requestHeaders"]
+				);
+				chrome.webRequest.onHeadersReceived.addListener(
+					function(details){
+						console.log(details);
+						for (var i=0;i<details.responseHeaders.length;++i){
+							headerName = details.responseHeaders[i].name.toString().toLowerCase();
+							if (headerName === "set-cookie"){
+								headerVal = details.responseHeaders[i].value.toString();
+								console.log(Trace.g.CookieEater.RemoveRecvBadCookies(headerVal));
+								console.log(headerName,headerVal);
+							}
+						}
+					},
+					{urls:["<all_urls>"]},
+					["blocking","responseHeaders"]
+				);
 			}
 		},
 		BadTopLevelDomain:{
@@ -1853,7 +1895,15 @@ var Trace = {
 				}
 			},
 			"Pref_ScreenRes":{
-				"enabled":false
+				"enabled":false,
+				"randomOpts":{
+					"enabled":true,
+					"values":[-10,10]
+				},
+				"commonResolutions":{
+					"enabled":false,
+					"resolutions":[]
+				}
 			},
 			"Pref_BatteryApi":{
 				"enabled":false
@@ -2091,7 +2141,15 @@ var Trace = {
 				}
 			},
 			"Pref_ScreenRes":{
-				"enabled":false
+				"enabled":false,
+				"randomOpts":{
+					"enabled":true,
+					"values":[-10,10]
+				},
+				"commonResolutions":{
+					"enabled":false,
+					"resolutions":[]
+				}
 			},
 			"Pref_BatteryApi":{
 				"enabled":false

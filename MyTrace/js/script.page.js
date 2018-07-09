@@ -296,12 +296,44 @@ var TracePage = {
 	},
 	protectNavPlugins:function() {
 		TracePage.codeInject(function(){
-			Object.defineProperty(navigator,"plugins",{
-				enumerable:true,
-				configurable:false,
-				get:function(){
-					console.warn("[TracePage]->Blocked[PL]");
-					return {};
+			function disableFunction(frame){
+				if (frame === null) return;
+				if (frame.traceDefined === true) return;
+
+				Object.defineProperty(frame.navigator,"plugins",{
+					enumerable:true,
+					configurable:false,
+					get:function(){
+						console.warn("[TracePage]->Blocked[PL]");
+						return {};
+					}
+				});
+
+				frame.traceDefined = true;
+			}
+
+			disableFunction(window);
+			var wind = HTMLIFrameElement.prototype.__lookupGetter__('contentWindow'),
+				cont = HTMLIFrameElement.prototype.__lookupGetter__('contentDocument');
+
+			Object.defineProperties(HTMLIFrameElement.prototype,{
+				contentWindow:{
+					get:function(){
+						var frame = wind.apply(this);
+						if (this.src && this.src.indexOf('//') !== -1 && location.host !== this.src.split('/')[2]) return frame;
+						try {frame.HTMLCanvasElement;}catch(e){}
+						disableFunction(frame);
+						return frame;
+					}
+				},
+				contentDocument:{
+					get:function(){
+						if (this.src && this.src.indexOf('//') !== -1 && location.host !== this.src.split('/')[2]) return cont.apply(this);
+						var frame = wind.apply(this);
+						try {frame.HTMLCanvasElement} catch(e){}
+						disableFunction(frame);
+						return cont.apply(this);
+					}
 				}
 			});
 		});

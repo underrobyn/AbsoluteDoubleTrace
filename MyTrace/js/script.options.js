@@ -170,7 +170,6 @@ var TraceOpt = {
 		TraceOpt.AssignNavigationClickEvents();
 
 		TraceOpt.GenerateGreeting();
-		TraceOpt.GenerateTip();
 		TraceOpt.BrowserCompatibility();
 
 		// Start Auth Channel and check integrity
@@ -214,6 +213,8 @@ var TraceOpt = {
 		TraceOpt.Whitelist.init();
 		TraceOpt.BadTopLevelBlock.AssignEvents();
 		TraceOpt.URLCleaner.AssignEvents();
+
+		TraceOpt.GenerateTip();
 	},
 	BrowserCompatibility:function(){
 		if (/OPR/.test(navigator.userAgent)){
@@ -1008,6 +1009,9 @@ var TraceOpt = {
 				case "Pref_PingBlock":
 					TraceOpt.Config.s.PingBlockSettings();
 					break;
+				case "Pref_ScreenRes":
+					TraceOpt.ScreenRes.OpenDialog();
+					break;
 				case "Pref_UserAgent":
 					TraceOpt.UserAgent.OpenDialog();
 					break;
@@ -1731,6 +1735,69 @@ var TraceOpt = {
 			TraceOpt.AssignCloseOverlay();
 		}
 	},
+	ScreenRes:{
+		OpenDialog:function(){
+			var el = $("<div/>",{
+				"class":"settings_config_container",
+				"data-parent":TraceOpt.Config.SelectedOption
+			});
+
+			console.log(TraceOpt.Config.CurrentSettings[TraceOpt.Config.SelectedOption]);
+
+			el.append(
+				$("<button/>",{"id":"sr_togglemode","class":"small"}).text("Click to toggle protection method").on("click enter",TraceOpt.ScreenRes.ToggleModeUI),$("<br/>"),$("<br/>"),
+				$("<div/>",{"id":"sr_resolutions"}).append(
+					$("<div/>",{"id":"sr_addtoresolutions"}).append(
+						$("<input/>",{"type":"text","id":"sr_addtoresinput"}),
+						$("<button/>",{"id":"sr_addtoressubmit","class":"small"}).text("Add Resolution").on("click enter",TraceOpt.ScreenRes.AddNewResolution)
+					),
+					$("<div/>",{"id":"sr_currentresolutions"})
+				),
+				$("<div/>",{"id":"sr_randoffset"}).append(
+					$("<span/>").text("A random number between these two values is created and added to the width and height of the screen resolution at each page refresh, making it harder to know your real screen resolution."),
+					$("<br/>"),$("<br/>"),
+					$("<span/>").text("Minimum Offset (Default is -10)"),
+					$("<input/>",{"type":"text","id":"sr_offsetminval","placeholder":"Minimum Value","value":TraceOpt.Config.CurrentSettings[TraceOpt.Config.SelectedOption].randomOpts.values[1]}),
+					$("<br/>"),$("<br/>"),
+					$("<span/>").text("Maximum Offset (Default is 10)"),
+					$("<input/>",{"type":"text","id":"sr_offsetmaxval","placeholder":"Maximum Value","value":TraceOpt.Config.CurrentSettings[TraceOpt.Config.SelectedOption].randomOpts.values[1]}),
+					$("<br/>"),$("<br/>"),
+					$("<button/>",{"id":"sr_updateoffsets","class":"small"}).text("Save Offsets").on("click enter",TraceOpt.ScreenRes.UpdateOffset)
+				)
+			);
+
+			$("#drop_message").empty().append(
+				$("<h1/>").text("Configure Screen Resolution Protection"),
+				$("<div/>",{"id":"sr_specialconfig"}).append(el)
+			);
+
+			if (TraceOpt.Config.CurrentSettings[TraceOpt.Config.SelectedOption].randomOpts.enabled === true){
+				$("#sr_resolutions").hide();
+			}
+			if (TraceOpt.Config.CurrentSettings[TraceOpt.Config.SelectedOption].commonResolutions.enabled === true){
+				$("#sr_randoffset").hide();
+			}
+
+			TraceOpt.AssignCloseOverlay();
+		},
+		ToggleModeUI:function(){
+			if (TraceOpt.Config.CurrentSettings[TraceOpt.Config.SelectedOption].randomOpts.enabled === true){
+				chrome.extension.getBackgroundPage().Trace.p.SetSetting("Pref_ScreenRes.randomOpts.enabled",false);
+				chrome.extension.getBackgroundPage().Trace.p.SetSetting("Pref_ScreenRes.commonResolutions.enabled",true);
+			} else {
+				chrome.extension.getBackgroundPage().Trace.p.SetSetting("Pref_ScreenRes.randomOpts.enabled",true);
+				chrome.extension.getBackgroundPage().Trace.p.SetSetting("Pref_ScreenRes.commonResolutions.enabled",false);
+			}
+			TraceOpt.ScreenRes.OpenDialog();
+		},
+		AddNewResolution:function(){
+			console.log($("#sr_addtoresinput").val());
+		},
+		UpdateOffset:function(){
+			console.log($("#sr_offsetminval").val());
+			console.log($("#sr_offsetmaxval").val());
+		}
+	},
 	Blocklist:{
 		ListConfig:{},
 		isPremium:(chrome.extension.getBackgroundPage !== null && typeof chrome.extension.getBackgroundPage().Trace.p.Current.Main_Trace.PremiumCode !== "undefined" ?
@@ -2092,7 +2159,7 @@ var TraceOpt = {
 				$("<br/>"),
 				$("<h1/>",{"id":"wle_domainclear", "class":"slimtext"}).text("Edit domain..."),
 				$("<button/>",{"class":"float_r"}).text("Cancel").click(TraceOpt.CloseOverlay),
-				$("<button/>",{"class":"float_r"}).text("Modify Domain").click(TraceOpt.WhitelistEdit.DoEditDomain),
+				$("<button/>",{"class":"float_r"}).text("Modify").click(TraceOpt.WhitelistEdit.DoEditDomain),
 				$("<br/>"),$("<br/>")
 			);
 			TraceOpt.AssignCloseOverlay();
