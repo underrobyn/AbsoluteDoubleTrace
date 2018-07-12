@@ -6,7 +6,7 @@
   	"author":"AbsoluteDouble",
 	"description":"Browse online without leaving a Trace, because who wants to be tracked?",
 	"minimum_chrome_version":"28",
-	"version":"1.9.3",
+	"version":"1.9.4",
   	"homepage_url":"https://absolutedouble.co.uk/trace/",
   	"options_page":"html/options.html",
   	"incognito":"spanning",

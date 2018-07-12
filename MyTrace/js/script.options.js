@@ -1745,22 +1745,24 @@ var TraceOpt = {
 			console.log(TraceOpt.Config.CurrentSettings[TraceOpt.Config.SelectedOption]);
 
 			el.append(
-				$("<button/>",{"id":"sr_togglemode","class":"small"}).text("Click to toggle protection method").on("click enter",TraceOpt.ScreenRes.ToggleModeUI),$("<br/>"),$("<br/>"),
+				$("<button/>",{"id":"sr_togglemode","class":"small"}).text("Change ").on("click enter",TraceOpt.ScreenRes.ToggleModeUI),
+				$("<h4/>").text("Method Options"),
 				$("<div/>",{"id":"sr_resolutions"}).append(
+					$("<span/>").text("Use this to specify resolutions that will be provided, one will randomly be chosen at each page reload."),
+					$("<div/>",{"id":"sr_currentresolutions"}),
 					$("<div/>",{"id":"sr_addtoresolutions"}).append(
-						$("<input/>",{"type":"text","id":"sr_addtoresinput"}),
+						$("<input/>",{"type":"text","id":"sr_addtoresinput","placeholder":"Resolution to add (Format WxH) e.g. 1920x1080"}),$("<br/>"),
 						$("<button/>",{"id":"sr_addtoressubmit","class":"small"}).text("Add Resolution").on("click enter",TraceOpt.ScreenRes.AddNewResolution)
-					),
-					$("<div/>",{"id":"sr_currentresolutions"})
+					)
 				),
 				$("<div/>",{"id":"sr_randoffset"}).append(
 					$("<span/>").text("A random number between these two values is created and added to the width and height of the screen resolution at each page refresh, making it harder to know your real screen resolution."),
 					$("<br/>"),$("<br/>"),
 					$("<span/>").text("Minimum Offset (Default is -10)"),
-					$("<input/>",{"type":"text","id":"sr_offsetminval","placeholder":"Minimum Value","value":TraceOpt.Config.CurrentSettings[TraceOpt.Config.SelectedOption].randomOpts.values[1]}),
+					$("<input/>",{"type":"text","id":"sr_offsetminval","placeholder":"Minimum Value"}),
 					$("<br/>"),$("<br/>"),
 					$("<span/>").text("Maximum Offset (Default is 10)"),
-					$("<input/>",{"type":"text","id":"sr_offsetmaxval","placeholder":"Maximum Value","value":TraceOpt.Config.CurrentSettings[TraceOpt.Config.SelectedOption].randomOpts.values[1]}),
+					$("<input/>",{"type":"text","id":"sr_offsetmaxval","placeholder":"Maximum Value"}),
 					$("<br/>"),$("<br/>"),
 					$("<button/>",{"id":"sr_updateoffsets","class":"small"}).text("Save Offsets").on("click enter",TraceOpt.ScreenRes.UpdateOffset)
 				)
@@ -1778,6 +1780,9 @@ var TraceOpt = {
 				$("#sr_randoffset").hide();
 			}
 
+			TraceOpt.ScreenRes.UpdateResolutions();
+			TraceOpt.ScreenRes.UpdateOffsets();
+
 			TraceOpt.AssignCloseOverlay();
 		},
 		ToggleModeUI:function(){
@@ -1790,12 +1795,60 @@ var TraceOpt = {
 			}
 			TraceOpt.ScreenRes.OpenDialog();
 		},
+		UpdateOffsets:function(){
+			$("#sr_offsetminval").val(TraceOpt.Config.CurrentSettings[TraceOpt.Config.SelectedOption].randomOpts.values[0]);
+			$("#sr_offsetmaxval").val(TraceOpt.Config.CurrentSettings[TraceOpt.Config.SelectedOption].randomOpts.values[1]);
+		},
+		UpdateResolutions:function(){
+			var r = TraceOpt.Config.CurrentSettings[TraceOpt.Config.SelectedOption].commonResolutions.resolutions,
+				d = $("#sr_currentresolutions");
+			d.empty();
+			if (typeof r === "undefined" || r.length === 0){
+				d.html("<h2>No Resolutions In List</h2>");
+				return;
+			}
+			for (item in r){
+				d.append(
+					$("<div/>",{"class":"sr_cresolution","data-listid":item}).text(r[item][0] + "x" + r[item][1]).on("click enter",TraceOpt.ScreenRes.RemoveResolution)
+				);
+			}
+		}
+		,
+		RemoveResolution:function(){
+			var id = $(this).data("listid");
+			TraceOpt.Config.CurrentSettings[TraceOpt.Config.SelectedOption].commonResolutions.resolutions.splice(id,1);
+			chrome.extension.getBackgroundPage().Trace.p.SetSetting("Pref_ScreenRes.commonResolutions.resolutions",TraceOpt.Config.CurrentSettings[TraceOpt.Config.SelectedOption].commonResolutions.resolutions);
+			TraceOpt.ScreenRes.UpdateResolutions();
+		},
 		AddNewResolution:function(){
-			console.log($("#sr_addtoresinput").val());
+			var res = $("#sr_addtoresinput").val().toLowerCase();
+			if (!res.includes("x")) {
+				alert("Incorrect format\nMake sure you entered something in the format Width x Height");
+				return;
+			}
+
+			res = res.replace(/[^!x\d.-]/g,"");
+			res = res.split("x");
+
+			if (res.length !== 2){
+				alert("Invalid resolution!\nMake sure you enter it in the format Width x Height")
+				return;
+			}
+
+			TraceOpt.Config.CurrentSettings[TraceOpt.Config.SelectedOption].commonResolutions.resolutions.push([res[0],res[1]]);
+			chrome.extension.getBackgroundPage().Trace.p.SetSetting("Pref_ScreenRes.commonResolutions.resolutions",TraceOpt.Config.CurrentSettings[TraceOpt.Config.SelectedOption].commonResolutions.resolutions);
+			TraceOpt.ScreenRes.UpdateResolutions();
 		},
 		UpdateOffset:function(){
-			console.log($("#sr_offsetminval").val());
-			console.log($("#sr_offsetmaxval").val());
+			$(this).text("Saving...");
+
+			var max = $("#sr_offsetmaxval").val(),
+				min = $("#sr_offsetminval").val();
+			TraceOpt.Config.CurrentSettings[TraceOpt.Config.SelectedOption].randomOpts.values = [min,max];
+			chrome.extension.getBackgroundPage().Trace.p.SetSetting("Pref_ScreenRes.randomOpts.values",TraceOpt.Config.CurrentSettings[TraceOpt.Config.SelectedOption].randomOpts.values);
+			TraceOpt.ScreenRes.UpdateOffsets();
+
+			$(this).text("Save Offsets");
 		}
 	},
 	Blocklist:{

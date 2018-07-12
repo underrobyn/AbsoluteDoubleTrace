@@ -147,6 +147,12 @@ h3{
 	font-weight:100;
 	font-size:1.25em;
 }
+h4{
+	font-weight:400;
+	padding:0;
+	margin:0 0 2% 0;
+	font-size:1.35em;
+}
 a{
 	color:#fff;
 }
@@ -250,6 +256,27 @@ a.dark{
 	width:100%;
 	min-height:25vh;
 	height:auto;
+}
+#sr_currentresolutions{
+	height:30vh;
+	width:97%;
+	background-color:rgba(0,0,0,0.2);
+	overflow-y:scroll;
+	padding:.5% 1.5%;
+}
+.sr_cresolution {
+	padding:1px 1%;
+	width:31.3%;
+	font-size:1.2em;
+	text-align:center;
+	float:left;
+	background-color:rgba(255,255,255,1);
+	transition:background-color .2s ease-in-out;
+	box-shadow:#1a1a1a 1px 1px 0;
+	cursor:pointer;
+}
+.sr_cresolution:hover {
+	background-color:rgba(255,255,255,0.5);
 }
 .text_box {
 	display:inline-block;

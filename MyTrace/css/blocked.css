@@ -12,6 +12,10 @@ h2 {
 	word-wrap: break-word;
 	max-width:80%;
 }
+a{
+	font-size:1.8em;
+	color:#fff;
+}
 body {
 	height:100vh;
 	background:#8719ff;

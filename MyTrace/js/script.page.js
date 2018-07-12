@@ -14,7 +14,7 @@ var TracePage = {
 		BlockBattery:{enabled:true},
 		BlockNetInfo:{enabled:true},
 		RandUserAgent:{enabled:true},
-		BlockScreenRes:{enabled:true},
+		BlockScreenRes:{enabled:true,randomOpts:{enabled:true,values:[-10,10]},commonResolutions:{enabled:false,resolutions:[]}},
 		BlockReferHeader:{enabled:false,mainFunction:"remove",jsVariable:{enabled:true,method:"remove"}},
 		BlockAudioFinger:{enabled:true,audioBuffer:{enabled:false},audioData:{enabled:false},audioOfflineMain:{enabled:true},audioMain:{enabled:true}},
 		BlockCanvasFinger:{enabled:true,customRGBA:{enabled:false,rgba:[0,0,0,0]}},
@@ -298,7 +298,7 @@ var TracePage = {
 		TracePage.codeInject(function(){
 			function disableFunction(frame){
 				if (frame === null) return;
-				if (frame.traceDefined === true) return;
+				if (frame.traceDefinedPlugins === true) return;
 
 				Object.defineProperty(frame.navigator,"plugins",{
 					enumerable:true,
@@ -309,7 +309,7 @@ var TracePage = {
 					}
 				});
 
-				frame.traceDefined = true;
+				frame.traceDefinedPlugins = true;
 			}
 
 			disableFunction(window);
@@ -433,7 +433,7 @@ var TracePage = {
 					});
 				}
 
-				if (frame.traceDefined === true) return;
+				if (frame.traceDefinedScreen === true) return;
 				// Loop through different resolution settings adding a small random offset
 				var screenVars = ["availHeight","availLeft","availTop","availWidth","height","width"];
 				for (screenVar in screenVars){
@@ -448,7 +448,7 @@ var TracePage = {
 				defProp("colorDepth",depthOffsets[Math.floor(Math.random()*depthOffsets.length)]);
 				defProp("pixelDepth",depthOffsets[Math.floor(Math.random()*depthOffsets.length)]);
 
-				frame.traceDefined = true;
+				frame.traceDefinedScreen = true;
 			}
 
 			disableFunction(window);
