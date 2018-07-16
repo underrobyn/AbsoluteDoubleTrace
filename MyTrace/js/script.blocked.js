@@ -146,7 +146,7 @@ var TraceBlock = {
 		chrome.extension.getBackgroundPage().Trace.c.AddItem(url,function(){
 			var lnk = "<a href='"+ TraceBlock.blockedURL +"'>Go to site</a>";
 			document.getElementById("whitelist_opts").innerHTML = "<h2>Site whitelisted</h2><br />" + lnk;
-			TraceTool.Auth.SafePost({action:"ReloadWhitelist"});
+			TraceBlock.Auth.SafePost({action:"ReloadWhitelist"});
 		});
 	}
 };

@@ -8,7 +8,6 @@ if (window["chrome"] === null || typeof (window["chrome"]) === "undefined"){
 var TracePage = {
 	debug:false,
 	currentPrefs:{
-		TracePage:{enabled:true},
 		BlockPing:{enabled:true,sendBeacon:{enabled:true}},
 		BlockPlugin:{enabled:true},
 		BlockBattery:{enabled:true},
@@ -21,13 +20,6 @@ var TracePage = {
 		BlockWebRTC:{enabled:true,wrtcPeerConnection:{enabled:false},wrtcDataChannel:{enabled:false},wrtcRtpReceiver:{enabled:false}}
 	},
 	whitelist:{},
-	init:function(){
-		TracePage.getPrefs(function(enabled){
-			if (enabled) {
-				TracePage.realInit();
-			}
-		});
-	},
 	realInit:function(){
 		if (Object.keys(TracePage.currentPrefs).length === 0){
 			return;
@@ -100,7 +92,7 @@ var TracePage = {
 		s.textContent = "(" + code + ")("+func+");";
 		document.documentElement.appendChild(s);
 	},
-	getPrefs:function(callback){
+	init:function(callback){
 		chrome.storage.local.get(
 			[
 				"Main_Trace",
@@ -118,7 +110,6 @@ var TracePage = {
 				"Pref_ReferHeader"
 			],function(prefs){
 				TracePage.currentPrefs = {
-					TracePage:prefs.Pref_TracePage,
 					BlockPing:prefs.Pref_PingBlock,
 					BlockPlugin:prefs.Pref_PluginHide,
 					BlockBattery:prefs.Pref_BatteryApi,
@@ -134,7 +125,7 @@ var TracePage = {
 				TracePage.whitelist = prefs.WebData_Whitelist;
 				TracePage.debug = prefs.Main_Trace.DebugApp.enabled;
 
-				callback(prefs.Pref_TracePage.enabled);
+				TracePage.realInit();
 			}
 		)
 	},
@@ -421,37 +412,72 @@ var TracePage = {
 		if (TracePage.debug) console.info("[TracePage]->[UA] Disabled User Agent Tracking.");
 	},
 	protectScreenRes:function(){
-		TracePage.codeInject(function(){
+		var opts = {
+			randomOpts:{
+				enabled:TracePage.currentPrefs.BlockScreenRes.randomOpts.enabled,
+				values:TracePage.currentPrefs.BlockScreenRes.randomOpts.values
+			},
+			commonResolutions:{
+				enabled:TracePage.currentPrefs.BlockScreenRes.commonResolutions.enabled,
+				resolutions:TracePage.currentPrefs.BlockScreenRes.commonResolutions.resolutions
+			}
+		};
+
+		// If nothing is enabled just don't run the protection
+		if (opts["randomOpts"]["enabled"] !== true && opts["commonResolutions"]["enabled"] !== true){
+			return;
+		}
+		if (opts["commonResolutions"]["enabled"] === true && opts["commonResolutions"]["resolutions"].length === 0){
+			return;
+		}
+
+		TracePage.codeInject(function(opts){
+			var opts = JSON.parse(opts);
+
 			function disableFunction(frame){
 				if (frame === null) return;
 
-				function defProp(name,val){
+				function defProp(name,val,offset){
+					if (offset) val = window.screen[name] + val;
+
 					Object.defineProperty(frame.screen,name,{
 						enumerable:true,
 						configurable:false,
-						value:window.screen[name] + val
+						value:val
 					});
 				}
 
 				if (frame.traceDefinedScreen === true) return;
+
 				// Loop through different resolution settings adding a small random offset
-				var screenVars = ["availHeight","availLeft","availTop","availWidth","height","width"];
-				for (screenVar in screenVars){
-					defProp(
-						screenVars[screenVar],
-						(Math.floor(Math.random()*10)-10)
-					);
+				if (opts["randomOpts"]["enabled"] === true){
+					var screenVars = ["availHeight","availLeft","availTop","availWidth","height","width"];
+					for (screenVar in screenVars){
+						defProp(
+							screenVars[screenVar],
+							(Math.floor(Math.random()*parseInt(opts["randomOpts"]["values"][0]))+parseInt(opts["randomOpts"]["values"][1])),
+							true
+						);
+					}
+				}
+
+				if (opts["commonResolutions"]["enabled"] === true){
+					var chosen = opts["commonResolutions"]["resolutions"][Math.floor(Math.random()*opts["commonResolutions"]["resolutions"].length)];
+					defProp("availHeight",chosen[1],false);
+					defProp("availWidth",chosen[0],false);
+					defProp("height",chosen[1],false);
+					defProp("width",chosen[0],false);
 				}
 
 				// Change pixel depths
 				var depthOffsets = [-6,6,12,24];
-				defProp("colorDepth",depthOffsets[Math.floor(Math.random()*depthOffsets.length)]);
-				defProp("pixelDepth",depthOffsets[Math.floor(Math.random()*depthOffsets.length)]);
+				defProp("colorDepth",depthOffsets[Math.floor(Math.random()*depthOffsets.length)],true);
+				defProp("pixelDepth",depthOffsets[Math.floor(Math.random()*depthOffsets.length)],true);
 
 				frame.traceDefinedScreen = true;
 			}
 
-			disableFunction(window);
+			disableFunction(window,opts);
 			var wind = HTMLIFrameElement.prototype.__lookupGetter__('contentWindow'),
 				cont = HTMLIFrameElement.prototype.__lookupGetter__('contentDocument');
 
@@ -461,7 +487,7 @@ var TracePage = {
 						var frame = wind.apply(this);
 						if (this.src && this.src.indexOf('//') !== -1 && location.host !== this.src.split('/')[2]) return frame;
 						try {frame.HTMLCanvasElement;}catch(e){}
-						disableFunction(frame);
+						disableFunction(frame,opts);
 						return frame;
 					}
 				},
@@ -470,12 +496,12 @@ var TracePage = {
 						if (this.src && this.src.indexOf('//') !== -1 && location.host !== this.src.split('/')[2]) return cont.apply(this);
 						var frame = wind.apply(this);
 						try {frame.HTMLCanvasElement} catch(e){}
-						disableFunction(frame);
+						disableFunction(frame,opts);
 						return cont.apply(this);
 					}
 				}
 			});
-		});
+		},"'" + JSON.stringify(opts) + "'");
 
 		if (TracePage.debug) console.info("[TracePage]->[SC] Disabled Screen Resolution Tracking.");
 	},

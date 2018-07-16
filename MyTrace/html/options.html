@@ -13,7 +13,7 @@
 	<body>
 
 		<!--
-			Trace Version 1.9.4
+			Trace Version 1.9.5
 			By Jake Mcneill
 
 			Website:	https://absolutedouble.co.uk/
@@ -38,7 +38,6 @@
 							<li>Regular Bad TLD Protection</li>
 							<li>Canvas Fingerprint Protection</li>
 							<li>WebRTC Protection</li>
-							<li>TracePage</li>
 							<li>Protection Statistics</li>
 							<li>Error Reporting</li>
 						</ul>
@@ -183,7 +182,7 @@
 									<tr id="row_networkinfo">
 										<td class="setting_info" tabindex="0" data-info="info_networkinfo">Network Information API</td>
 										<!--<td class="setting_config" tabindex="0" data-config="Pref_NetworkInformation">Configure</td>-->
-										<td class="isetting_toggle" tabindex="0" data-toggle="Pref_NetworkInformation" colspan="2">Fetching Status...</td>
+										<td class="setting_toggle" tabindex="0" data-toggle="Pref_NetworkInformation" colspan="2">Fetching Status...</td>
 									</tr>
 									<tr id="info_networkinfo" class="hiddensettinginfo">
 										<td colspan="3">
@@ -194,7 +193,7 @@
 									</tr>
 									<tr id="row_batteryapi">
 										<td class="setting_info" tabindex="0" data-info="info_batteryapi">Battery API Protection</td>
-										<td class="isetting_toggle" tabindex="0" data-toggle="Pref_BatteryApi" colspan="2">Fetching Status...</td>
+										<td class="setting_toggle" tabindex="0" data-toggle="Pref_BatteryApi" colspan="2">Fetching Status...</td>
 									</tr>
 									<tr id="info_batteryapi" class="hiddensettinginfo">
 										<td colspan="3">
@@ -218,7 +217,7 @@
 									</tr>
 									<tr id="row_pingblock">
 										<td class="setting_info" tabindex="0" data-info="info_pingblock">Ping Protection</td>
-										<td class="isetting_toggle" tabindex="0" data-toggle="Pref_PingBlock">Fetching Status...</td>
+										<td class="setting_toggle" tabindex="0" data-toggle="Pref_PingBlock">Fetching Status...</td>
 										<td class="setting_config" tabindex="0" data-config="Pref_PingBlock">Configure</td>
 									</tr>
 									<tr id="info_pingblock" class="hiddensettinginfo">
@@ -308,7 +307,7 @@
 									</tr>
 									<tr id="row_ipheadspoof">
 										<td class="setting_info" tabindex="0" data-info="info_ipheadspoof">Proxy IP Header Spoofing</td>
-										<td class="isetting_toggle" tabindex="0" data-toggle="Pref_IPSpoof">Fetching Status...</td>
+										<td class="setting_toggle" tabindex="0" data-toggle="Pref_IPSpoof">Fetching Status...</td>
 										<td class="setting_config" tabindex="0" data-config="Pref_IPSpoof">Configure</td>
 									</tr>
 									<tr id="info_ipheadspoof" class="hiddensettinginfo">
@@ -322,8 +321,8 @@
 									</tr>
 									<tr id="row_screenres">
 										<td class="setting_info" tabindex="0" data-info="info_screenres">Screen Resolution Tracking</td>
-										<td class="isetting_toggle" tabindex="0" data-toggle="Pref_ScreenRes" colspan="2">Fetching Status...</td>
-										<td class="setting_config" tabindex="0" data-config="Pref_ScreenRes" style="display: none">Configure</td>
+										<td class="setting_toggle" tabindex="0" data-toggle="Pref_ScreenRes">Fetching Status...</td>
+										<td class="setting_config" tabindex="0" data-config="Pref_ScreenRes">Configure</td>
 									</tr>
 									<tr id="info_screenres" class="hiddensettinginfo">
 										<td colspan="3">
@@ -337,7 +336,7 @@
 									</tr>
 									<tr id="row_navplugin">
 										<td class="setting_info" tabindex="0" data-info="info_navplugin">JS Plugin Hide</td>
-										<td class="isetting_toggle" tabindex="0" data-toggle="Pref_PluginHide" colspan="2">Fetching Status...</td>
+										<td class="setting_toggle" tabindex="0" data-toggle="Pref_PluginHide" colspan="2">Fetching Status...</td>
 									</tr>
 									<tr id="info_navplugin" class="hiddensettinginfo">
 										<td colspan="3">
@@ -550,16 +549,6 @@
 								Enabling this setting will allow Trace to remove or randomise these parameters so that you are much harder to track.<br /><br />
 								<button id="adv_urlcleaner_settings" class="larger_button">Settings</button>
 								<button id="adv_urlcleaner_toggle" class="larger_button setting_toggle" data-toggle="Pref_WebController.urlCleaner">Disabled</button>
-							</div>
-						</div>
-
-						<div class="sect_adv">
-							<div class="sect_adv_header" data-cont="tracepage_injectopt">&nbsp;TracePage</div>
-							<div class="sect_adv_cont" id="tracepage_injectopt">
-								This setting must be enabled to allow Trace to inject code into webpages, this can be used to disable certain functions used by tracking companies, so even if tracking code is somehow loaded,
-								it won't actually do much harm because of Trace's mitigations.<br />Many features require this to be enabled. Features include, Canvas &amp; Audio Fingerprinting protection, Ping protection,
-								Plugin hiding, Network information API protection and the user agent randomiser.<br /><br />
-								<button id="adv_allowinjects" class="larger_button isetting_toggle" data-toggle="Pref_TracePage">Disabled</button>
 							</div>
 						</div>
 					</div>

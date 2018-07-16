@@ -1982,9 +1982,6 @@ var Trace = {
 					"user_set":""
 				}
 			},
-			"Pref_TracePage":{
-				"enabled":true
-			},
 			"Main_Trace":{
 				"DebugApp":{
 					"enabled":false
@@ -2228,9 +2225,6 @@ var Trace = {
 					"user_set":""
 				}
 			},
-			"Pref_TracePage":{
-				"enabled":true
-			},
 			"Main_Trace":{
 				"DebugApp":{
 					"enabled":false
@@ -2337,7 +2331,6 @@ var Trace = {
 					"Pref_UserAgent",
 					"Pref_WebRTC",
 					"Pref_IPSpoof",
-					"Pref_TracePage",
 					"Main_Trace",
 					"Main_Interface"
 				],
@@ -2490,18 +2483,6 @@ var Trace = {
 
 			if (setting === "Pref_PingBlock.pingRequest.enabled" || setting === "Pref_PingBlock"){
 				Trace.b.ToggleBlockPings();
-			}
-
-			// Load TracePage settings
-			if (setting === "Pref_TracePage"){
-				if (val.enabled === false){
-					Trace.p.SetSetting("Pref_AudioFingerprint.enabled",false);
-					Trace.p.SetSetting("Pref_CanvasFingerprint.enabled",false);
-					Trace.p.SetSetting("Pref_PingBlock.enabled",false);
-					Trace.p.SetSetting("Pref_PluginHide.enabled",false);
-					Trace.p.SetSetting("Pref_UserAgent.enabled",false);
-					Trace.p.SetSetting("Pref_NetworkInformation.enabled",false);
-				}
 			}
 
 			// Load IPSpoof settings

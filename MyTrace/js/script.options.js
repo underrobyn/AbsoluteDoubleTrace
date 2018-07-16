@@ -215,6 +215,9 @@ var TraceOpt = {
 		TraceOpt.URLCleaner.AssignEvents();
 
 		TraceOpt.GenerateTip();
+
+		TraceOpt.Blocklist.isPremium = (typeof chrome.extension.getBackgroundPage().Trace.p.Current.Main_Trace.PremiumCode !== "undefined" ?
+			(chrome.extension.getBackgroundPage().Trace.p.Current.Main_Trace.PremiumCode.length === 0 ? false : true) : false);
 	},
 	BrowserCompatibility:function(){
 		if (/OPR/.test(navigator.userAgent)){
@@ -460,49 +463,6 @@ var TraceOpt = {
 		$(".setting_config").each(function(){
 			$(this).on("click enter", function(){
 				TraceOpt.Config.Options($(this).data("config"));
-			}).on("keypress",function(e) {
-				if(e.which === 13) {
-					$(this).trigger('enter');
-				}
-			});
-		});
-
-		// Special Setting Toggle events
-		$(".isetting_toggle").each(function(){
-			$(this).on("click enter", function(){
-				var setting = $(this).data("toggle");
-
-				if (setting === "Pref_TracePage"){
-					if (chrome.extension.getBackgroundPage().Trace.p.Current.Pref_TracePage.enabled === true){
-						if (!confirm("Disabling this will have an affect on other settings in Trace, are you sure you want to continue?")){
-							return;
-						}
-					}
-				}
-
-				if (setting !== "Pref_TracePage" && chrome.extension.getBackgroundPage().Trace.p.Current.Pref_TracePage.enabled !== true){
-					$("#drop_message").empty().append(
-						$("<h1/>").text("To continue, enable TracePage"),
-						$("<span/>").text("This setting requires TracePage to be enabled."),
-						$("<br/>"),$("<br/>"),
-
-						$("<button/>",{
-							"title":"Enable TracePage"
-						}).text("Enable").click(function(){
-							chrome.extension.getBackgroundPage().Trace.p.ToggleSetting("Pref_TracePage",TraceOpt.GetCurrentSettings);
-							chrome.extension.getBackgroundPage().Trace.p.ToggleSetting(setting,TraceOpt.GetCurrentSettings);
-
-							TraceOpt.CloseOverlay();
-							TraceOpt.GetCurrentSettings();
-						}),
-						$("<button/>",{
-							"title":"Don't enable TracePage"
-						}).text("Cancel").click(TraceOpt.CloseOverlay)
-					);
-					TraceOpt.AssignCloseOverlay();
-				} else {
-					chrome.extension.getBackgroundPage().Trace.p.ToggleSetting(setting,TraceOpt.GetCurrentSettings);
-				}
 			}).on("keypress",function(e) {
 				if(e.which === 13) {
 					$(this).trigger('enter');
@@ -1745,7 +1705,7 @@ var TraceOpt = {
 			console.log(TraceOpt.Config.CurrentSettings[TraceOpt.Config.SelectedOption]);
 
 			el.append(
-				$("<button/>",{"id":"sr_togglemode","class":"small"}).text("Change ").on("click enter",TraceOpt.ScreenRes.ToggleModeUI),
+				$("<button/>",{"id":"sr_togglemode","class":"small"}).text("Change protection method").on("click enter",TraceOpt.ScreenRes.ToggleModeUI),$("<br/>"),
 				$("<h4/>").text("Method Options"),
 				$("<div/>",{"id":"sr_resolutions"}).append(
 					$("<span/>").text("Use this to specify resolutions that will be provided, one will randomly be chosen at each page reload."),
@@ -1804,7 +1764,7 @@ var TraceOpt = {
 				d = $("#sr_currentresolutions");
 			d.empty();
 			if (typeof r === "undefined" || r.length === 0){
-				d.html("<h2>No Resolutions In List</h2>");
+				d.html("<h2>No Resolutions In List</h2><p>Protection will not work unless you specify a resolution</p>");
 				return;
 			}
 			for (item in r){
@@ -1835,26 +1795,26 @@ var TraceOpt = {
 				return;
 			}
 
-			TraceOpt.Config.CurrentSettings[TraceOpt.Config.SelectedOption].commonResolutions.resolutions.push([res[0],res[1]]);
+			TraceOpt.Config.CurrentSettings[TraceOpt.Config.SelectedOption].commonResolutions.resolutions.push([parseInt(res[0]),parseInt(res[1])]);
 			chrome.extension.getBackgroundPage().Trace.p.SetSetting("Pref_ScreenRes.commonResolutions.resolutions",TraceOpt.Config.CurrentSettings[TraceOpt.Config.SelectedOption].commonResolutions.resolutions);
 			TraceOpt.ScreenRes.UpdateResolutions();
 		},
 		UpdateOffset:function(){
-			$(this).text("Saving...");
-
-			var max = $("#sr_offsetmaxval").val(),
-				min = $("#sr_offsetminval").val();
+			var max = parseInt($("#sr_offsetmaxval").val()),
+				min = parseInt($("#sr_offsetminval").val());
 			TraceOpt.Config.CurrentSettings[TraceOpt.Config.SelectedOption].randomOpts.values = [min,max];
 			chrome.extension.getBackgroundPage().Trace.p.SetSetting("Pref_ScreenRes.randomOpts.values",TraceOpt.Config.CurrentSettings[TraceOpt.Config.SelectedOption].randomOpts.values);
 			TraceOpt.ScreenRes.UpdateOffsets();
 
-			$(this).text("Save Offsets");
+			$("#sr_updateoffsets").text("Saved!");
+			setTimeout(function(){
+				$("#sr_updateoffsets").text("Save Offsets");
+			},1000);
 		}
 	},
 	Blocklist:{
 		ListConfig:{},
-		isPremium:(chrome.extension.getBackgroundPage !== null && typeof chrome.extension.getBackgroundPage().Trace.p.Current.Main_Trace.PremiumCode !== "undefined" ?
-			(chrome.extension.getBackgroundPage().Trace.p.Current.Main_Trace.PremiumCode.length === 0 ? false : true) : false),
+		isPremium:false,
 		updatedList:false,
 		OpenDialog:function(){
 			TraceOpt.Blocklist.isPremium = (typeof chrome.extension.getBackgroundPage().Trace.p.Current.Main_Trace.PremiumCode !== "undefined" ?
