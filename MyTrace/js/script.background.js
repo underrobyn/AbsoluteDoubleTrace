@@ -125,6 +125,7 @@ var Trace = {
 			},
 			"wb":{
 				"chrome":{
+					"69":"AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3493.3 Safari/537.36",
 					"67":"AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.79 Safari/537.36",
 					"66":"AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.139 Safari/537.36",
 					"65":"AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.162 Safari/537.36",
@@ -139,10 +140,10 @@ var Trace = {
 					"53":"Gecko/20100101 Firefox/55.03"
 				},
 				"vivaldi":{
-					"1.95":"AppleWebKit/537.36 (KHTML, like Gecko) Chrome/64.0.3282.189 Safari/537.36 Vivaldi/1.95.1077.60"
+					"1.96":"AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.183 Safari/537.36 Vivaldi/1.96.1147.47"
 				},
 				"opera":{
-					"51":"AppleWebKit/537.36 (KHTML, like Gecko) Chrome/64.0.3282.186 Safari/537.36 OPR/51.0.2830.55"
+					"54":"AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.87 Safari/537.36 OPR/54.0.2952.54"
 				},
 				"edge":{
 					"17":"Chrome/64.0.3282.140 Safari/537.36 Edge/17.17134",
@@ -353,41 +354,44 @@ var Trace = {
 			var rA = function(a){
 				return a[Math.floor(Math.random() * a.length)];
 			};
-			//if (Trace.p.Current.Pref_UserAgent.uaCust.customUAs === true){
-				// Choose OS
-				var uaOSPool = [];
-				if (Trace.p.Current.Pref_UserAgent.uaOSConfig.AllowLinux.enabled === true){
-					uaOSPool = uaOSPool.concat(Object.values(Trace.v.uaSettings.os.linux));
-				}
-				if (Trace.p.Current.Pref_UserAgent.uaOSConfig.AllowMac.enabled === true){
-					uaOSPool = uaOSPool.concat(Object.values(Trace.v.uaSettings.os.macos));
-				}
-				if (Trace.p.Current.Pref_UserAgent.uaOSConfig.AllowWindows.enabled === true){
-					uaOSPool = uaOSPool.concat(Object.values(Trace.v.uaSettings.os.windows));
-				}
 
-				// Choose browser
-				var uaWBPool = [];
-				if (Trace.p.Current.Pref_UserAgent.uaWBConfig.AllowChrome.enabled === true){
-					uaWBPool = uaWBPool.concat(Object.values(Trace.v.uaSettings.wb.chrome));
-				}
-				if (Trace.p.Current.Pref_UserAgent.uaWBConfig.AllowFirefox.enabled === true){
-					uaWBPool = uaWBPool.concat(Object.values(Trace.v.uaSettings.wb.firefox));
-				}
-				if (Trace.p.Current.Pref_UserAgent.uaWBConfig.AllowEdge.enabled === true){
-					uaWBPool = uaWBPool.concat(Object.values(Trace.v.uaSettings.wb.edge));
-				}
-				if (Trace.p.Current.Pref_UserAgent.uaWBConfig.AllowSafari.enabled === true){
-					uaWBPool = uaWBPool.concat(Object.values(Trace.v.uaSettings.wb.safari));
-				}
-				if (Trace.p.Current.Pref_UserAgent.uaWBConfig.AllowVivaldi.enabled === true){
-					uaWBPool = uaWBPool.concat(Object.values(Trace.v.uaSettings.wb.vivaldi));
-				}
+			// If user has enabled custom user agents and set some
+			if (Trace.p.Current.Pref_UserAgent.uaCust.enabled === true && Trace.p.Current.Pref_UserAgent.uaCust.customUAs.length > 0){
+				return rA(Trace.p.Current.Pref_UserAgent.uaCust.customUAs);
+			}
 
-				return "Mozilla/5.0 (" + rA(uaOSPool) + ") " + rA(uaWBPool);
-			//} else {
-			//	return Trace.p.Current.Pref_UserAgent.uaCust.customUAs[Math.floor((Math.random() * Trace.p.Current.Pref_UserAgent.uaCust.customUAs.length))];
-			//}
+			// Choose OS
+			var uaOSPool = [];
+			if (Trace.p.Current.Pref_UserAgent.uaOSConfig.AllowLinux.enabled === true){
+				uaOSPool = uaOSPool.concat(Object.values(Trace.v.uaSettings.os.linux));
+			}
+			if (Trace.p.Current.Pref_UserAgent.uaOSConfig.AllowMac.enabled === true){
+				uaOSPool = uaOSPool.concat(Object.values(Trace.v.uaSettings.os.macos));
+			}
+			if (Trace.p.Current.Pref_UserAgent.uaOSConfig.AllowWindows.enabled === true){
+				uaOSPool = uaOSPool.concat(Object.values(Trace.v.uaSettings.os.windows));
+			}
+
+			// Choose browser
+			var uaWBPool = [];
+			if (Trace.p.Current.Pref_UserAgent.uaWBConfig.AllowChrome.enabled === true){
+				uaWBPool = uaWBPool.concat(Object.values(Trace.v.uaSettings.wb.chrome));
+			}
+			if (Trace.p.Current.Pref_UserAgent.uaWBConfig.AllowFirefox.enabled === true){
+				uaWBPool = uaWBPool.concat(Object.values(Trace.v.uaSettings.wb.firefox));
+			}
+			if (Trace.p.Current.Pref_UserAgent.uaWBConfig.AllowEdge.enabled === true){
+				uaWBPool = uaWBPool.concat(Object.values(Trace.v.uaSettings.wb.edge));
+			}
+			if (Trace.p.Current.Pref_UserAgent.uaWBConfig.AllowSafari.enabled === true){
+				uaWBPool = uaWBPool.concat(Object.values(Trace.v.uaSettings.wb.safari));
+			}
+			if (Trace.p.Current.Pref_UserAgent.uaWBConfig.AllowVivaldi.enabled === true){
+				uaWBPool = uaWBPool.concat(Object.values(Trace.v.uaSettings.wb.vivaldi));
+			}
+
+			// Return random user agent
+			return "Mozilla/5.0 (" + rA(uaOSPool) + ") " + rA(uaWBPool);
 		},
 		StartAlarmEvent:function(){
 			chrome.alarms.onAlarm.addListener(function(a){
@@ -583,14 +587,20 @@ var Trace = {
 					dataType:"text",
 					cache:false,
 					method:"GET",
-					timeout:30000,
+					timeout:50000,
 					beforeSend:function(){
 						if (Trace.DEBUG) console.log("[cachd]-> Checking blocklist version against main server");
 					},
 					success:function(version){
 						if (Trace.DEBUG) console.log("[cachd]-> Got version from server, server version is",version);
 
-						var vInfo = JSON.parse(version);
+						try{
+							var vInfo = JSON.parse(version);
+						} catch(e){
+							console.error(e);
+							Trace.b.GetBlockList(0,0);
+							return;
+						}
 
 						Trace.v.s.get([
 							"WebCache_Version"

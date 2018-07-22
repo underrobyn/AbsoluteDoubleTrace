@@ -276,6 +276,9 @@ var TraceOpt = {
 		$("#user_tip").html(tips[Math.floor(Math.random()*tips.length)]);
 	},
 	GetMainPage:function(){
+		if (typeof chrome.extension.getBackgroundPage !== "function"){
+			return;
+		}
 		chrome.extension.getBackgroundPage().Trace.s.MainText(function(i,t,d){
 			var text = "<br />Trace has been protecting you since <span>" + i + "</span>";
 			if (TraceOpt.FormatNumber(t["total"]).toString() !== "0"){
@@ -531,7 +534,11 @@ var TraceOpt = {
 		$(this).text("Working...");
 	},
 	GetPremiumStatus:function(){
+		if (typeof chrome.extension.getBackgroundPage !== "function"){
+			return;
+		}
 		var code = chrome.extension.getBackgroundPage().Trace.v.Premium;
+
 		if (typeof(code) !== "string" || code === ""){
 			$("#premium_status").empty().append(
 				$("<span/>",{
@@ -556,24 +563,24 @@ var TraceOpt = {
 					if (win !== null) win.focus();
 				}).text("Website")
 			);
-		} else {
-			$("#premium_status").empty().append(
-				$("<span/>").text("Thank you for supporting Trace!"),
-				$("<br/>"),$("<br/>"),
-				$("<button/>").text("Disable Premium").click(TraceOpt.RemovePremium),
-				$("<span/>").text(" "),
-				$("<button/>").text(
-					(chrome.extension.getBackgroundPage().Trace.p.Current.Pref_WebController.enabled === true ? "Force Blocklist Update" : "Enable Domain Blocking")
-				).click(TraceOpt.UpdateBlocklist),
-				$("<span/>").text(" "),
-				$("<button/>",{
-					id:"premium_visit_site"
-				}).click(function(){
-					var win = window.open("https://absolutedouble.co.uk/trace/", "_blank");
-					if (win !== null) win.focus();
-				}).text("Website")
-			);
+			return;
 		}
+		$("#premium_status").empty().append(
+			$("<span/>").text("Thank you for supporting Trace!"),
+			$("<br/>"),$("<br/>"),
+			$("<button/>").text("Disable Premium").click(TraceOpt.RemovePremium),
+			$("<span/>").text(" "),
+			$("<button/>").text(
+				(chrome.extension.getBackgroundPage().Trace.p.Current.Pref_WebController.enabled === true ? "Force Blocklist Update" : "Enable Domain Blocking")
+			).click(TraceOpt.UpdateBlocklist),
+			$("<span/>").text(" "),
+			$("<button/>",{
+				id:"premium_visit_site"
+			}).click(function(){
+				var win = window.open("https://absolutedouble.co.uk/trace/", "_blank");
+				if (win !== null) win.focus();
+			}).text("Website")
+		);
 	},
 	RemovePremium:function(){
 		if (confirm("Are you sure you wish to remove your premium code from Trace?\nThis will not delete your code from our servers.\n\nYour code:\n" + chrome.extension.getBackgroundPage().Trace.p.Current.Main_Trace.PremiumCode)){
@@ -1276,6 +1283,9 @@ var TraceOpt = {
 			});
 		},
 		GetStatsData:function(cb){
+			if (typeof chrome.extension.getBackgroundPage !== "function"){
+				return;
+			}
 			chrome.extension.getBackgroundPage().Trace.s.Data(function(d){
 				TraceOpt.Stats.GraphData = d;
 				if (cb){
@@ -2513,7 +2523,7 @@ if(window.location.hash && window.location.hash === "#newinstall") {
 	$("#overlay_message").slideDown(300);
 	$("#overlay_close").click(TraceOpt.FreshInstall);
 
-	if (typeof Storage !== "undefined"){
+	if (typeof Storage !== "undefined" && typeof localStorage !== "undefined"){
 		localStorage["showSettingsTutorial"] = true;
 		localStorage["showAdvancedTutorial"] = true;
 	}
