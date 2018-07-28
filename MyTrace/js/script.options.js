@@ -51,12 +51,17 @@ var TraceOpt = {
 		setTimeout(function(){$("#ux").removeClass("blurred");},10);
 	},
 	CloseOverlay:function(){
-		$("#overlay_message").slideUp(250);
+		$("#overlay_message").fadeOut(250);
 		$("#ux").removeClass("blurred");
+		setTimeout(function(){
+			$("#overlay_message").removeClass("overlay_fs");
+		},250);
 	},
-	AssignCloseOverlay:function(){
+	AssignCloseOverlay:function(fs){
+		if (fs) $("#overlay_message").addClass("overlay_fs");
+
 		$("#ux").addClass("blurred");
-		$("#overlay_message").slideDown(300);
+		$("#overlay_message").fadeIn(300);
 		$("#overlay_close").click(TraceOpt.CloseOverlay);
 		$(window).click(function(e){
 			if ($(e.target)[0].id === "overlay_message"){
@@ -655,7 +660,7 @@ var TraceOpt = {
 				"title":"Close"
 			}).text("Close").click(TraceOpt.CloseOverlay)
 		);
-		TraceOpt.AssignCloseOverlay();
+		TraceOpt.AssignCloseOverlay(true);
 	},
 	PremiumHelp:function(){
 		$("#drop_message").empty().append(
@@ -705,7 +710,7 @@ var TraceOpt = {
 				"title":"Close"
 			}).text("Close").click(TraceOpt.CloseOverlay)
 		);
-		TraceOpt.AssignCloseOverlay();
+		TraceOpt.AssignCloseOverlay(true);
 	},
 	Scribble:function(){
 		if ($("#premium_code_box") === null){
@@ -959,7 +964,7 @@ var TraceOpt = {
 					$("<h1/>").text("Settings"),
 					$("<h2/>").text("To edit the configuration enable the setting first.")
 				);
-				TraceOpt.AssignCloseOverlay();
+				TraceOpt.AssignCloseOverlay(true);
 				return;
 			}
 
@@ -1061,7 +1066,7 @@ var TraceOpt = {
 					$("<button/>",{"class":"float_r"}).text("Close").click(TraceOpt.CloseOverlay),
 					$("<br/>"),$("<br/>")
 				);
-				TraceOpt.AssignCloseOverlay();
+				TraceOpt.AssignCloseOverlay(true);
 			},
 			ChromeHeaderSettings:function(){
 				var cont = TraceOpt.Config.GetConf();
@@ -1071,7 +1076,7 @@ var TraceOpt = {
 					$("<button/>",{"class":"float_r"}).text("Close").click(TraceOpt.CloseOverlay),
 					$("<br/>"),$("<br/>")
 				);
-				TraceOpt.AssignCloseOverlay();
+				TraceOpt.AssignCloseOverlay(true);
 			},
 			PingBlockSettings:function(){
 				var cont = TraceOpt.Config.GetConf();
@@ -1083,7 +1088,7 @@ var TraceOpt = {
 					$("<button/>",{"class":"float_r"}).text("Close").click(TraceOpt.CloseOverlay),
 					$("<br/>"),$("<br/>")
 				);
-				TraceOpt.AssignCloseOverlay();
+				TraceOpt.AssignCloseOverlay(true);
 			},
 			WebRTCSettings:function(){
 				var cont = TraceOpt.Config.GetConf();
@@ -1095,7 +1100,7 @@ var TraceOpt = {
 					$("<button/>",{"class":"float_r"}).text("Close").click(TraceOpt.CloseOverlay),
 					$("<br/>"),$("<br/>")
 				);
-				TraceOpt.AssignCloseOverlay();
+				TraceOpt.AssignCloseOverlay(true);
 			}
 		}
 	},
@@ -1500,7 +1505,7 @@ var TraceOpt = {
 					"title":"Close"
 				}).text("Close").click(TraceOpt.CloseOverlay)
 			);
-			TraceOpt.AssignCloseOverlay();
+			TraceOpt.AssignCloseOverlay(true);
 		},
 		DownloadStats:function(file){
 			if (typeof file !== "string"){
@@ -1607,16 +1612,15 @@ var TraceOpt = {
 					"title":"Close"
 				}).text("Cancel").click(TraceOpt.CloseOverlay)
 			);
-			TraceOpt.AssignCloseOverlay();
+			TraceOpt.AssignCloseOverlay(true);
 		},
 		ConfirmDeleteStats:function(x){
 			var a = $("#stats_del_amount").val();
 
 			var cb = function(){
-				$("#overlay_message").slideUp(250);
+				TraceOpt.CloseOverlay();
 				TraceOpt.Stats.GetStatsData(function(d){
 					TraceOpt.Stats.MakeData(d,TraceOpt.Stats.MakeGraph);
-					$("#ux").removeClass("blurred");
 				});
 			};
 
@@ -1702,7 +1706,7 @@ var TraceOpt = {
 				$("<h1/>").text("User Agent Customiser"),
 				$("<div/>",{"id":"ua_specialconfig"}).append(el)
 			);
-			TraceOpt.AssignCloseOverlay();
+			TraceOpt.AssignCloseOverlay(true);
 		}
 	},
 	ScreenRes:{
@@ -1715,14 +1719,13 @@ var TraceOpt = {
 			console.log(TraceOpt.Config.CurrentSettings[TraceOpt.Config.SelectedOption]);
 
 			el.append(
-				$("<button/>",{"id":"sr_togglemode","class":"small"}).text("Change protection method").on("click enter",TraceOpt.ScreenRes.ToggleModeUI),$("<br/>"),
-				$("<h4/>").text("Method Options"),
 				$("<div/>",{"id":"sr_resolutions"}).append(
-					$("<span/>").text("Use this to specify resolutions that will be provided, one will randomly be chosen at each page reload."),
+					$("<span/>").text("Use this to specify resolutions that will be provided, one will randomly be chosen at each page reload."),$("<br/>"),
 					$("<div/>",{"id":"sr_currentresolutions"}),
 					$("<div/>",{"id":"sr_addtoresolutions"}).append(
-						$("<input/>",{"type":"text","id":"sr_addtoresinput","placeholder":"Resolution to add (Format WxH) e.g. 1920x1080"}),$("<br/>"),
-						$("<button/>",{"id":"sr_addtoressubmit","class":"small"}).text("Add Resolution").on("click enter",TraceOpt.ScreenRes.AddNewResolution)
+						$("<input/>",{"type":"text","id":"sr_addtoresinput","placeholder":"Resolution to add (Format WxH) e.g. 1920x1080"}),$("<br/>"),$("<br/>"),
+						$("<button/>",{"id":"sr_addtoressubmit","class":"small"}).text("Add Resolution").on("click enter",TraceOpt.ScreenRes.AddNewResolution),$("<span/>").text(" "),
+						$("<button/>",{"id":"sr_addtoressubmit","class":"small"}).text("Add Common Resolutions").on("click enter",TraceOpt.ScreenRes.AddCommonResolutions)
 					)
 				),
 				$("<div/>",{"id":"sr_randoffset"}).append(
@@ -1735,7 +1738,9 @@ var TraceOpt = {
 					$("<input/>",{"type":"text","id":"sr_offsetmaxval","placeholder":"Maximum Value"}),
 					$("<br/>"),$("<br/>"),
 					$("<button/>",{"id":"sr_updateoffsets","class":"small"}).text("Save Offsets").on("click enter",TraceOpt.ScreenRes.UpdateOffset)
-				)
+				),
+				$("<br/>"),$("<button/>",{"id":"sr_togglemode","class":"small"}).text("Change selection method").on("click enter",TraceOpt.ScreenRes.ToggleModeUI),
+				$("<button/>",{"title":"Close","class":"small float_r"}).text("Close").click(TraceOpt.CloseOverlay)
 			);
 
 			$("#drop_message").empty().append(
@@ -1753,7 +1758,7 @@ var TraceOpt = {
 			TraceOpt.ScreenRes.UpdateResolutions();
 			TraceOpt.ScreenRes.UpdateOffsets();
 
-			TraceOpt.AssignCloseOverlay();
+			TraceOpt.AssignCloseOverlay(true);
 		},
 		ToggleModeUI:function(){
 			if (TraceOpt.Config.CurrentSettings[TraceOpt.Config.SelectedOption].randomOpts.enabled === true){
@@ -1768,6 +1773,31 @@ var TraceOpt = {
 		UpdateOffsets:function(){
 			$("#sr_offsetminval").val(TraceOpt.Config.CurrentSettings[TraceOpt.Config.SelectedOption].randomOpts.values[0]);
 			$("#sr_offsetmaxval").val(TraceOpt.Config.CurrentSettings[TraceOpt.Config.SelectedOption].randomOpts.values[1]);
+		},
+		AddCommonResolutions:function(){
+			var common = [
+				[1024,768],
+				[1280,720],
+				[1280,800],
+				[1280,1024],
+				[1360,768],
+				[1366,768],
+				[1440,900],
+				[1600,900],
+				[1920,1080],
+				[1920,1280],
+				[1920,1440],
+				[3440,1440],
+				[3840,1600]
+			];
+
+			if (!confirm("This will add " + common.length + " resolutions to the list.\nAre you sure you wish to proceed?")) return;
+
+			for (var res in common){
+				TraceOpt.Config.CurrentSettings[TraceOpt.Config.SelectedOption].commonResolutions.resolutions.push([parseInt(common[res][0]),parseInt(common[res][1])]);
+			}
+			chrome.extension.getBackgroundPage().Trace.p.SetSetting("Pref_ScreenRes.commonResolutions.resolutions",TraceOpt.Config.CurrentSettings[TraceOpt.Config.SelectedOption].commonResolutions.resolutions);
+			TraceOpt.ScreenRes.UpdateResolutions();
 		},
 		UpdateResolutions:function(){
 			var r = TraceOpt.Config.CurrentSettings[TraceOpt.Config.SelectedOption].commonResolutions.resolutions,
@@ -1921,12 +1951,11 @@ var TraceOpt = {
 						);
 
 						// List labels
+						var label = $("<span/>",{"class":"blc_optreq blc_req"}).text("Optional List");
 						if (currentItem.premium === true){
 							var label = $("<span/>",{"class":"blc_premreq blc_req"}).text(TraceOpt.Blocklist.isPremium===true ? "Premium List" : "This list requires Premium");
 						} else if (currentItem.default === true){
 							var label = $("<span/>",{"class":"blc_defreq blc_req"}).text("Default List");
-						} else {
-							var label = $("<span/>",{"class":"blc_optreq blc_req"}).text("Optional List");
 						}
 
 						body.append(
@@ -2301,7 +2330,7 @@ var TraceOpt = {
 				$("<button/>").text("Save").click(TraceOpt.BadTopLevelBlock.SaveSelection),
 				$("<button/>").text("Cancel").click(TraceOpt.CloseOverlay)
 			);
-			TraceOpt.AssignCloseOverlay();
+			TraceOpt.AssignCloseOverlay(true);
 
 			$("#atld_protlevel option[value='" + csetting[0] + "']").prop("selected", true);
 		},
@@ -2375,7 +2404,7 @@ var TraceOpt = {
 				$("<button/>",{"class":"float_r"}).text("Close").click(TraceOpt.CloseOverlay),
 				$("<br/>"),$("<br/>")
 			);
-			TraceOpt.AssignCloseOverlay();
+			TraceOpt.AssignCloseOverlay(true);
 		}
 	},
 	URLCleaner:{
@@ -2460,7 +2489,7 @@ var TraceOpt = {
 				$("<button/>").text("Save").click(TraceOpt.URLCleaner.SaveSelection),
 				$("<button/>").text("Cancel").click(TraceOpt.CloseOverlay)
 			);
-			TraceOpt.AssignCloseOverlay();
+			TraceOpt.AssignCloseOverlay(true);
 
 			$("#afr_urlc_plevel option[value='" + frameSetting[0] + "']").prop("selected", true);
 			$("#ars_urlc_plevel option[value='" + resourceSetting[0] + "']").prop("selected", true);

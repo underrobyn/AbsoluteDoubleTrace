@@ -52,7 +52,7 @@ html, body {
 	padding-top:85px;
 	width:100%;
 	height:100%;
-	overflow:auto;
+	overflow-x:hidden;
 	cursor:pointer;
 }
 #overlay_cont {
@@ -74,13 +74,23 @@ html, body {
 #overlay_close {
 	color:#aaaaaa;
 	float:right;
-	font-size:3em;
+	font-size:2em !important;
 	font-weight:900;
 }
 #overlay_close:hover,#overlay_close:focus {
 	color:#000;
 	text-decoration:none;
 	cursor:pointer;
+}
+.overlay_fs {
+	padding:0 !important;
+}
+.overlay_fs #overlay_cont{
+	width:96% !important;
+	padding:2% !important;
+	margin:0 !important;
+	max-height:100vh !important;
+	overflow-y:scroll;
 }
 h1 {
 	margin:0 0 20px 0;
@@ -258,6 +268,7 @@ a.dark{
 	height:auto;
 }
 #sr_currentresolutions{
+	margin:2% 0 0 0;
 	height:30vh;
 	width:97%;
 	background-color:rgba(0,0,0,0.2);
@@ -599,7 +610,7 @@ input[type="text"]{
 		width:28%;
 	}
 }
-@media (max-width:1000px){
+@media (max-width:1200px){
 	#overlay_cont{
 		width:87.5%;
 		padding:20px;
@@ -682,6 +693,9 @@ input[type="text"]{
 	}
 	.title {
 		font-size:1.35em;
+	}
+	#overlay_message{
+		padding:10px;
 	}
 	.side_el{
 		font-size:2em;
