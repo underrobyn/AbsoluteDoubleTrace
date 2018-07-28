@@ -345,6 +345,9 @@ var TracePage = {
 
 		TracePage.codeInject(function(ret){
 			var dret = JSON.parse(ret);
+			dret.addEventListener = function(){
+				console.warn("[TracePage]->Protected[NE]");
+			};
 			Object.defineProperty(navigator,"connection",{
 				enumerable:true,
 				configurable:false,

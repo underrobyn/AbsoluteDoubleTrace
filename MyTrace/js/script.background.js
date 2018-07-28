@@ -1368,18 +1368,30 @@ var Trace = {
 	g:{
 		CookieEater:{
 			BadCookieList:function(){
-
+				return ["iambadcookie"];
 			},
 			RemoveSendBadCookies:function(cookiestr){
-				var newCookieStr = cookiestr;
+				var oldCookies = cookiestr;
 				window.biscuit = cookiestr;
-				console.log(Cookies.getJSON());
-				return newCookieStr;
+
+				var badCookies = Trace.g.CookieEater.BadCookieList();
+				var cookieList = Cookies.get();
+				var cookieKeys = Object.keys(cookieList);
+
+				for (var i = 0, l = cookieKeys.length;i<l;i++){
+					if (badCookies.indexOf(cookieKeys[i]) > -1){
+						console.log("Remove "+cookieKeys[i]);
+						Cookies.remove(cookieKeys[i], { path: '' });
+					}
+				}
+
+				return window.biscuit;
 			},
 			RemoveRecvBadCookies:function(cookiestr){
 				var newCookieStr = cookiestr;
 				window.biscuit = cookiestr;
-				console.warn(Cookies.getJSON());
+				console.log(Cookies.get());
+				console.log(Cookies.getJSON());
 				return newCookieStr;
 			},
 			ProtectionToggle:function(){
@@ -1390,8 +1402,9 @@ var Trace = {
 							headerName = details.requestHeaders[i].name.toString().toLowerCase();
 							if (headerName === "cookie"){
 								headerVal = details.requestHeaders[i].value.toString();
-								console.log(Trace.g.CookieEater.RemoveSendBadCookies(headerVal));
-								console.log(headerName,headerVal);
+								Trace.g.CookieEater.RemoveSendBadCookies(headerVal);
+								//console.log(headerName,headerVal);
+								//console.log("");
 							}
 						}
 					},
@@ -1400,13 +1413,12 @@ var Trace = {
 				);
 				chrome.webRequest.onHeadersReceived.addListener(
 					function(details){
-						console.log(details);
 						for (var i=0;i<details.responseHeaders.length;++i){
 							headerName = details.responseHeaders[i].name.toString().toLowerCase();
 							if (headerName === "set-cookie"){
 								headerVal = details.responseHeaders[i].value.toString();
 								console.log(Trace.g.CookieEater.RemoveRecvBadCookies(headerVal));
-								console.log(headerName,headerVal);
+								//console.log(headerName,headerVal);
 							}
 						}
 					},
