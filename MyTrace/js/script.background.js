@@ -136,9 +136,10 @@ var Trace = {
 				"firefox":{
 					"62":"Gecko/20100101 Firefox/62.0",
 					"61":"Gecko/20100101 Firefox/61.0",
+					"60":"Gecko/20100101 Firefox/60.0",
 					"59":"Gecko/20100101 Firefox/59.0",
-					"57":"Gecko/20100101 Firefox/57.0",
-					"53":"Gecko/20100101 Firefox/55.03"
+					"58":"Gecko/20100101 Firefox/58.0",
+					"57":"Gecko/20100101 Firefox/57.0"
 				},
 				"vivaldi":{
 					"1.96":"AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.183 Safari/537.36 Vivaldi/1.96.1147.47"
@@ -844,7 +845,7 @@ var Trace = {
 			if (Trace.d.blocked.host.length > 0) Trace.d.validate.host = true;
 			if (Trace.d.blocked.url.length > 0) Trace.d.validate.url = true;
 			if (Trace.d.blocked.query.length > 0) Trace.d.validate.query = true;
-			if (Trace.d.blocked.file.length > 0) Trace.d.validate.files = true;
+			if (Trace.d.blocked.file.length > 0) Trace.d.validate.file = true;
 
 			Trace.Notify("Trace WebController has loaded the blocklists and is ready.","protd");
 		},
@@ -1221,8 +1222,10 @@ var Trace = {
 			// Check for file block
 			if (Trace.d.validate.file && blockType === 0){
 				var file = cleanURL.split("/").pop();
-				if (Trace.n.arraySearch(Trace.d.blocked.file,file) !== -1){
-					blockType = 5;
+				if (file.length !== 0){
+					if (Trace.n.arraySearch(Trace.d.blocked.file,file) !== -1){
+						blockType = 5;
+					}
 				}
 			}
 
@@ -1439,6 +1442,7 @@ var Trace = {
 					"party",
 					"pro",
 					"review",
+					"systems",
 					"trade",
 					"vip",
 					"zip"
@@ -1797,7 +1801,7 @@ var Trace = {
 			"Pref_WebController":{
 				"enabled":true,
 				"showBlocked":{
-					"enabled":false
+					"enabled":true
 				},
 				"Whitelist":{
 					"enabled":true
@@ -2039,7 +2043,7 @@ var Trace = {
 			"Pref_WebController":{
 				"enabled":true,
 				"showBlocked":{
-					"enabled":false
+					"enabled":true
 				},
 				"Whitelist":{
 					"enabled":true

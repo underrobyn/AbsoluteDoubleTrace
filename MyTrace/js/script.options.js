@@ -1885,21 +1885,27 @@ var TraceOpt = {
 			$("#ux").addClass("blurred");
 			$("#overlay_message").slideDown(300);
 
-			$("#overlay_close").unbind("click").click(function(){
-				if (TraceOpt.Blocklist.updatedList) chrome.extension.getBackgroundPage().Trace.b.BlocklistLoader(true);
+			// Stop events coming back to haunt me in the future
+			function unbindClick(){
+				$(window).unbind("click");
+				$("#overlay_close").unbind("click");
+			}
+
+			function updateLists(){
+				if (TraceOpt.Blocklist.updatedList) {
+					unbindClick();
+					chrome.extension.getBackgroundPage().Trace.b.BlocklistLoader(true);
+				}
 
 				$("#blc_cServerList").empty();
 				$("#overlay_cont").removeClass("blc_parent");
 				TraceOpt.CloseOverlay();
-			});
-			$(window).unbind("click").click(function(e){
-				if ($(e.target)[0].id === "overlay_message"){
-					if (TraceOpt.Blocklist.updatedList) chrome.extension.getBackgroundPage().Trace.b.BlocklistLoader(true);
+			}
 
-					$("#blc_cServerList").empty();
-					$("#overlay_cont").removeClass("blc_parent");
-					TraceOpt.CloseOverlay();
-				}
+			unbindClick();
+			$("#overlay_close").click(updateLists);
+			$(window).click(function(e){
+				if ($(e.target)[0].id === "overlay_message") updateLists();
 			});
 		},
 		LoadList:function(){
@@ -1953,9 +1959,9 @@ var TraceOpt = {
 						// List labels
 						var label = $("<span/>",{"class":"blc_optreq blc_req"}).text("Optional List");
 						if (currentItem.premium === true){
-							var label = $("<span/>",{"class":"blc_premreq blc_req"}).text(TraceOpt.Blocklist.isPremium===true ? "Premium List" : "This list requires Premium");
+							label = $("<span/>",{"class":"blc_premreq blc_req"}).text(TraceOpt.Blocklist.isPremium===true ? "Premium List" : "This list requires Premium");
 						} else if (currentItem.default === true){
-							var label = $("<span/>",{"class":"blc_defreq blc_req"}).text("Default List");
+							label = $("<span/>",{"class":"blc_defreq blc_req"}).text("Default List");
 						}
 
 						body.append(
@@ -2543,7 +2549,6 @@ var TraceOpt = {
 		}
 	}
 };
-
 
 $(document).ready(TraceOpt.WindowLoad);
 
