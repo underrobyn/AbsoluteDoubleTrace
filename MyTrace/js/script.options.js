@@ -721,7 +721,12 @@ var TraceOpt = {
 
 		var pt = $("#premium_inner");
 		var eden = $("#premium_code_box").val();
-		var emsg = "Sorry, that premium code didn't work. If you are having issues, please don't hesitate to contact me.";
+		var emsg = [
+			"Sorry, that premium code didn't work. If you are having issues, please don't hesitate to contact me.",
+			"Sorry, your premium code isn't active yet. Please wait a few hours then try again.",
+			"Sorry, your premium code has been revoked. If you believe this is an error, please contact me.",
+			"ERROR:Code_Paused - Please send me an email"
+		];
 
 		if (eden.length < 5){
 			pt.text("Invalid code.");
@@ -764,14 +769,20 @@ var TraceOpt = {
 						pt.text("Premium blocklist will be used when domain blocking is enabled in setttings.");
 					}
 				} else {
-					chrome.extension.getBackgroundPage().Trace.Notify(emsg,"optd");
-					pt.text(emsg);
+					chrome.extension.getBackgroundPage().Trace.Notify(emsg[0],"optd");
+					pt.text(emsg[0]);
 				}
 			},
 			error:function(e){
 				if (e.status === 403 || e.status === 402){
-					chrome.extension.getBackgroundPage().Trace.Notify(emsg,"optd");
-					pt.text(emsg);
+					// Choose a status message to show
+					var a = emsg[0];
+					if (e.responseText === "CodeRevokedError") a = emsg[2];
+					if (e.responseText === "CodeInactiveError") a = emsg[1];
+					if (e.responseText === "CodePauseError") a = emsg[3];
+
+					chrome.extension.getBackgroundPage().Trace.Notify(a,"optd");
+					pt.text(a);
 					return;
 				}
 				chrome.extension.getBackgroundPage().Trace.Notify("Server communication error!","optd");
@@ -992,6 +1003,9 @@ var TraceOpt = {
 					break;
 				case "Pref_WebController":
 					TraceOpt.Blocklist.OpenDialog();
+					break;
+				case "Pref_CookieEater":
+					TraceOpt.CookieEaterUI.OpenDialog();
 					break;
 				case "Main_Interface":
 					TraceOpt.UserInterfaceCustomiser.OptionsInterface();
@@ -1494,6 +1508,10 @@ var TraceOpt = {
 				}).text("CSV").click(function(){TraceOpt.Stats.DownloadStats("csv");}),
 				$("<span/>").text(" "),
 				$("<button/>",{
+					"title":"Download Statistics in TSV format"
+				}).text("TSV").click(function(){TraceOpt.Stats.DownloadStats("tsv");}),
+				$("<span/>").text(" "),
+				$("<button/>",{
 					"title":"Download Statistics in XML format"
 				}).text("XML").click(function(){TraceOpt.Stats.DownloadStats("xml");}),
 				$("<span/>").text(" "),
@@ -1514,19 +1532,21 @@ var TraceOpt = {
 			var date;
 
 			chrome.extension.getBackgroundPage().Trace.s.Data(function(d){
-				if (file === "csv"){
+				if (file === "csv" || file === "tsv"){
+					var s = ",";
+					if (file === "tsv") s = "\t";
 
-					var returnd = 'Date,Web,Media,Code,Other,Total';
+					var returnd = 'Date'+s+'Web'+s+'Media'+s+'Code'+s+'Other'+s+'Total';
 
 					for (var i = 0, l = Object.keys(d).length;i<l;i++){
 						currentd = Object.keys(d)[i];
 						obj = d[currentd];
 						returnd += "\n" + currentd +
-							',' + obj.webpage +
-							',' + obj.media +
-							',' + obj.code +
-							',' + obj.other +
-							',' + (obj.webpage + obj.media + obj.code + obj.other);
+							s + obj.webpage +
+							s + obj.media +
+							s + obj.code +
+							s + obj.other +
+							s + (obj.webpage + obj.media + obj.code + obj.other);
 					}
 
 					TraceOpt.Stats.CreateDownload(returnd,file);
@@ -1561,7 +1581,7 @@ var TraceOpt = {
 						"stats":d
 					};
 
-					TraceOpt.Stats.CreateDownload(JSON.stringify(stats),file);
+					TraceOpt.Stats.CreateDownload(JSON.stringify(stats,null,4),file);
 
 				} else {
 					console.info("Cannot export this file format");
@@ -2413,27 +2433,27 @@ var TraceOpt = {
 			TraceOpt.AssignCloseOverlay(true);
 		}
 	},
-	URLCleaner:{
-		AssignEvents:function(){
+	URLCleaner: {
+		AssignEvents: function () {
 			$("#adv_urlcleaner_settings").click(TraceOpt.URLCleaner.SelectProtectionUI);
-			if (chrome.extension.getBackgroundPage().Trace.p.Current.Pref_WebController.urlCleaner.enabled !== true){
+			if (chrome.extension.getBackgroundPage().Trace.p.Current.Pref_WebController.urlCleaner.enabled !== true) {
 				$("#urlCleanBlock").hide();
 				return;
 			}
 		},
-		CurrentName:function(type){
+		CurrentName: function (type) {
 			var s = chrome.extension.getBackgroundPage().Trace.p.Current.Pref_WebController.urlCleaner.queryString[type].level;
 			var m = chrome.extension.getBackgroundPage().Trace.p.Current.Pref_WebController.urlCleaner.queryString[type].method;
-			if (s === "0") return [s,"Safe Cleaning",m];
-			if (s === "1") return [s,"Regular Cleaning",m];
-			if (s === "2") return [s,"Risky Cleaning",m];
-			if (s === "3") return [s,"Exteme Cleaning",m];
-			if (s === "4") return [s,"Remove All URL Parameters",m];
+			if (s === "0") return [s, "Safe Cleaning", m];
+			if (s === "1") return [s, "Regular Cleaning", m];
+			if (s === "2") return [s, "Risky Cleaning", m];
+			if (s === "3") return [s, "Exteme Cleaning", m];
+			if (s === "4") return [s, "Remove All URL Parameters", m];
 
-			return [s,"Unknown","Unknown"];
+			return [s, "Unknown", "Unknown"];
 		},
-		SelectProtectionUI:function(){
-			if (chrome.extension.getBackgroundPage().Trace.p.Current.Pref_WebController.urlCleaner.enabled !== true){
+		SelectProtectionUI: function () {
+			if (chrome.extension.getBackgroundPage().Trace.p.Current.Pref_WebController.urlCleaner.enabled !== true) {
 				alert("Enable the URL Cleaner to modify the settings for it.");
 				return;
 			}
@@ -2444,54 +2464,57 @@ var TraceOpt = {
 			$("#drop_message").empty().append(
 				$("<h1/>").text("URL Cleaning Settings"),
 				$("<h3/>").html("Select aggression level, please note, the more aggressive the setting is, the more likely it is that a legitimate parameter will be blocked. Also, be aware that any URL cleaning, especially resource URL cleaning will break websites"),
-				$("<span/>",{id:"aurlc_uwarning",style:"display:none"}).text("No message set.").append($("<br/>"),$("<br/>")),
+				$("<span/>", {
+					id: "aurlc_uwarning",
+					style: "display:none"
+				}).text("No message set.").append($("<br/>"), $("<br/>")),
 				$("<h2/>").text("Frame URL Cleaning Settings"),
-				$("<select/>",{id:"afr_urlc_plevel"}).append(
-					$("<option/>",{value:-1}).text("No Cleaning"),
-					$("<option/>",{value:0}).text("Safe Cleaning"),
-					$("<option/>",{value:1}).text("Regular Cleaning"),
-					$("<option/>",{value:2}).text("Risky Cleaning"),
-					$("<option/>",{value:3}).text("Extreme Cleaning"),
-					$("<option/>",{value:4}).text("Remove All URL Parameters")
-				).on("change",function(){
-					if ($(this).val() === "4"){
-						$("#aurlc_uwarning").text("Are you sure you want to remove all URL parameters? This will break almost every single website you use on the web.").append($("<br/>"),$("<br/>")).show();
-					} else if ($(this).val() === "3"){
-						$("#aurlc_uwarning").text("This setting is very extreme and may break a lot of websites, if you don't want websites to be broken as easily please use regular cleaning instead.").append($("<br/>"),$("<br/>")).show();
+				$("<select/>", {id: "afr_urlc_plevel"}).append(
+					$("<option/>", {value: -1}).text("No Cleaning"),
+					$("<option/>", {value: 0}).text("Safe Cleaning"),
+					$("<option/>", {value: 1}).text("Regular Cleaning"),
+					$("<option/>", {value: 2}).text("Risky Cleaning"),
+					$("<option/>", {value: 3}).text("Extreme Cleaning"),
+					$("<option/>", {value: 4}).text("Remove All URL Parameters")
+				).on("change", function () {
+					if ($(this).val() === "4") {
+						$("#aurlc_uwarning").text("Are you sure you want to remove all URL parameters? This will break almost every single website you use on the web.").append($("<br/>"), $("<br/>")).show();
+					} else if ($(this).val() === "3") {
+						$("#aurlc_uwarning").text("This setting is very extreme and may break a lot of websites, if you don't want websites to be broken as easily please use regular cleaning instead.").append($("<br/>"), $("<br/>")).show();
 					} else {
 						$("#aurlc_uwarning").hide();
 					}
 				}),
 				$("<span/>").text(" "),
-				$("<select/>",{id:"afr_urlc_pmethod"}).append(
-					$("<option/>",{value:"remove"}).text("Remove Parameters"),
-					$("<option/>",{value:"randomise"}).text("Randomise Parameters")
+				$("<select/>", {id: "afr_urlc_pmethod"}).append(
+					$("<option/>", {value: "remove"}).text("Remove Parameters"),
+					$("<option/>", {value: "randomise"}).text("Randomise Parameters")
 				),
 				$("<h2/>").text("Resource URL Cleaning Settings"),
-				$("<select/>",{id:"ars_urlc_plevel"}).append(
-					$("<option/>",{value:-1}).text("No Cleaning"),
-					$("<option/>",{value:0}).text("Safe Cleaning"),
-					$("<option/>",{value:1}).text("Regular Cleaning"),
-					$("<option/>",{value:2}).text("Risky Cleaning"),
-					$("<option/>",{value:3}).text("Extreme Cleaning"),
-					$("<option/>",{value:4}).text("Remove All URL Parameters")
-				).on("change",function(){
-					if ($(this).val() === "4"){
-						$("#aurlc_uwarning").text("Are you sure you want to remove all URL parameters? This will break almost every single website you use on the web.").append($("<br/>"),$("<br/>")).show();
-					} else if ($(this).val() === "3"){
-						$("#aurlc_uwarning").text("This setting is very extreme and may break a lot of websites, if you don't want websites to be broken as easily please use regular cleaning instead.").append($("<br/>"),$("<br/>")).show();
+				$("<select/>", {id: "ars_urlc_plevel"}).append(
+					$("<option/>", {value: -1}).text("No Cleaning"),
+					$("<option/>", {value: 0}).text("Safe Cleaning"),
+					$("<option/>", {value: 1}).text("Regular Cleaning"),
+					$("<option/>", {value: 2}).text("Risky Cleaning"),
+					$("<option/>", {value: 3}).text("Extreme Cleaning"),
+					$("<option/>", {value: 4}).text("Remove All URL Parameters")
+				).on("change", function () {
+					if ($(this).val() === "4") {
+						$("#aurlc_uwarning").text("Are you sure you want to remove all URL parameters? This will break almost every single website you use on the web.").append($("<br/>"), $("<br/>")).show();
+					} else if ($(this).val() === "3") {
+						$("#aurlc_uwarning").text("This setting is very extreme and may break a lot of websites, if you don't want websites to be broken as easily please use regular cleaning instead.").append($("<br/>"), $("<br/>")).show();
 					} else {
 						$("#aurlc_uwarning").hide();
 					}
 				}),
 				$("<span/>").text(" "),
-				$("<select/>",{id:"ars_urlc_pmethod"}).append(
-					$("<option/>",{value:"remove"}).text("Remove Parameters"),
-					$("<option/>",{value:"randomise"}).text("Randomise Parameters")
+				$("<select/>", {id: "ars_urlc_pmethod"}).append(
+					$("<option/>", {value: "remove"}).text("Remove Parameters"),
+					$("<option/>", {value: "randomise"}).text("Randomise Parameters")
 				),
-				$("<br/>"),$("<br/>"),
+				$("<br/>"), $("<br/>"),
 				$("<button/>").text("List Of Affected URL Parameters").click(TraceOpt.URLCleaner.SeeAffected),
-				$("<br/>"),$("<br/>"),
+				$("<br/>"), $("<br/>"),
 				$("<button/>").text("Save").click(TraceOpt.URLCleaner.SaveSelection),
 				$("<button/>").text("Cancel").click(TraceOpt.CloseOverlay)
 			);
@@ -2502,50 +2525,93 @@ var TraceOpt = {
 			$("#afr_urlc_pmethod option[value='" + frameSetting[2] + "']").prop("selected", true);
 			$("#ars_urlc_pmethod option[value='" + resourceSetting[2] + "']").prop("selected", true);
 		},
-		SeeAffected:function(){
+		SeeAffected: function () {
 			$("#overlay_message").fadeOut(250).delay(100).fadeIn(250);
 			TraceOpt.URLCleaner.SaveSelection(false);
 
 			var affectedList = "";
 			var blockList = chrome.extension.getBackgroundPage().Trace.g.URLCleaner.badParams;
-			if (blockList[0] === false){
+			if (blockList[0] === false) {
 				affectedList = "<h2>You must enable WebRequest Controller to use this</h2>"
 			} else {
-				for (x in blockList.safe){
+				for (x in blockList.safe) {
 					affectedList += "<div class='tld_blockdom tld_colsafe'>" + blockList.safe[x] + "</div>";
 				}
-				for (x in blockList.regular){
+				for (x in blockList.regular) {
 					affectedList += "<div class='tld_blockdom tld_colreg'>" + blockList.regular[x] + "</div>";
 				}
-				for (x in blockList.risky){
+				for (x in blockList.risky) {
 					affectedList += "<div class='tld_blockdom tld_colrisk'>" + blockList.risky[x] + "</div>";
 				}
-				for (x in blockList.extreme){
+				for (x in blockList.extreme) {
 					affectedList += "<div class='tld_blockdom tld_colextr'>" + blockList.extreme[x] + "</div>";
 				}
 			}
 
-			setTimeout(function(){
+			setTimeout(function () {
 				$("#drop_message").empty().append(
 					$("<h1/>").text("List of affected parameters"),
-					$("<div/>",{
-						"id":"atld_blockedlist"
+					$("<div/>", {
+						"id": "atld_blockedlist"
 					}).html(affectedList)
 				);
-			},250);
+			}, 250);
 		},
-		SaveSelection:function(c){
+		SaveSelection: function (c) {
 			if (typeof c !== "boolean") var c = true;
 
 			var frameSetting = $("#afr_urlc_plevel").val();
 			var resSetting = $("#ars_urlc_plevel").val();
 			var frameMethod = $("#afr_urlc_pmethod").val();
 			var resMethod = $("#ars_urlc_pmethod").val();
-			chrome.extension.getBackgroundPage().Trace.p.SetSetting("Pref_WebController.urlCleaner.queryString.main_frame.level",frameSetting);
-			chrome.extension.getBackgroundPage().Trace.p.SetSetting("Pref_WebController.urlCleaner.queryString.resources.level",resSetting);
-			chrome.extension.getBackgroundPage().Trace.p.SetSetting("Pref_WebController.urlCleaner.queryString.main_frame.method",frameMethod);
-			chrome.extension.getBackgroundPage().Trace.p.SetSetting("Pref_WebController.urlCleaner.queryString.resources.method",resMethod);
+			chrome.extension.getBackgroundPage().Trace.p.SetSetting("Pref_WebController.urlCleaner.queryString.main_frame.level", frameSetting);
+			chrome.extension.getBackgroundPage().Trace.p.SetSetting("Pref_WebController.urlCleaner.queryString.resources.level", resSetting);
+			chrome.extension.getBackgroundPage().Trace.p.SetSetting("Pref_WebController.urlCleaner.queryString.main_frame.method", frameMethod);
+			chrome.extension.getBackgroundPage().Trace.p.SetSetting("Pref_WebController.urlCleaner.queryString.resources.method", resMethod);
 			if (c) TraceOpt.CloseOverlay();
+		}
+	},
+	CookieEaterUI:{
+		AssignEvents:function(){
+
+		},
+		OpenDialog:function(){
+			if (chrome.extension.getBackgroundPage().Trace.p.Current.Pref_CookieEater.enabled !== true){
+				alert("Enable the Cookie Eater to modify the settings for it.");
+				return;
+			}
+
+			$("#drop_message").empty().append(
+				$("<h1/>").text("Cookie Eater Settings"),
+				$("<h3/>").html(""),
+				$("<span/>",{id:"ce_uwarning",style:"display:none"}).text("No message set.").append($("<br/>"),$("<br/>")),
+				$("<h2/>",{"style":"margin-bottom:0;"}).text("'Cookie' Header Settings"),
+				$("<span/>").text("Use this section to decide what to do with Cookies the browser sends to the server via the 'Cookie' header."),$("<br/>"),
+				$("<select/>",{id:"ce_sett_cookiehead"}).append(
+					$("<option/>",{value:"remove"}).text("Remove Cookies"),
+					$("<option/>",{value:"randomise"}).text("Randomise Values"),
+					$("<option/>",{value:"nothing"}).text("Do Nothing")
+				),
+				$("<h2/>",{"style":"margin-bottom:0;"}).text("'Set-Cookie' Header Settings"),
+				$("<span/>").text("Use this section to decide what to do with cookies sent to the browser by via the 'Set-Cookie' header."),$("<br/>"),
+				$("<select/>",{id:"ce_sett_setcookiehead"}).append(
+					$("<option/>",{value:"remove"}).text("Remove Cookies"),
+					$("<option/>",{value:"randomise"}).text("Randomise Values"),
+					$("<option/>",{value:"nothing"}).text("Do Nothing")
+				),
+				$("<br/>"),$("<br/>"),
+				$("<button/>").text("Edit list of affected cookies").click(TraceOpt.CookieEaterUI.EditAffectedCookies),
+				$("<br/>"),$("<br/>"),
+				$("<button/>").text("Save").click(TraceOpt.CookieEaterUI.SaveSelection),
+				$("<button/>").text("Cancel").click(TraceOpt.CloseOverlay)
+			);
+			TraceOpt.AssignCloseOverlay(true);
+		},
+		SaveSelection:function(){
+
+		},
+		EditAffectedCookies:function(){
+
 		}
 	}
 };
