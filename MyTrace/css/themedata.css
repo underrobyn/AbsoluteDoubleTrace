@@ -1,3 +1,36 @@
+/* Navigation positions */
+.nav_top #main{
+	width:100%;
+	margin:0;
+	height:92.5%;
+	top:7.5%;
+}
+.nav_top #nav {
+	line-height:7.5% !important;
+	height:7.5%;
+	width:100%;
+	margin:0;
+	top:0;
+}
+.nav_top .side_el {
+	float:left;
+	width:16.66%;
+	line-height:7.5vh !important;
+	height:100% !important;
+}
+.nav_top .sect_header{
+	display:none;
+}
+
+.nav_right #nav {
+	right:0 !important;
+	float:right !important;
+}
+.nav_right #main {
+	left:0 !important;
+	margin:0 !important;
+}
+
 /* Trace Default */
 .tracedefault_theme{
 	background:#8719ff;
@@ -23,9 +56,15 @@
 	background:-webkit-linear-gradient(to top, #535353, #595959);
 	background:linear-gradient(to top, #535353, #595959);
 }
+.tracegreyscale_theme ::selection {
+	background:#1a1a1a;
+}
 .tracegreyscale_theme .checkbox_cont input:checked ~ .ccheck {
 	background-color: #5a5a5a;
 }
+.tracegreyscale_theme .blc_defreq {color:#1a1a1a;}
+.tracegreyscale_theme .blc_premreq {color:#1a1a1a;}
+.tracegreyscale_theme .blc_optreq {color:#1a1a1a;}
 
 /* Trace Light */
 .tracelight_theme{
@@ -34,6 +73,56 @@
 	background:linear-gradient(to top, #ffffff, #efefef);
 	color:#1a1a1a;
 }
+.tracelight_theme ::selection {
+	background: #7a7a7a;
+}
+.tracelight_theme #nav, .tracelight_theme .sect_header {
+	color:#fff;
+}
+
+.tracelight_theme .blc_defreq {background-color:#1a1a1a;color:#fff;}
+.tracelight_theme .blc_premreq {background-color:#1a1a1a;color:#fff;}
+.tracelight_theme .blc_optreq {background-color:#1a1a1a;color:#fff;}
+
 .tracelight_theme button{
+	background-color:rgba(0,0,0,0.4);
+}
+.tracelight_theme table {
+	background-color: rgba(0,0,0,0.3);
+	color: #fafafa;
+}
+.tracelight_theme .sect_adv_header {
+	background-color: rgba(0,0,0,0.3);
+	color:#fff;
+}
+.tracelight_theme .sect_adv {
+	box-shadow:inset 0 0 0 1px #1a1a1a;
+}
+
+/* Trace Intense */
+.traceintense_theme{
+	background:#FF5722;
+	background:-webkit-linear-gradient(45deg, #6d57c6, #FF5722, #cd078c);
+	background:linear-gradient(45deg, #6d57c6, #FF5722, #cd078c);
+	color:#fff;
+}
+.traceintense_theme ::selection {
+	background:#6d57c6;
+}
+.traceintense_theme button{
+	background-color:rgba(0,0,0,0.4);
+}
+
+/* Trace Intense */
+.traceleaf_theme{
+	background:#386244;
+	background:-webkit-linear-gradient(45deg, #386244, #821f00, #c00037);
+	background:linear-gradient(45deg, #386244, #821f00, #c00037);
+	color:#fff;
+}
+.traceleaf_theme ::selection {
+	background:#386244;
+}
+.traceleaf_theme button{
 	background-color:rgba(0,0,0,0.4);
 }

@@ -1,9 +1,16 @@
-/* Copyright AbsoluteDouble Trace 2018 */
+/*
+ * 	Trace background script
+ * 	Copyright AbsoluteDouble 2018
+ * 	Written by Jake Mcneill
+ * 	https://absolutedouble.co.uk/
+ */
 
 // A general fix for browser that use window.browser instead of window.chrome
 if (window["chrome"] === null || typeof (window["chrome"]) === "undefined"){
 	window.chrome = window.browser;
 }
+
+window.URL = window.URL || window.webkitURL;
 
 var Trace = {
 
@@ -65,7 +72,7 @@ var Trace = {
 				Trace.v.s.set({"trace_installdate":Trace.s.GenTime()[0]});
 				Trace.s.SaveStats();
 				Trace.b.BlocklistLoader(true);
-				chrome.tabs.create({url:"/html/options.html#newinstall"});
+				chrome.tabs.create({url:"/html/options.html#v2installed"});
 			} else if (details.reason && details.reason === "update") {
 				if (Trace.DEBUG) console.info("[mangd]-> Updated from: " + details.previousVersion);
 			}
@@ -78,7 +85,39 @@ var Trace = {
 		ContentTalk:function(request, sender, sendResponse){
 			//if (Trace.DEBUG) console.log("[TracePage] " + sender.tab ? "from a content script:" + sender.tab.url : "from the extension");
 			if (request.msg === "uaReq"){
-				sendResponse({r:Trace.n.ua});
+				sendResponse({
+					userAgentString:Trace.n.useragent,
+					osCPUString:Trace.n.oscpu,
+					platformString:Trace.n.platform
+				});
+			} else if (request.msg === "checkList"){
+
+				// See if the whitelist can sort this one out for us
+				if (Trace.c.wlEnabled === true){
+					var reqUrl = request.url;
+
+					for (var i = 0, l = Trace.c.decodedWhitelist.keys.length;i<l;i++){
+						if (Trace.c.decodedWhitelist.keys[i].test(reqUrl)){
+							var send = Trace.c.decodedWhitelist.values[i].Protections;
+	 						sendResponse({
+								"runProtection":true,
+								"data":send
+							});
+							return;
+						}
+					}
+				}
+
+				// Okay so the whitelist couldn't...
+				var protections = Trace.c.whitelistDefaults;
+				var keys = Object.keys(protections);
+				for (var l = keys.length, i = 0;i<l;i++){
+					protections[keys[i]] = Trace.p.Current.Main_ExecutionOrder.PerPage.indexOf(keys[i]) === -1;
+				}
+				sendResponse({
+					"runProtection":false,
+					"data":protections
+				});
 			} else {
 				console.error("Invalid message recieved");
 			}
@@ -87,17 +126,30 @@ var Trace = {
 
 	// Variables
 	v:{
+		// From storage
 		eReporting:false,
 		bNotifications:false,
+		pSessions:false,
+		sessionData:{},
+		Premium:"",
+
+		// Refresh constants
 		UserAgentInterval:1,
 		FakeIPInterval:1,
-		Premium:"",
+
+		// Storage type
 		s:(/Edge/.test(navigator.userAgent) ? browser.storage.local : chrome.storage.local),
+
+		// Blocklist URLs
 		blocklistURL:"https://absolutedouble.co.uk/trace/app/weblist.php",
 		blocklistFallback:"https://raw.githubusercontent.com/jake-cryptic/hmfp_lists/master/fallback.json",
 		blocklistOffline:chrome.extension.getURL("data/blocklist.json"),
 		blocklistBase:"https://absolutedouble.co.uk/trace/app/weblist.php?p=",
+
+		// Notification constant
 		notifIcon:"icons/trace_256.png",
+
+		// User agent values (move these later)
 		uaSettings:{
 			"os": {
 				"windows":{
@@ -148,9 +200,9 @@ var Trace = {
 					"54":"AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.87 Safari/537.36 OPR/54.0.2952.54"
 				},
 				"edge":{
-					"17":"Chrome/64.0.3282.140 Safari/537.36 Edge/17.17134",
+					"17":"AppleWebKit/537.36 (KHTML, like Gecko) Chrome/64.0.3282.140 Safari/537.36 Edge/17.17134",
 					"15":"AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2743.116 Safari/537.36 Edge/15.15063",
-					"14":" AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36 Edge/14.14359"
+					"14":"AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36 Edge/14.14359"
 				},
 				"safari":{
 					"10.1":"AppleWebKit/603.1.30 (KHTML, like Gecko) Version/10.1 Safari/603.1.30",
@@ -164,7 +216,9 @@ var Trace = {
 	n:{
 		appSecret:"Cza7kImqFYZPrbGq76PY8I9fynasuWyEoDtY4L9U0zgIACb2t9vpn2sO4eHcS0Co",		// Is this pointless? Yes. Do I care? No.
 		callbacks:[],
-		ua:"Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:57.0) Gecko/20100101 Firefox/57.0",
+		useragent:"Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:57.0) Gecko/20100101 Firefox/57.0",
+		oscpu:"Windows NT 6.1; Win64; x64; rv:57.0",
+		platform:"Win32",
 
 		// Thanks to https://stackoverflow.com/a/23945027/
 		extractHostname:function(url){
@@ -195,6 +249,14 @@ var Trace = {
 			return domain;
 		},
 
+		// Thanks to https://gist.github.com/donmccurdy/6d073ce2c6f3951312dfa45da14a420f
+		wildcardToRegExp:function(s){
+			return new RegExp('^' + s.split(/\*+/).map(Trace.n.regExpEscape).join('.*') + '$');
+		},
+		regExpEscape:function(s){
+			return s.replace(/[|\\{}()[\]^$+*?.]/g, '\\$&');
+		},
+
 		// Thanks to https://github.com/Olical/binary-search/blob/master/src/binarySearch.js
 		arraySearch:function(list,item){
 			if (!list || !item) {
@@ -206,7 +268,7 @@ var Trace = {
 			var max = list.length - 1;
 			var guess;
 
-			var bitwise = ((max <= 2147483647) ? true : false);
+			var bitwise = (max <= 2147483647);
 			if (bitwise) {
 				while (min <= max) {
 					guess = (min + max) >> 1;
@@ -250,7 +312,11 @@ var Trace = {
 	// Functions
 	f:{
 		StartTrace:function(){
-			// Load settings
+			// Create current object and prepare for loading
+			Trace.p.Current = Trace.p.Defaults;
+			Trace.p.Defaults["tracenewprefs"] = true;
+
+			// Load settings from storage
 			Trace.p.Load(function(){
 				Trace.f.StartModules();
 			});
@@ -259,6 +325,7 @@ var Trace = {
 			// Load some settings into program
 			Trace.v.bNotifications = Trace.p.Current.Main_Trace.BrowserNotifications.enabled;
 			Trace.v.eReporting = Trace.p.Current.Main_Trace.ErrorReporting.enabled;
+			Trace.v.pSessions = Trace.p.Current.Main_Trace.ProtectionSessions.enabled;
 			Trace.v.Premium = Trace.p.Current.Main_Trace.PremiumCode;
 			Trace.DEBUG = Trace.p.Current.Main_Trace.DebugApp.enabled;
 
@@ -268,6 +335,10 @@ var Trace = {
 			// Load statistics into program
 			if (Trace.p.Current.Main_Trace.ProtectionStats.enabled === true)
 				Trace.s.LoadStats();
+
+			// Load statistics into program
+			if (Trace.p.Current.Main_Trace.ProtectionSessions.enabled === true)
+				Trace.f.GenerateSession();
 
 			// Assign keyboard shortcuts
 			if (chrome.commands){
@@ -279,23 +350,29 @@ var Trace = {
 			Trace.b.ToggleBlockPings();
 
 			if (Trace.p.Current.Pref_WebController.enabled === true){
-				if (Trace.p.Current.Pref_WebController.Whitelist.enabled === true) {
-					Trace.c.LoadWhitelist();
-				}
+				Trace.c.GetWhitelist();
 				Trace.d.AssignChecker();
 				Trace.d.LoadBlacklist();
 			}
 
-			// Any pre-header modifications start here
-			if (Trace.p.Current.Pref_UserAgent.enabled === true || Trace.p.Current.Pref_GoogleHeader.enabled === true || Trace.p.Current.Pref_IPSpoof.enabled === true)
-				Trace.f.StartHeaderModification();
-
-			// Cookie
-			Trace.g.CookieEater.ProtectionToggle();
-
 			// Any post-header modifications start here
+			if (Trace.p.Current.Pref_CookieEater.enabled === true)
+				Trace.h.Cookie.Start();
+
 			if (Trace.p.Current.Pref_ETagTrack.enabled === true)
-				Trace.f.StartEtagProtection();
+				Trace.h.Etag.Start();
+
+			if (Trace.p.Current.Pref_GoogleHeader.enabled === true)
+				Trace.h.Google.Start();
+
+			if (Trace.p.Current.Pref_ReferHeader.enabled === true)
+				Trace.h.Referer.Start();
+
+			if (Trace.p.Current.Pref_UserAgent.enabled === true)
+				Trace.h.UserAgent.Start();
+
+			if (Trace.p.Current.Pref_IPSpoof.enabled === true)
+				Trace.h.IPSpoof.Start();
 
 			// Alarm events to change UserAgent
 			Trace.f.StartAlarmEvent();
@@ -316,6 +393,59 @@ var Trace = {
 
 			// Tell the user that we're done!
 			Trace.Notify("Finished setting up.","initd");
+		},
+		GenerateSession:function(){
+			var newSession = {};
+			var keys = Trace.p.Current.Main_Trace.ProtectionSessions.affects;
+
+			// Generate resolution & colour depth
+			if (keys.indexOf("Pref_ScreenRes") !== -1){
+				//newSession = Trace.
+			}
+
+			// Generate effectiveType, downlink and rtt
+			if (keys.indexOf("Pref_NetworkInformation") !== -1){
+
+			}
+
+			// Generate browser and os
+			if (keys.indexOf("Pref_UserAgent") !== -1){
+
+			}
+		},
+		ReturnExecOrder:function(cb){
+			cb(Trace.p.Current.Main_ExecutionOrder);
+		},
+		ChangeExecOrder:function(prot,cb){
+			var current = "AllPage", goto = "PerPage", duplicate = false, inArr = false;
+			if (Trace.p.Current.Main_ExecutionOrder.AllPage.indexOf(prot) !== -1){
+				console.log("All:",prot);
+				inArr = true;
+			}
+			if (Trace.p.Current.Main_ExecutionOrder.PerPage.indexOf(prot) !== -1){
+				console.log("Per:",prot);
+				current = "PerPage";
+				goto = "AllPage";
+
+				if (inArr === true) duplicate = true;
+			}
+
+			console.log("[execd]-> Moving %s to %s",prot,goto);
+
+			// Remove item
+			var index = Trace.p.Current.Main_ExecutionOrder[current].indexOf(prot);
+			Trace.p.Current.Main_ExecutionOrder[current].splice(index,1);
+
+			// Add item
+			if (!duplicate)
+				Trace.p.Current.Main_ExecutionOrder[goto].push(prot);
+
+			// Save data
+			Trace.v.s.set({
+				"Main_ExecutionOrder":Trace.p.Current.Main_ExecutionOrder
+			},function(){
+				if (cb) cb();
+			});
 		},
 		KeyboardCommand:function(c){
 			// This function is called whenever a keyboard shortcut is pressed
@@ -340,7 +470,7 @@ var Trace = {
 		ToggleUserAgentRandomiser:function(onlyStart){
 			if (Trace.p.Current.Pref_UserAgent.enabled === true){
 				// Create random user agent
-				Trace.n.ua = Trace.f.ChooseUserAgent();
+				Trace.f.ChooseUserAgent();
 
 				// Assign browser event
 				chrome.alarms.create("UserAgentRefresh",{periodInMinutes: Trace.v.UserAgentInterval});
@@ -392,13 +522,21 @@ var Trace = {
 				uaWBPool = uaWBPool.concat(Object.values(Trace.v.uaSettings.wb.vivaldi));
 			}
 
-			// Return random user agent
-			return "Mozilla/5.0 (" + rA(uaOSPool) + ") " + rA(uaWBPool);
+			Trace.n.oscpu = rA(uaOSPool);
+			Trace.n.useragent = "Mozilla/5.0 (" + Trace.n.oscpu + ") " + rA(uaWBPool);
+
+			if (Trace.n.oscpu.toLowerCase().includes("win")){
+				Trace.n.platform = rA(["Win32","Win64"]);
+			} else if (Trace.n.oscpu.toLowerCase().includes("mac")){
+				Trace.n.platform = rA(["MacIntel","MacPPC"]);
+			} else {
+				Trace.n.platform = rA(["Linux","X11","Linux 1686"]);
+			}
 		},
 		StartAlarmEvent:function(){
 			chrome.alarms.onAlarm.addListener(function(a){
 				if (a.name === "UserAgentRefresh" && Trace.p.Current.Pref_UserAgent.enabled === true){
-					Trace.n.ua = Trace.f.ChooseUserAgent();
+					Trace.f.ChooseUserAgent();
 				}
 				if (a.name === "StatsDatabaseRefresh" && Trace.p.Current.Main_Trace.ProtectionStats.enabled === true){
 					Trace.s.SaveStats();
@@ -413,136 +551,6 @@ var Trace = {
 					Trace.i.StopIPRefresh();
 				}
 			});
-		},
-		StartHeaderModification:function(){
-			if (Trace.DEBUG) console.log("[httpd]-> Started Pre-Header Protection.");
-			if (!chrome.webRequest) return;
-
-			chrome.webRequest.onBeforeSendHeaders.addListener(
-				function(details){
-					// Check if we have any modifications to make, if not then don't waste resources
-					var ghm = (
-						(Trace.p.Current.Pref_GoogleHeader.rmChromeConnected.enabled === true) ||
-						(Trace.p.Current.Pref_GoogleHeader.rmChromeUMA.enabled === true) ||
-						(Trace.p.Current.Pref_GoogleHeader.rmChromeVariations.enabled === true) ||
-						(Trace.p.Current.Pref_GoogleHeader.rmClientData.enabled === true)
-					);
-					if (
-						Trace.p.Current.Pref_GoogleHeader.enabled !== true &&
-						Trace.p.Current.Pref_UserAgent.enabled 	!== true &&
-						Trace.p.Current.Pref_IPSpoof.enabled !== true &&
-						Trace.p.Current.Pref_CookieEater.enabled !== true &&
-						ghm !== true
-					){
-						return {requestHeaders:details.requestHeaders};
-					}
-
-					for (var i=0;i<details.requestHeaders.length;++i){
-						headerName = details.requestHeaders[i].name.toString().toLowerCase();
-
-						// Remove bad headers
-						if (Trace.p.Current.Pref_GoogleHeader.enabled === true && ghm === true){
-							if (Trace.p.Current.Pref_GoogleHeader.rmChromeConnected.enabled === true){
-								if (headerName === "x-chrome-connected"){
-									details.requestHeaders.splice(i,1);
-									continue;
-								}
-							}
-							if (Trace.p.Current.Pref_GoogleHeader.rmChromeUMA.enabled === true){
-								if (headerName === "x-chrome-uma-enabled"){
-									details.requestHeaders.splice(i,1);
-									continue;
-								}
-							}
-							if (Trace.p.Current.Pref_GoogleHeader.rmChromeVariations.enabled === true){
-								if (headerName === "x-chrome-variations"){
-									details.requestHeaders.splice(i,1);
-									continue;
-								}
-							}
-							if (Trace.p.Current.Pref_GoogleHeader.rmClientData.enabled === true){
-								if (headerName === "x-client-data"){
-									details.requestHeaders.splice(i,1);
-									continue;
-								}
-							}
-						}
-
-						// Change user agent
-						if (Trace.p.Current.Pref_UserAgent.enabled === true){
-							if (headerName === "user-agent"){
-								if (details.requestHeaders[i].value !== Trace.n.ua){
-									details.requestHeaders[i].value = Trace.n.ua;
-								}
-							}
-						}
-					}
-
-					// Attempt forge IP
-					if (Trace.p.Current.Pref_IPSpoof.enabled === true){
-						if (Trace.p.Current.Pref_IPSpoof.useClientIP.enabled === true){
-							details.requestHeaders.push({
-								"name":"Client-IP",
-								"value":Trace.i.CurrentFakeIP
-							});
-						}
-						if (Trace.p.Current.Pref_IPSpoof.useForwardedFor.enabled === true){
-							details.requestHeaders.push({
-								"name":"X-Forwarded-For",
-								"value":Trace.i.CurrentFakeIP
-							});
-						}
-						if (Trace.p.Current.Pref_IPSpoof.useForwardedFor.enabled === true){
-							details.requestHeaders.push({
-								"name":"Via",
-								"value":Trace.i.CurrentViaHeader
-							});
-						}
-					}
-
-					// Return new headers to be sent
-					return {requestHeaders:details.requestHeaders};
-				},
-				{urls:["<all_urls>"]},
-				["blocking","requestHeaders"]
-			);
-		},
-		StartEtagProtection:function(){
-			if (Trace.DEBUG) console.log("[httpd]-> Started E-Tag Protection.");
-			chrome.webRequest.onHeadersReceived.addListener(
-				Trace.f.RemoveEtags,
-				{urls:["http://*/*","https://*/*"]},
-				["responseHeaders"]
-			);
-		},
-		StopEtagProtection:function(){
-			try{
-				chrome.webRequest.onHeadersReceived.removeListener(Trace.f.RemoveEtags);
-			}catch(e){
-				console.error(e);
-			}
-		},
-		RemoveEtags:function(details){
-			if (Trace.p.Current.Pref_ETagTrack.enabled !== true) return;
-			if (details.frameId < 0) return;
-			if (details.url.substring(0,4).toLowerCase() !== "http" && details.url.substring(0,5).toLowerCase() !== "https") return;
-
-			// Headers to remove
-			var badHeaders = ["etag"];
-
-			for (var i=0;i<details.responseHeaders.length;++i){
-				headerName = details.responseHeaders[i].name.toString().toLowerCase();
-
-				// Remove bad response headers
-				if (Trace.p.Current.Pref_ETagTrack.enabled === true){
-					if (badHeaders.indexOf(headerName) !== -1){
-						details.responseHeaders.splice(i,1);
-						details.responseHeaders.push({name:"Pragma",value:"no-cache"});
-					}
-				}
-			}
-
-			return {responseHeaders:details.responseHeaders};
 		},
 		ToggleWebRtc:function(){
 			if (!window.chrome.privacy) alert("Trace encountered an error: Couldn't access Privacy API.");
@@ -658,7 +666,13 @@ var Trace = {
 			return url;
 		},
 		GetBlockList:function(attempt,server){
-			if (attempt > 4 && navigator.onLine){
+			// Check if user is online
+			if (!navigator.onLine) {
+				Trace.Notify("Couldn't download blocklist because you don't seem to be connected to the internet.", "protd");
+				return false;
+			}
+
+			if (attempt > 4){
 				Trace.Notify("Error downloading blocklist! Unable to download blocklist for unknown reasons. Domain protection will not function.","protd");
 				return false;
 			}
@@ -688,75 +702,78 @@ var Trace = {
 								"progress":percentComplete
 							});
 						} catch(e){
-							console.log("Notifications aren't allowed.");
+							console.log("[protd]-> Notifications aren't allowed.");
 						}
 					}
 				};
 			}
 
 			xhr.onreadystatechange = function(){
-				var status, data;
+				if (xhr.readyState !== 4){
+					return;
+				}
 
-				if (xhr.readyState === 4){
-					status = xhr.status;
+				var status = xhr.status,
+					sName = (server === 0 ? "main" : "secondary"),
+					data;
 
-					if (status === 200){
-						try {
-							data = JSON.parse(xhr.responseText);
-						} catch(e) {
-							Trace.Notify("Parsing downloaded blocklist error! Will retry.","protd");
-							setTimeout(function(){
-								Trace.b.GetBlockList(attempt,1);
-							},attempt*1250);
-							return false;
-						}
-
-						// Apply list
-						Trace.Notify("Got blocklist from " + (server === 0 ? "main" : "secondary") + " server","protd");
-						Trace.b.ApplyWebBlocklist(data,false);
-					} else {
-						var headerResp = xhr.getResponseHeader("x-trace-list");
-						if (headerResp !== null && headerResp !== "x-trace-list"){
-							console.log("Trace failed to load the blocklist.");
-							console.error(JSON.stringify({"Event":"GetBlocklistDownloadFailure","TraceListHead":headerResp,"ErrorObj":{"status":status,"text":xhr.statusText}}));
-						}
-
-						if (navigator.onLine) {
-							if (status === 0) {
-								Trace.Notify("Couldn't download blocklist because a connection coulnd't be made to the server.", "protd");
-							} else if (status === 402) {
-								Trace.Notify("Your premium code is invalid! It has been removed from Trace's storage", "protd");
-								Trace.f.RemovePremium();
-							} else if (status === 403) {
-								Trace.Notify("One or more security parameters were missing when updating the blocklist", "protd");
-							} else if (status === 404) {
-								Trace.Notify("Trace recieved a 404 from blocklist server ID " + server + ".","protd");
-							} else if (status === 508){
-								Trace.Notify("Cloudflare error 508 when downloading update to blocklist.", "protd");
-							} else if (status === 520){
-								Trace.Notify("Cloudflare error 520 when downloading update to blocklist.", "protd");
-							} else {
-								Trace.Notify("Trace couldn't download the blocklist, unknown error, server ID " + server + ".","protd");
-								_UserCrashReportService({"Event":"ServerFailedDown!","Server":(server === 0 ? "main" : "secondary"),"status":status,"Online":true},false);
-							}
-
-							// Retry blocklist download
-							if (server === 0){
-								Trace.Notify("Failed to load blocklist from main server, trying secondary server","protd");
-								setTimeout(function(){
-									Trace.b.GetBlockList(attempt,1);
-								},attempt*1000);
-							} else {
-								Trace.Notify("Failed to load blocklist from secondary server, trying again. Attempt " + attempt + " of 5","protd");
-								setTimeout(function(){
-									Trace.b.GetBlockList(attempt,server);
-								},attempt*1000);
-							}
-						} else {
-							Trace.Notify("Couldn't download blocklist because you don't seem to be connected to the internet.","protd");
-							return false;
-						}
+				if (status === 200){
+					try {
+						data = JSON.parse(xhr.responseText);
+					} catch(e) {
+						Trace.Notify("Parsing downloaded blocklist error! Will retry.","protd");
+						setTimeout(function(){
+							Trace.b.GetBlockList(attempt,1);
+						},attempt*1250);
+						return false;
 					}
+
+					// Apply list
+					Trace.Notify("Got blocklist from " + sName + " server","protd");
+					Trace.b.ApplyWebBlocklist(data,false);
+					return true;
+				}
+
+				var headerResp = xhr.getResponseHeader("x-trace-list");
+				if (headerResp !== null && headerResp !== "x-trace-list"){
+					console.error(JSON.stringify({"Event":"GetBlocklistDownloadFailure","TraceListHead":headerResp,"ErrorObj":{"status":status,"text":xhr.statusText}}));
+				}
+
+				switch (status){
+					case 0:
+						Trace.Notify("Couldn't download blocklist because a connection couldn't be made to the server.", "protd");
+						break;
+					case 402:
+						Trace.Notify("Your premium code is invalid! It has been removed from Trace's storage", "protd");
+						break;
+					case 403:
+						Trace.Notify("One or more security parameters were missing when updating the blocklist", "protd");
+						break;
+					case 404:
+						Trace.Notify("Trace recieved a 404 from " + sName + " blocklist server.","protd");
+						break;
+					case 508:
+						Trace.Notify("Cloudflare error 508 when downloading update to blocklist.", "protd");
+						break;
+					case 520:
+						Trace.Notify("Cloudflare error 520 when downloading update to blocklist.", "protd");
+						break;
+					default:
+						Trace.Notify("Trace couldn't download the blocklist, unknown error from " + sName + " blocklist server.","protd");
+						break;
+				}
+
+				// Retry blocklist download
+				if (server === 0){
+					Trace.Notify("Failed to load blocklist from main server, trying secondary server","protd");
+					setTimeout(function(){
+						Trace.b.GetBlockList(attempt,1);
+					},attempt*1000);
+				} else {
+					Trace.Notify("Failed to load blocklist from secondary server, trying again. Attempt " + attempt + " of 5","protd");
+					setTimeout(function(){
+						Trace.b.GetBlockList(attempt,server);
+					},attempt*1000);
 				}
 			};
 
@@ -879,86 +896,157 @@ var Trace = {
 		}
 	},
 	c:{
-		whitelist:{},
+		/*
+			If setting in allPage and is true - run it
+			If setting in allPage and is false - don't run
+			If setting in perPage and is true - run it
+			If setting in perPage and is false - don't run
+		*/
+		whitelistDefaults:{
+			"Pref_AudioFingerprint":true,
+			"Pref_BatteryApi":true,
+			"Pref_CanvasFingerprint":true,
+			"Pref_ClientRects":true,
+			"Pref_CookieEater":true,
+			"Pref_ETagTrack":true,
+			"Pref_GoogleHeader":true,
+			"Pref_IPSpoof":true,
+			"Pref_NetworkInformation":true,
+			"Pref_PingBlock":true,
+			"Pref_PluginHide":true,
+			"Pref_ReferHeader":true,
+			"Pref_ScreenRes":true,
+			"Pref_UserAgent":true,
+			"Pref_WebRTC":true
+		},
+		storedWhitelist:{},
+		decodedWhitelist:{
+			"keys":[],
+			"values":[]
+		},
+		wlEnabled:true,
 		NewWhitelistFormat:function(old){
 			console.log("Saved new whitelist format");
 			var trNewWl = {};
-			for (var i = 0, l = old.length;i<l;i++){
-				trNewWl[old[i]] = {
-					"WebController":true,
-					"TracePage":true
-				}
+			for (var i = 0, l = Object.keys(old).length;i<l;i++){
+				trNewWl["*"+Object.keys(old)[i]+"*"] = {
+					"SiteBlocked":false,	// Allow access to the site
+					"InitRequests":true,	// Allow the site to make requests to sites in the blocklist
+					"Protections":Trace.c.whitelistDefaults		// Object of protections to change on the site
+				};
 			}
 			return trNewWl;
 		},
+		GetWhitelist:function(cb){
+			Trace.v.s.get(["WebData_Whitelist","Main_PageList"],function(s){
+				if ((typeof s.Main_PageList === "undefined" || s.Main_PageList === null) && typeof s.WebData_Whitelist !== "object"){
+					// If new whitelist isn't set and old one isn't either save a blank one
+					Trace.c.SaveWhitelist();
+				} else if (typeof s.WebData_Whitelist === "object") {
+					// If old whitelist is set convert to new format
+					Trace.c.storedWhitelist = Trace.c.NewWhitelistFormat(s.WebData_Whitelist);
+					Trace.v.s.remove(["WebData_Whitelist"]);
+					Trace.c.SaveWhitelist();
+					if (cb) cb(true);
+				} else {
+					// If new whitelist is there, set it.
+					Trace.c.storedWhitelist = s.Main_PageList;
+				}
+				// Load Whitelist
+				Trace.c.LoadWhitelist(cb);
+			});
+		},
 		LoadWhitelist:function(cb){
-			if (Trace.p.Current.Pref_WebController.Whitelist.enabled === true){
-				Trace.v.s.get(["domain_wl","WebData_Whitelist"],function(s){
-					if ((typeof s.WebData_Whitelist === "undefined" || s.WebData_Whitelist === null) && typeof s.domain_wl !== "string"){
-						// If new whitelist isn't set and old one isn't either save a blank one
-						Trace.c.SaveWhitelist();
-						if (cb) cb(false);
-					} else if (typeof s.domain_wl === "string") {
-						// If old whitelist is set convert to new format
-						Trace.c.whitelist = Trace.c.NewWhitelistFormat(JSON.parse(s.domain_wl));
-						Trace.v.s.remove(["domain_wl"]);
-						Trace.c.SaveWhitelist();
-						if (cb) cb(true);
-						return;
-					} else {
-						// If new whitelist is there, set it.
-						Trace.c.whitelist = s.WebData_Whitelist;
+			var keys = Object.keys(Trace.c.storedWhitelist);
+			var vals = Object.values(Trace.c.storedWhitelist);
+			var defKeys = Object.keys(Trace.c.whitelistDefaults);
+			var decoded = {
+				"keys":[],
+				"values":[]
+			};
+			var l = keys.length;
+
+			for (var i = 0;i<l;i++){
+				decoded["keys"].push(Trace.n.wildcardToRegExp(keys[i]));
+
+				if (typeof vals[i] !== "object"){
+					continue;
+				}
+
+				if (typeof vals[i].Protections !== "object" || Object.keys(vals[i].Protections).length !== defKeys.length){
+					var repairedProts = vals[i].Protections;
+					for (var j = 0, k = defKeys.length;j<k;j++){
+						if (typeof repairedProts[defKeys[j]] === "undefined"){
+							repairedProts[defKeys[j]] = Trace.c.whitelistDefaults[defKeys[j]];
+							console.log("[plstd]-> Updated protections for",keys[i],defKeys[j]);
+						}
 					}
-				});
-			} else {
-				if (cb) cb(false);
+					vals[i].Protections = repairedProts;
+					Trace.c.storedWhitelist[keys[i]].Protections = repairedProts;
+					Trace.c.UpdateStorage();
+				}
+
+				decoded["values"].push(vals[i]);
 			}
+			Trace.c.decodedWhitelist = decoded;
+			Trace.c.wlEnabled = l !== 0;
+
+			console.log("[plstd]-> Decoded pagelist!");
+			if (cb) cb();
 		},
 		SaveWhitelist:function(cb){
-			if (Trace.DEBUG) console.log("[whtld]-> Saving whitelist!");
+			if (Trace.DEBUG) console.log("[plstd]-> Saving pagelist!");
 			Trace.v.s.set({
-				"WebData_Whitelist":Trace.c.whitelist
+				"Main_PageList":Trace.c.storedWhitelist
+			},function(){
+				Trace.c.LoadWhitelist(cb);
+			});
+		},
+		UpdateStorage:function(cb){
+			Trace.v.s.set({
+				"Main_PageList":Trace.c.storedWhitelist
 			},function(){
 				if (cb) cb();
 			});
 		},
-		CleanDomain:function(url){
-			var hostname;
-
-			if (url.indexOf("://") > -1) {
-				hostname = url.split('/')[2];
-			} else {
-				hostname = url.split('/')[0];
-			}
-
-			if ((hostname.match(new RegExp(":","g")) || []).length > 1){
-				return false;
-			}
-
-			hostname = hostname.split(':')[0];
-			hostname = hostname.split('?')[0];
-
-			return hostname;
+		ReturnWhitelist:function(callback){
+			callback(Trace.c.storedWhitelist);
 		},
-		EditItem:function(removeItem,addItem,cb){
+		EmptyList:function(){
+			Trace.c.storedWhitelist = {};
+			Trace.c.SaveWhitelist();
+		},
+		EditItem:function(removeItem,addItem,newObject,cb){
 			Trace.c.RemoveItem(removeItem);
-			Trace.c.AddItem(addItem,cb);
+			Trace.c.AddItem(addItem,newObject,cb);
 		},
-		AddItem:function(item,cb){
-			if (typeof item !== "string" || item.length < 4){
-				return "Invalid domain name!";
+		AddItem:function(item,newObject,cb){
+			if (typeof item !== "string" || item.length < 2){
+				return "Invalid entry";
 			}
 
-			var cleanDomain = Trace.c.CleanDomain(item);
-			Trace.c.whitelist[cleanDomain] = {
-				"WebController":true,
-				"TracePage":true
-			};
+			Trace.c.storedWhitelist[item] = newObject;
 			Trace.c.SaveWhitelist(cb);
 		},
 		RemoveItem:function(item,cb){
-			delete Trace.c.whitelist[item];
+			delete Trace.c.storedWhitelist[item];
 			if (cb) Trace.c.SaveWhitelist(cb);
+		},
+		CheckItem:function(url,protections){
+			var execOrder = Trace.p.Current.Main_ExecutionOrder;
+			var allowed = {};
+			var entryInfo = {};
+
+			for (var i = 0, l = Trace.c.decodedWhitelist.keys.length;i<l;i++){
+				if (Trace.c.decodedWhitelist.keys[i].test(reqUrl)){
+					entryInfo = Trace.c.decodedWhitelist.values[i];
+					break;
+				}
+			}
+
+			for (var j = 0, k = protections.length;j<k;i++){
+				allowed[protections[j]] = execOrder.AllPage.indexOf(protections[j]) !== -1;
+			}
 		}
 	},
 	d:{
@@ -1009,36 +1097,35 @@ var Trace = {
 			}
 		},
 		AssignChecker:function(){
-			Trace.Notify("Starting WebRequest event controller","webcd");
-
 			if (Trace.d.meta.isBlocking){
 				Trace.d.RestartChecker();
 				return false;
 			}
 
-			if (typeof chrome.webRequest !== "undefined") {
-				try {
+			if (typeof chrome.webRequest === "undefined") {
+				Trace.Notify("Failed to access browser WebRequest API. Maybe we don't have permission","webcd");
+				return false;
+			}
+
+			try {
+				chrome.webRequest.onBeforeRequest.addListener(Trace.d.RequestChecker,{
+					"types":Trace.d.params.dataTypes,
+					"urls":Trace.d.params.urlPatterns
+				},["blocking"]);
+			} catch(e){
+				if (e.message.toLowerCase().includes("invalid value for argument 1.")){
+					Trace.d.params.dataTypes.splice(8,4);
+					Trace.d.params.dataTypes.splice(7,1);
 					chrome.webRequest.onBeforeRequest.addListener(Trace.d.RequestChecker,{
 						"types":Trace.d.params.dataTypes,
 						"urls":Trace.d.params.urlPatterns
 					},["blocking"]);
-				} catch(e){
-					if (e.message.toLowerCase().includes("invalid value for argument 1.")){
-						Trace.d.params.dataTypes.splice(8,4);
-						Trace.d.params.dataTypes.splice(7,1);
-						chrome.webRequest.onBeforeRequest.addListener(Trace.d.RequestChecker,{
-							"types":Trace.d.params.dataTypes,
-							"urls":Trace.d.params.urlPatterns
-						},["blocking"]);
-					}
 				}
-				Trace.d.meta.isBlocking = true;
-			} else {
-				Trace.Notify("Failed to access browser WebRequest API. Maybe we don't have permission","webcd");
 			}
+			Trace.d.meta.isBlocking = true;
 		},
 		RemoveChecker:function(){
-			Trace.Notify("Stopping WebRequest event controller","webcd");
+			Trace.Notify("Stopping WebRequestController","webcd");
 			chrome.webRequest.onBeforeRequest.removeListener(Trace.d.RequestChecker);
 			Trace.d.meta.isBlocking = false;
 		},
@@ -1050,94 +1137,29 @@ var Trace = {
 			Trace.b.BlocklistLoader(false);
 		},
 		CleanURL:function(s,type){
+			// If no params to edit, return
+			if (!s.includes("?")) return s;
+
 			if (Trace.p.Current.Pref_WebController.urlCleaner.queryString[type].level === 4){
 				return s.split('?')[0];
 			}
 
-			var QueryObject = Trace.d.GetUrlParams(s);
-			if (Object.keys(QueryObject).length === 0) return s;
+			var params = Trace.g.URLCleaner.GetList(type);
+			var parsed = new URL(s);
 
-			var CleanQuery = Trace.d.RemoveBadParams(QueryObject,Object.keys(QueryObject).length,type);
+			for(var key of parsed.searchParams.keys()) {
+				if (params.indexOf(key) === -1) continue;
 
-			if (CleanQuery === ("?" + s.split("?")[1])){
-				console.warn("Param string unchanged");
-			} else {
-				console.log("\nOld ParamString->",("?" + s.split("?")[1]));
-				console.log("New ParamString->",CleanQuery);
-			}
-
-			return (s.split('?')[0] + CleanQuery);
-		},
-		RemoveBadParams:function(o,l,type){
-			var newParamStr = "?",
-				numBadParams = 0,
-				badQuery = Trace.g.URLCleaner.GetList(type);
-
-			if (badQuery === true) {
-				return "";
-			}
-
-			for(var i = 0;i<l;i++){
-				var pName = Object.keys(o)[i].toString();
-				var pVal = Object.values(o)[i].toString();
-
-				if (badQuery.indexOf(pName.toLowerCase()) !== -1){
-					if (Trace.p.Current.Pref_WebController.urlCleaner.queryString[type].method === "randomise"){
-						var randVal = Trace.makeRandomID(10);
-						if (newParamStr.length === 1){
-							newParamStr += (typeof pName !== "string" ? "" : pName + "=") + randVal;
-						} else {
-							newParamStr += "&" + pName + "=" + randVal;
-						}
-					}
-					numBadParams++;
+				if (Trace.p.Current.Pref_WebController.urlCleaner.queryString[type].method === "randomise"){
+					parsed.searchParams.set(key,Trace.makeRandomID(10));
+					if (Trace.DEBUG) console.log("%c -Rand Param: "+key,"color:#f00;font-size:1.2em");
 				} else {
-					if (newParamStr.length === 1){
-						newParamStr += (typeof pName !== "string" ? "" : pName + (pVal.length !== 0 ? "=" : "")) + pVal;
-					} else {
-						newParamStr += "&" + pName + (pVal.length !== 0 ? "=" + pVal : pVal);
-					}
-				}
-			}
-			return newParamStr;
-		},
-		GetUrlParams:function(s){
-			// Credit: https://www.sitepoint.com/get-url-parameters-with-javascript/
-			if (!s || typeof(s) !== 'string') return '';
-
-			var params = {};
-
-			if (s.includes("?")){
-				var keys = s.split("?")[1].split('&');
-				for (var i = 0;i<keys.length;i++){
-					var a = keys[i].split('=');
-					var paramNum = undefined;
-
-					var paramName = a[0].replace(/\[\d*\]/,function(v){
-						paramNum = v.slice(1,-1);
-						return '';
-					});
-					var paramValue = typeof(a[1])==='undefined' ? "" : a[1];
-
-					paramName = paramName.toString();
-					paramValue = paramValue.toString();
-
-					if (params[paramName]) {
-						if (typeof params[paramName] === "string"){
-							params[paramName] = [params[paramName]];
-						}
-						if (typeof paramNum === "undefined"){
-							params[paramName].push(paramValue);
-						} else {
-							params[paramName][paramNum] = paramValue;
-						}
-					} else {
-						params[paramName] = paramValue;
-					}
+					parsed.searchParams.delete(key);
+					if (Trace.DEBUG) console.log("%c -Remv Param: "+key,"color:#f00;font-size:1.2em");
 				}
 			}
 
-			return params;
+			return parsed.href;
 		},
 		RequestChecker:function(request){
 			// Check if URL is valid
@@ -1157,30 +1179,29 @@ var Trace = {
 			var host = Trace.n.extractHostname(request.url);
 			var domain = Trace.n.extractRootDomain(host);
 
-			// Check if domain is whitelisted
-			if (Trace.p.Current.Pref_WebController.Whitelist.enabled === true){
-				var check = [domain,host];
+			if (Trace.c.wlEnabled === true){
+				var initUrl, reqUrl = request.url;
+				if (typeof request.initiator === "string") initUrl = request.initiator;
+				if (typeof request.originUrl === "string") initUrl = request.initiator;
 
-				// Check what website is starting the webrequest
-				if (typeof request.initiator === "string"){
-					check[0] = Trace.n.extractRootDomain(request.initiator);
-					check[1] = Trace.n.extractHostname(request.initiator);
-				} else {
-					// Check initiator on Firefox
-					if (typeof request.originUrl === "string"){
-						check[0] = Trace.n.extractRootDomain(request.originUrl);
-						check[1] = Trace.n.extractHostname(request.originUrl);
+				for (var i = 0, l = Trace.c.decodedWhitelist.keys.length;i<l;i++){
+					//console.log(Trace.c.decodedWhitelist.keys[i]);
+					//console.log(reqUrl,initUrl);
+					// Check if this page is allowed to be accessed
+					if (Trace.c.decodedWhitelist.keys[i].test(reqUrl)){
+						if (Trace.c.decodedWhitelist.values[i].SiteBlocked === false){
+							return {cancel:false};
+						} else {
+							return {cancel:true};
+						}
 					}
-				}
-
-				if (Trace.c.whitelist[check[1]] !== undefined){
-					if (Trace.c.whitelist[check[1]].WebController === true){
-						return {cancel:false};
-					}
-				}
-				if (Trace.c.whitelist[check[0]] !== undefined){
-					if (Trace.c.whitelist[check[0]].WebController === true){
-						return {cancel:false};
+					// Check if this item is allowed to make requests
+					if (typeof initUrl !== "undefined"){
+						if (Trace.c.decodedWhitelist.keys[i].test(initUrl)){
+							if (Trace.c.decodedWhitelist.values[i].InitRequests === true){
+								return {cancel:false};
+							}
+						}
 					}
 				}
 			}
@@ -1263,25 +1284,21 @@ var Trace = {
 
 				// Then clean the query string
 				if (Trace.p.Current.Pref_WebController.urlCleaner.queryString.enabled === true) {
-					modifiedUrl = true;
+					modifiedUrl = false;
 
 					// Remove fragment before cleaning URL
-					if (fragment.length === 2){
-						newUrl = fragment[0];
-					}
-
+					//if (fragment.length === 2){
+						//newUrl = fragment[0];
+					//}
 					if ((request.type === "main_frame" || request.type === "sub_frame") && Trace.p.Current.Pref_WebController.urlCleaner.queryString.main_frame.level !== -1) {
 						newUrl = Trace.d.CleanURL(newUrl,"main_frame");
-					} else if ((request.type !== "main_frame" && request.type !== "sub_frame") && Trace.p.Current.Pref_WebController.urlCleaner.queryString.resources.level !== -1){
-						newUrl = Trace.d.CleanURL(newUrl,"resources");
-					} else {
-						modifiedUrl = false;
+						modifiedUrl = true;
 					}
 
 					// Re-add fragment
-					if (fragment.length === 2){
-						newUrl = newUrl + "#" + fragment[1];
-					}
+					//if (fragment.length === 2){
+					//	newUrl = newUrl + "#" + fragment[1];
+					//}
 				}
 
 				// If modifications were made then we redirect the user to the modified version
@@ -1291,6 +1308,402 @@ var Trace = {
 			}
 
 			return {cancel:false};
+		}
+	},
+
+	// Main Header Functions
+	h:{
+		Helpers:{
+			// URL that made the request (Cross browser solution)
+			getInitiator:function(request){
+				if (typeof request.initiator === "string") return request.initiator;	// Chrome, Opera...
+				if (typeof request.originUrl === "string") return request.initiator;	// Firefox
+				if (typeof request.url === "string") return request.url;				// Started by user
+
+				return "";
+			},
+			isRequestThirdParty:function(request){
+				var reqUrl = Trace.n.extractRootDomain(request.url);
+				var reqIni = Trace.n.extractRootDomain(Trace.h.Helpers.getInitiator(request));
+
+				return reqIni !== reqUrl;
+			}
+		},
+		Cookie:{
+			Start:function(){
+				if (Trace.DEBUG) console.log("[httpd]-> Cookie Header Protection.");
+				chrome.webRequest.onBeforeSendHeaders.addListener(
+					Trace.h.Cookie.ModifySend,
+					{urls:["http://*/*","https://*/*"]},
+					["blocking","requestHeaders"]
+				);
+				chrome.webRequest.onHeadersReceived.addListener(
+					Trace.h.Cookie.ModifyRecv,
+					{urls:["http://*/*","https://*/*"]},
+					["responseHeaders"]
+				);
+			},
+			Stop:function(){
+				try{
+					chrome.webRequest.onBeforeSendHeaders.removeListener(Trace.h.Cookie.ModifySend);
+					chrome.webRequest.onHeadersReceived.removeListener(Trace.h.Cookie.ModifyRecv);
+				}catch(e){
+					console.error(e);
+				}
+			},
+			ModifySend:function(details){
+				// Do a large amount of checks to see if we are gonna edit these cookies
+				if (Trace.p.Current.Pref_CookieEater.enabled !== true) return;
+
+				var settings = Trace.p.Current.Pref_CookieEater.settings.cookie;
+
+				if (settings.enabled !== true) return;
+				if (settings.fp_method === "nothing" && settings.tp_method === "nothing") return;
+
+				if (details.frameId < 0) return;
+				if (details.url.substring(0,4).toLowerCase() !== "http") return;
+
+				var cookieList = Trace.g.CookieEater.GetList();
+				var method = "fp_method";
+
+				if (Trace.h.Helpers.isRequestThirdParty(details)) {
+					method = "tp_method";
+				}
+
+				// Loop each header
+				for (var i=0;i<details.requestHeaders.length;++i){
+					var headerName = details.requestHeaders[i].name.toString().toLowerCase();
+
+					if (headerName !== "cookie") continue;
+
+					var cp = new CookieParser(details.requestHeaders[i].value);
+
+					if (settings[method] === "removeall"){
+						details.requestHeaders.splice(i,1);
+					} else if (settings[method] === "randomiseall"){
+						cp.updateAllCookies(function(){
+							return Trace.makeRandomID(15);
+						});
+						details.requestHeaders[i].value = cp.getString();
+					} else if (settings[method] === "remove"){
+						cp.removeCookies(cookieList);
+						details.requestHeaders[i].value = cp.getString();
+					} else if (settings[method] === "randomise"){
+						cp.updateCookies(cookieList,function(){
+							return Trace.makeRandomID(15);
+						});
+						details.requestHeaders[i].value = cp.getString();
+					}
+
+					break;
+				}
+
+				return {requestHeaders:details.requestHeaders};
+			},
+			ModifyRecv:function(details){
+				// Do a large amount of checks to see if we are gonna edit these set-cookies
+				if (Trace.p.Current.Pref_CookieEater.enabled !== true) return;
+
+				var settings = Trace.p.Current.Pref_CookieEater.settings.setcookie;
+
+				if (settings.enabled !== true) return;
+				if (settings.fp_method === "nothing" && settings.tp_method === "nothing") return;
+
+				if (details.frameId < 0) return;
+				if (details.url.substring(0,4).toLowerCase() !== "http") return;
+
+				//console.log(details);
+				// Loop each header
+				for (var i=0;i<details.responseHeaders.length;++i){
+					var headerName = details.responseHeaders[i].name.toString().toLowerCase();
+
+					// Remove bad response headers
+					if (headerName !== "set-cookie") continue;
+
+					var p = new SetCookieParser(details.responseHeaders[i].value);
+					console.log(p.parsed);
+					console.log(p.cookiename,p.cookievalue);
+					/**************** SORT THIS OUT ***************************************/
+					break;
+					if (Trace.h.Helpers.isRequestThirdParty(details)){
+						if (settings.tp_method === "removeall"){
+							details.responseHeaders.splice(i,1);
+						} else if (settings.tp_method === "randomiseall"){
+							details.responseHeaders[i].value = Trace.makeRandomID(15);
+						}
+					} else {
+						if (settings.fp_method === "removeall"){
+							details.responseHeaders.splice(i,1);
+						} else if (settings.fp_method === "randomiseall"){
+							details.responseHeaders[i].value = Trace.makeRandomID(15);
+						}
+					}
+				}
+
+				return {responseHeaders:details.responseHeaders};
+			}
+		},
+		Etag:{
+			Start:function(){
+				if (Trace.DEBUG) console.log("[httpd]-> Started E-Tag Protection.");
+				chrome.webRequest.onHeadersReceived.addListener(
+					Trace.h.Etag.Modify,
+					{urls:["http://*/*","https://*/*"]},
+					["responseHeaders"]
+				);
+			},
+			Stop:function(){
+				try{
+					chrome.webRequest.onHeadersReceived.removeListener(Trace.h.Etag.Modify);
+				}catch(e){
+					console.error(e);
+				}
+			},
+			Modify:function(details){
+				if (Trace.p.Current.Pref_ETagTrack.enabled !== true) return;
+				if (details.frameId < 0) return;
+				if (details.url.substring(0,4).toLowerCase() !== "http") return;
+
+				for (var i=0;i<details.responseHeaders.length;++i){
+					var headerName = details.responseHeaders[i].name.toString().toLowerCase();
+
+					// Skip headers that aren't etag
+					if (headerName !== "etag") continue;
+
+					details.responseHeaders.splice(i,1);
+					break;
+				}
+
+				return {responseHeaders:details.responseHeaders};
+			}
+		},
+		Google:{
+			Start:function(){
+				if (Trace.DEBUG) console.log("[httpd]-> Started Google Header Protection.");
+				if (!chrome.webRequest) return;
+				chrome.webRequest.onBeforeSendHeaders.addListener(
+					Trace.h.Google.Modify,
+					{urls:["<all_urls>"]},
+					["blocking","requestHeaders"]
+				);
+			},
+			Stop:function(){
+				try{
+					chrome.webRequest.onBeforeSendHeaders.removeListener(Trace.h.Google.Modify);
+				}catch(e){
+					console.error(e);
+				}
+			},
+			Modify:function(details){
+				// Check if we have any modifications to make, if not then don't waste resources
+				var ghm = (
+					(Trace.p.Current.Pref_GoogleHeader.rmChromeConnected.enabled === true) ||
+					(Trace.p.Current.Pref_GoogleHeader.rmChromeUMA.enabled === true) ||
+					(Trace.p.Current.Pref_GoogleHeader.rmChromeVariations.enabled === true) ||
+					(Trace.p.Current.Pref_GoogleHeader.rmClientData.enabled === true)
+				);
+				if (Trace.p.Current.Pref_GoogleHeader.enabled !== true && ghm !== true) {
+					return {requestHeaders:details.requestHeaders};
+				}
+
+				for (var i=0;i<details.requestHeaders.length;++i) {
+					var headerName = details.requestHeaders[i].name.toString().toLowerCase();
+
+					if (Trace.p.Current.Pref_GoogleHeader.rmChromeConnected.enabled === true) {
+						if (headerName === "x-chrome-connected") {
+							console.log("Removed x-c-c");
+							details.requestHeaders.splice(i, 1);
+							continue;
+						}
+					}
+					if (Trace.p.Current.Pref_GoogleHeader.rmChromeUMA.enabled === true) {
+						if (headerName === "x-chrome-uma-enabled") {
+							details.requestHeaders.splice(i, 1);
+							continue;
+						}
+					}
+					if (Trace.p.Current.Pref_GoogleHeader.rmChromeVariations.enabled === true) {
+						if (headerName === "x-chrome-variations") {
+							console.log("Removed x-c-v");
+							details.requestHeaders.splice(i, 1);
+							continue;
+						}
+					}
+					if (Trace.p.Current.Pref_GoogleHeader.rmClientData.enabled === true) {
+						if (headerName === "x-client-data") {
+							details.requestHeaders.splice(i, 1);
+						}
+					}
+				}
+
+				// Return new headers to be sent
+				return {requestHeaders:details.requestHeaders};
+			}
+		},
+		IPSpoof:{
+			Start:function(){
+				if (Trace.DEBUG) console.log("[httpd]-> Started IPSpoof Protection.");
+				if (!chrome.webRequest) return;
+				chrome.webRequest.onBeforeSendHeaders.addListener(
+					Trace.h.IPSpoof.Modify,
+					{urls:["<all_urls>"]},
+					["blocking","requestHeaders"]
+				);
+			},
+			Stop:function(){
+				try{
+					chrome.webRequest.onBeforeSendHeaders.removeListener(Trace.h.IPSpoof.Modify);
+				}catch(e){
+					console.error(e);
+				}
+			},
+			Modify:function(details){
+				if (Trace.p.Current.Pref_IPSpoof.enabled !== true){
+					return {requestHeaders:details.requestHeaders};
+				}
+
+				// Attempt forge IP
+				if (Trace.p.Current.Pref_IPSpoof.useClientIP.enabled === true){
+					details.requestHeaders.push({
+						"name":"Client-IP",
+						"value":Trace.i.CurrentFakeIP
+					});
+				}
+				if (Trace.p.Current.Pref_IPSpoof.useForwardedFor.enabled === true){
+					details.requestHeaders.push({
+						"name":"X-Forwarded-For",
+						"value":Trace.i.CurrentFakeIP
+					});
+				}
+				if (Trace.p.Current.Pref_IPSpoof.useForwardedFor.enabled === true){
+					details.requestHeaders.push({
+						"name":"Via",
+						"value":Trace.i.CurrentViaHeader
+					});
+				}
+
+				// Return new headers to be sent
+				return {requestHeaders:details.requestHeaders};
+			}
+		},
+		Referer:{
+			Start:function(){
+				if (Trace.DEBUG) console.log("[httpd]-> Started Referer Header Protection.");
+				if (!chrome.webRequest) return;
+				chrome.webRequest.onBeforeSendHeaders.addListener(
+					Trace.h.Referer.Modify,
+					{urls:["<all_urls>"]},
+					["blocking","requestHeaders"]
+				);
+			},
+			Stop:function(){
+				try{
+					chrome.webRequest.onBeforeSendHeaders.removeListener(Trace.h.Referer.Modify);
+				}catch(e){
+					console.error(e);
+				}
+			},
+			Modify:function(details){
+				if (Trace.p.Current.Pref_ReferHeader.enabled !== true){
+					return {requestHeaders:details.requestHeaders};
+				}
+
+				var s = Trace.p.Current.Pref_ReferHeader.httpHeader;
+
+				// Loop each header
+				for (var i=0;i<details.requestHeaders.length;++i){
+					var headerName = details.requestHeaders[i].name.toString().toLowerCase();
+
+					if (headerName !== "referer") continue;
+
+					// Allow only secure origins
+					if (Trace.p.Current.Pref_ReferHeader.httpHeader.onlySecureOrigins.enabled){
+						if (details.url.substr(0,5) !== "https"){
+							details.requestHeaders.splice(i,1);
+							break;
+						}
+					}
+
+					// Break out of loop if these conditions are met
+					var headerVal = details.requestHeaders[i].value.toString();
+					var hostname = Trace.n.extractHostname(headerVal);
+					var sameHost = hostname === Trace.n.extractHostname(details.url);
+					var sameRoot = Trace.n.extractRootDomain(headerVal) === Trace.n.extractRootDomain(details.url);
+
+					if (sameHost){
+						if (s.allowSameHost.enabled){
+							if (s.allowSameHost.fullUrl !== true){
+								details.requestHeaders[i].value = hostname;
+							}
+							break;
+						}
+					}
+
+					if (sameRoot){
+						if (s.allowSameDomain.enabled){
+							if (s.allowSameDomain.fullUrl !== true){
+								details.requestHeaders[i].value = hostname;
+							}
+							break;
+						}
+					}
+
+					if (!sameRoot && !sameHost){
+						if (s.allowThirdParty.enabled){
+							if (s.allowThirdParty.fullUrl !== true){
+								details.requestHeaders[i].value = hostname;
+							}
+							break;
+						}
+					}
+
+					// If loop hasn't broke yet then remove the header
+					details.requestHeaders.splice(i,1);
+					break;
+				}
+
+				// Return new headers to be sent
+				return {requestHeaders:details.requestHeaders};
+			}
+		},
+		UserAgent:{
+			Start:function(){
+				if (Trace.DEBUG) console.log("[httpd]-> Started User-Agent Header Protection.");
+				if (!chrome.webRequest) return;
+				chrome.webRequest.onBeforeSendHeaders.addListener(
+					Trace.h.UserAgent.Modify,
+					{urls:["<all_urls>"]},
+					["blocking","requestHeaders"]
+				);
+			},
+			Stop:function(){
+				try{
+					chrome.webRequest.onBeforeSendHeaders.removeListener(Trace.h.UserAgent.Modify);
+				}catch(e){
+					console.error(e);
+				}
+			},
+			Modify:function(details){
+				if (Trace.p.Current.Pref_UserAgent.enabled 	!== true){
+					return {requestHeaders:details.requestHeaders};
+				}
+
+				for (var i=0;i<details.requestHeaders.length;++i){
+					var headerName = details.requestHeaders[i].name.toString().toLowerCase();
+
+					// Skip headers that aren't user agent
+					if (headerName !== "user-agent") continue;
+
+					// Change header then break
+					if (details.requestHeaders[i].value !== Trace.n.useragent){
+						details.requestHeaders[i].value = Trace.n.useragent;
+					}
+					break;
+				}
+
+				// Return new headers to be sent
+				return {requestHeaders:details.requestHeaders};
+			}
 		}
 	},
 
@@ -1320,6 +1733,8 @@ var Trace = {
 		},
 		ToggleIPSpoof:function(onlyStart){
 			if (Trace.p.Current.Pref_IPSpoof.enabled === true){
+				Trace.h.IPSpoof.Start();
+
 				// Set custom via header
 				if (Trace.p.Current.Pref_IPSpoof.traceVia.enabled || typeof Trace.p.Current.Pref_IPSpoof.traceVia.value !== "string"){
 					Trace.i.CurrentViaHeader = "Proxy";
@@ -1337,11 +1752,12 @@ var Trace = {
 				} else {
 					if (!onlyStart){
 						Trace.i.StopIPRefresh();
+						Trace.h.IPSpoof.Stop();
 					}
 					if (typeof Trace.p.Current.Pref_IPSpoof.traceIP.user_set !== "string" || Trace.p.Current.Pref_IPSpoof.traceIP.user_set.length < 7){
 						Trace.p.SetSetting("Pref_IPSpoof.traceIP.user_set","128.128.128.128");
 						Trace.i.CurrentFakeIP = "128.128.128.128";
-						Trace.Notify("Proxy IP Spoofing found an error with the IP used, using 128.128.128.128 instead.","pipsd")
+						Trace.Notify("Proxy IP Spoofing found an error with the IP used, using 128.128.128.128 instead.","pipsd");
 						return;
 					}
 
@@ -1351,7 +1767,10 @@ var Trace = {
 				}
 			} else {
 				// Stop ip refresh if
-				if (!onlyStart) Trace.i.StopIPRefresh();
+				if (!onlyStart) {
+					Trace.i.StopIPRefresh();
+					Trace.h.IPSpoof.Stop();
+				}
 			}
 		},
 		StopIPRefresh:function(){
@@ -1371,119 +1790,25 @@ var Trace = {
 	// Advanced functions
 	g:{
 		CookieEater:{
-			BadCookieList:function(){
-				return ["iambadcookie"];
-			},
-			RemoveSendBadCookies:function(cookiestr){
-				var oldCookies = cookiestr;
-				window.biscuit = cookiestr;
+			GetList:function(){
+				if (Trace.p.Current.Pref_CookieEater.enabled !== true){
+					return [false];
+				}
 
-				var badCookies = Trace.g.CookieEater.BadCookieList();
-				var cookieList = Cookies.get();
-				var cookieKeys = Object.keys(cookieList);
-
-				for (var i = 0, l = cookieKeys.length;i<l;i++){
-					if (badCookies.indexOf(cookieKeys[i]) > -1){
-						console.log("Remove "+cookieKeys[i]);
-						Cookies.remove(cookieKeys[i], { path: '' });
+				// Create array to return
+				var s = Trace.p.Current.Pref_CookieEater.list;
+				var k = Object.keys(s);
+				var r = [];
+				for (var i = 0,l = k.length;i<l;i++){
+					if (s[k[i]] === true){
+						r.push(k[i]);
 					}
 				}
 
-				return window.biscuit;
-			},
-			RemoveRecvBadCookies:function(cookiestr){
-				var newCookieStr = cookiestr;
-				window.biscuit = cookiestr;
-				console.log(Cookies.get());
-				console.log(Cookies.getJSON());
-				return newCookieStr;
-			},
-			ProtectionToggle:function(){
-				return;
-				chrome.webRequest.onBeforeSendHeaders.addListener(
-					function(details){
-						for (var i=0;i<details.requestHeaders.length;++i){
-							headerName = details.requestHeaders[i].name.toString().toLowerCase();
-							if (headerName === "cookie"){
-								headerVal = details.requestHeaders[i].value.toString();
-								Trace.g.CookieEater.RemoveSendBadCookies(headerVal);
-								//console.log(headerName,headerVal);
-								//console.log("");
-							}
-						}
-					},
-					{urls:["<all_urls>"]},
-					["blocking","requestHeaders"]
-				);
-				chrome.webRequest.onHeadersReceived.addListener(
-					function(details){
-						for (var i=0;i<details.responseHeaders.length;++i){
-							headerName = details.responseHeaders[i].name.toString().toLowerCase();
-							if (headerName === "set-cookie"){
-								headerVal = details.responseHeaders[i].value.toString();
-								console.log(Trace.g.CookieEater.RemoveRecvBadCookies(headerVal));
-								//console.log(headerName,headerVal);
-							}
-						}
-					},
-					{urls:["<all_urls>"]},
-					["blocking","responseHeaders"]
-				);
+				return r;
 			}
 		},
 		BadTopLevelDomain:{
-			TLDs:{
-				extended:[
-					"asia",
-					"cc",
-					"cf",
-					"christmas",
-					"cricket",
-					"party",
-					"pro",
-					"review",
-					"systems",
-					"trade",
-					"vip",
-					"zip"
-				],
-				all:[
-					"accountant",
-					"date",
-					"diet",
-					"loan",
-					"mom",
-					"online",
-					"racing",
-					"ren",
-					"stream",
-					"study",
-					"top",
-					"xin",
-					"yokohama"
-				],
-				most:[
-					"ads",
-					"link",
-					"kim",
-					"top",
-					"science",
-					"space",
-					"webcam",
-					"men",
-					"win",
-					"work"
-				],
-				few:[
-					"bid",
-					"click",
-					"country",
-					"download",
-					"faith",
-					"gdn",
-					"gq"
-				]
-			},
 			ToggleProtection:function(){
 				if (Trace.p.Current.Pref_WebController.enabled !== true){
 					Trace.Notify("Trace will protect against bad top level domains when domain blocking is enabled.","atld");
@@ -1506,94 +1831,20 @@ var Trace = {
 					return [];
 				}
 
-				// Get level of protection
-				var level = 1;
-				if (typeof Trace.p.Current.Pref_WebController.tld.level !== "undefined"){
-					level = parseInt(Trace.p.Current.Pref_WebController.tld.level);
+				// Create array to return
+				var s = Trace.p.Current.Pref_WebController.tld.settings;
+				var k = Object.keys(s);
+				var r = [];
+				for (var i = 0,l = k.length;i<l;i++){
+					if (s[k[i]] === true){
+						r.push(k[i]);
+					}
 				}
 
-				// Create and return the list depending on the level
-				var list = [];
-
-				list = list.concat(Trace.g.BadTopLevelDomain.TLDs.few);
-				if (level === 0) return list;
-
-				list = list.concat(Trace.g.BadTopLevelDomain.TLDs.most);
-				if (level === 1) return list;
-
-				list = list.concat(Trace.g.BadTopLevelDomain.TLDs.all);
-				if (level === 2) return list;
-
-				list = list.concat(Trace.g.BadTopLevelDomain.TLDs.extended);
-				if (level === 3) return list;
-
-				// For those sniffing glue, they get nothing
-				return [];
+				return r;
 			}
 		},
 		URLCleaner:{
-			badParams:{
-				safe:[
-					"utm_source",
-					"utm_campaign",
-					"utm_content",
-					"utm_medium",
-					"utm_name",
-					"utm_cid",
-					"utm_reader",
-					"utm_term"
-				],
-				regular:[
-					"ad_bucket",
-					"ad_size",
-					"ad_slot",
-					"ad_type",
-					"adid",
-					"adserverid",
-					"adserveroptimizerid",
-					"adtype",
-					"adurl",
-					"clickid",
-					"clkurlenc",
-					"ga_fc",
-					"ga_hid",
-					"ga_sid",
-					"ga_vid",
-					"piggiebackcookie",
-					"pubclick",
-					"pubid",
-					"num_ads",
-					"tracking"
-				],
-				risky:[
-					"bdref",
-					"bstk",
-					"campaignid",
-					"dclid",
-					"documentref",
-					"exitPop",
-					"flash",
-					"matchid",
-					"mediadataid",
-					"minbid",
-					"page_referrer",
-					"referrer",
-					"reftype",
-					"revmod",
-					"rurl",
-					"siteid",
-					"tldid",
-					"zoneid"
-				],
-				extreme:[
-					"_reqid",
-					"data",
-					"payload",
-					"providerid",
-					"rev",
-					"uid"
-				]
-			},
 			ToggleProtection:function(){
 				if (Trace.p.Current.Pref_WebController.enabled !== true){
 					Trace.Notify("Trace will clean URLs when the WebRequest Controller is enabled.","urlcd");
@@ -1603,7 +1854,7 @@ var Trace = {
 
 				setTimeout(Trace.b.BlocklistLoader,1000);
 			},
-			GetList:function(type){
+			GetList:function(){
 				if (Trace.p.Current.Pref_WebController.enabled !== true){
 					return [false];
 				}
@@ -1611,32 +1862,17 @@ var Trace = {
 					return [];
 				}
 
-				// Get level of protection
-				var level = 1;
-				if (typeof type === "string" && typeof Trace.p.Current.Pref_WebController.urlCleaner.queryString[type].level !== "undefined"){
-					level = parseInt(Trace.p.Current.Pref_WebController.urlCleaner.queryString[type].level);
+				// Create array to return
+				var s = Trace.p.Current.Pref_WebController.urlCleaner.queryString.params;
+				var k = Object.keys(s);
+				var r = [];
+				for (var i = 0,l = k.length;i<l;i++){
+					if (s[k[i]] === true){
+						r.push(k[i]);
+					}
 				}
 
-				// If level is 4 we remove all URL parameters
-				if (level === 4) return true;
-
-				// Create and return the list depending on the level
-				var list = [];
-
-				list = list.concat(Trace.g.URLCleaner.badParams.safe);
-				if (level === 0) return list;
-
-				list = list.concat(Trace.g.URLCleaner.badParams.regular);
-				if (level === 1) return list;
-
-				list = list.concat(Trace.g.URLCleaner.badParams.risky);
-				if (level === 2) return list;
-
-				list = list.concat(Trace.g.URLCleaner.badParams.extreme);
-				if (level === 3) return list;
-
-				// For those sniffing glue, they get nothing
-				return [];
+				return r;
 			}
 		}
 	},
@@ -1697,12 +1933,10 @@ var Trace = {
 			day.toString().length !== 2 ? day = "0" + day.toString() : 0;
 			mon.toString().length !== 2 ? mon = "0" + mon.toString() : 0;
 
-			var data = [
+			return [
 				(d.getFullYear() + "-" + mon + "-" + day).toString(),
 				Date.now()+3000
 			];
-
-			return data;
 		},
 		SaveStats:function(cb){
 			Trace.v.s.set({
@@ -1763,20 +1997,21 @@ var Trace = {
 		},
 		DeleteAmount:function(amount,cb) {
 			var newstats = {};
-			if (amount >= Object.keys(Trace.s.Current).length){
+			var keys = Object.keys(Trace.s.Current);
+			if (amount >= keys.length){
 				cb();
 				return;
 			}
 
-			for (var i = Object.keys(Trace.s.Current).length-amount;i < Object.keys(Trace.s.Current).length;i++){
-				newstats[Object.keys(Trace.s.Current)[i]] = Trace.s.Current[Object.keys(Trace.s.Current)[i]];
+			for (var i = keys.length-amount;i < keys.length;i++){
+				newstats[keys[i]] = Trace.s.Current[keys[i]];
 			}
 			Trace.s.Current = newstats;
 			Trace.s.SaveStats(cb);
 		},
 		MainText:function(cb){
 			Trace.v.s.get("trace_installdate",function(s){
-				var d = [], installDate = "... Today..?";
+				var d = [], installDate = "today.";
 				if (typeof s.trace_installdate === "string"){
 					installDate = s.trace_installdate;
 				}
@@ -1797,271 +2032,143 @@ var Trace = {
 
 	// Settings functions
 	p:{
-		Current:{
-			"Pref_WebController":{
-				"enabled":true,
-				"showBlocked":{
-					"enabled":true
-				},
-				"Whitelist":{
-					"enabled":true
-				},
-				"tld":{
-					"enabled":true,
-					"level":1
-				},
-				"urlCleaner":{
-					"enabled":false,
-					"queryString":{
-						"enabled":true,
-						"main_frame":{
-							"level":1,
-							"method":"remove"
-						},
-						"resources":{
-							"level":1,
-							"method":"remove"
-						}
-					},
-					"fragmentHash":{
-						"enabled":false
-					}
-				},
-				"installCodes":{
-					"a00000002":true,
-					"a00000005":true
-				}
-			},
-			"Pref_CanvasFingerprint":{
-				"enabled":true,
-				"customRGBA":{
-					"enabled":false,
-					"rgba":[0,0,0,0]
-				}
-			},
-			"Pref_AudioFingerprint":{
-				"enabled":false,
-				"audioBuffer":{
-					"enabled":true
-				},
-				"audioData":{
-					"enabled":true
-				},
-				"audioOfflineMain":{
-					"enabled":false
-				},
-				"audioMain":{
-					"enabled":false
-				}
-			},
-			"Pref_CookieEater":{
-				"enabled":false,
-				"settings":{
-					"setcookie":{
-						"enabled":true,
-						"method":"remove",
-						"level":1
-					},
-					"cookie":{
-						"enabled":false,
-						"method":"remove",
-						"level":1
-					}
-				}
-			},
-			"Pref_ReferHeader":{
-				"enabled":false,
-				"mainFunction":"remove",
-				"jsVariable":{
-					"enabled":true,
-					"method":"remove"
-				},
-				"httpHeader":{
-					"enabled":true,
-					"method":"remove"
-				},
-				"rules":{}
-			},
-			"Pref_GoogleHeader":{
-				"enabled":false,
-				"rmClientData":{
-					"enabled":false
-				},
-				"rmChromeUMA":{
-					"enabled":true
-				},
-				"rmChromeVariations":{
-					"enabled":true
-				},
-				"rmChromeConnected":{
-					"enabled":true
-				}
-			},
-			"Pref_ETagTrack":{
-				"enabled":false
-			},
-			"Pref_PingBlock":{
-				"enabled":true,
-				"pingRequest":{
-					"enabled":true
-				},
-				"sendBeacon":{
-					"enabled":true
-				}
-			},
-			"Pref_NetworkInformation":{
-				"enabled":false,
-				"customNet":{
-					"enabled":false,
-					"info":{
-						"downlink":7.5,
-						"effectiveType":"4g",
-						"onchange":null,
-						"rtt":100
-					}
-				}
-			},
-			"Pref_ScreenRes":{
-				"enabled":false,
-				"randomOpts":{
-					"enabled":true,
-					"values":[-10,10]
-				},
-				"commonResolutions":{
-					"enabled":false,
-					"resolutions":[]
-				}
-			},
-			"Pref_BatteryApi":{
-				"enabled":false
-			},
-			"Pref_PluginHide":{
-				"enabled":false
-			},
-			"Pref_UserAgent":{
-				"enabled":false,
-				"uaOSConfig":{
-					"AllowMac":{
-						"enabled":false
-					},
-					"AllowLinux":{
-						"enabled":false
-					},
-					"AllowWindows":{
-						"enabled":true
-					}
-				},
-				"uaWBConfig":{
-					"AllowChrome":{
-						"enabled":true
-					},
-					"AllowFirefox":{
-						"enabled":true
-					},
-					"AllowVivaldi":{
-						"enabled":true
-					},
-					"AllowOpera":{
-						"enabled":true
-					},
-					"AllowEdge":{
-						"enabled":true
-					},
-					"AllowSafari":{
-						"enabled":true
-					}
-				},
-				"uaCust":{
-					"enabled":false,
-					"onlyCust":false,
-					"customUAs":[]
-				}
-			},
-			"Pref_WebRTC":{
-				"enabled":true,
-				"wrtcInternal":{
-					"enabled":true
-				},
-				"wrtcPeerConnection":{
-					"enabled":false
-				},
-				"wrtcDataChannel":{
-					"enabled":false
-				},
-				"wrtcRtpReceiver":{
-					"enabled":false
-				}
-			},
-			"Pref_IPSpoof":{
-				"enabled":false,
-				"useClientIP":{
-					"enabled":true
-				},
-				"useForwardedFor":{
-					"enabled":true
-				},
-				"traceVia":{
-					"enabled":true,
-					"value":"Proxy"
-				},
-				"traceIP":{
-					"enabled":true,
-					"user_set":""
-				}
-			},
-			"Main_Trace":{
-				"DebugApp":{
-					"enabled":false
-				},
-				"DomainCache":{
-					"enabled":true
-				},
-				"ProtectionStats":{
-					"enabled":true
-				},
-				"BrowserNotifications":{
-					"enabled":false
-				},
-				"KeyboardCommand":{
-					"enabled":false
-				},
-				"ErrorReporting":{
-					"enabled":true
-				},
-				"PremiumCode":""
-			},
-			"Main_Interface":{
-				"enabled":true,
-				"NavPosition":"lside",
-				"Theme":{
-					"name":"tracedefault",
-					"timealterations":true
-				}
-			}
-		},
 		Defaults:{
 			"Pref_WebController":{
 				"enabled":true,
 				"showBlocked":{
 					"enabled":true
 				},
-				"Whitelist":{
-					"enabled":true
-				},
 				"tld":{
 					"enabled":true,
-					"level":1
+					"settings":{
+						"accountant":false,
+						"ads":true,
+						"asia":false,
+						"bid":true,
+						"cc":false,
+						"cf":false,
+						"christmas":false,
+						"click":true,
+						"country":true,
+						"cricket":false,
+						"date":false,
+						"diet":false,
+						"download":true,
+						"faith":true,
+						"gdn":true,
+						"gq":true,
+						"kim":true,
+						"link":true,
+						"loan":false,
+						"men":false,
+						"mom":false,
+						"om":true,
+						"online":false,
+						"party":false,
+						"pro":false,
+						"racing":false,
+						"ren":false,
+						"review":false,
+						"science":true,
+						"space":true,
+						"stream":false,
+						"study":false,
+						"systems":false,
+						"top":true,
+						"trade":false,
+						"vip":false,
+						"webcam":true,
+						"win":true,
+						"work":true,
+						"xin":false,
+						"yokohama":false,
+						"zip":true
+					}
 				},
 				"urlCleaner":{
 					"enabled":false,
 					"queryString":{
 						"enabled":true,
+						"params":{
+							"ga_source":true,
+							"ga_medium":true,
+							"ga_term":true,
+							"ga_content":true,
+							"ga_campaign":true,
+							"ga_place":true,
+							"utm_source":true,
+							"utm_campaign":true,
+							"utm_content":true,
+							"utm_medium":true,
+							"utm_name":true,
+							"utm_cid":true,
+							"utm_reader":true,
+							"utm_term":true,
+							"ad_bucket":false,
+							"ad_size":false,
+							"ad_slot":false,
+							"ad_type":false,
+							"adid":false,
+							"adserverid":false,
+							"adserveroptimizerid":false,
+							"adtype":false,
+							"adurl":false,
+							"clickid":false,
+							"clkurlenc":false,
+							"fb_source":false,
+							"fb_ref":false,
+							"CampaignID":false,
+							"AffiliateGuid":false,
+							"AdID":false,
+							"ImpressionGuid":false,
+							"ga_fc":false,
+							"ga_hid":false,
+							"ga_sid":false,
+							"ga_vid":false,
+							"piggiebackcookie":false,
+							"pubclick":false,
+							"pubid":false,
+							"num_ads":false,
+							"tracking":false,
+							"usegapi":false,
+							"affiliate":false,
+							"first_visit":false,
+							"trackId":false,
+							"_trkparms":false,
+							"bdref":false,
+							"bstk":false,
+							"campaignid":false,
+							"dclid":false,
+							"documentref":false,
+							"exitPop":false,
+							"flash":false,
+							"matchid":false,
+							"mediadataid":false,
+							"minbid":false,
+							"page_referrer":false,
+							"referrer":false,
+							"reftype":false,
+							"revmod":false,
+							"rurl":false,
+							"siteid":false,
+							"tldid":false,
+							"zoneid":false,
+							"site":false,
+							"fb":false,
+							"pk_campaign":false,
+							"_reqid":false,
+							"data":false,
+							"payload":false,
+							"providerid":false,
+							"rev":false,
+							"uid":false,
+							"sourceid":false,
+							"origin":false
+						},
 						"main_frame":{
-							"level":1,
 							"method":"remove"
 						},
 						"resources":{
-							"level":-1,
 							"method":"remove"
 						}
 					},
@@ -2093,7 +2200,27 @@ var Trace = {
 					"enabled":false
 				},
 				"audioMain":{
-					"enabled":true
+					"enabled":false
+				}
+			},
+			"Pref_HardwareSpoof":{
+				"enabled":true,
+				"webgl":{
+					"enabled":false
+					//"spoofGpu":{
+					//	"enabled":
+					//}
+				},
+				"hardware":{
+					"enabled":true,
+					"hardwareConcurrency":{
+						"enabled":true,
+						"value":4
+					},
+					"deviceMemory":{
+						"enabled":true,
+						"value":4
+					}
 				}
 			},
 			"Pref_CookieEater":{
@@ -2101,29 +2228,61 @@ var Trace = {
 				"settings":{
 					"setcookie":{
 						"enabled":true,
-						"method":"remove",
-						"level":1
+						"fp_method":"nothing",
+						"fp_level":1,
+						"tp_method":"remove",
+						"tp_level":1
 					},
 					"cookie":{
 						"enabled":false,
-						"method":"remove",
-						"level":1
+						"fp_method":"nothing",
+						"fp_level":1,
+						"tp_method":"remove",
+						"tp_level":1
 					}
+				},
+				"list":{
+					"__mmapiwsid":false,
+					"__utmz":false,
+					"__utmc":false,
+					"__utma":false,
+					"__cfduid":false,
+					"_chartbeat2":false,
+					"_ga":false,
+					"_v__chartbeat3":false,
+					"_vwo_uuid_v2":false,
+					"_vwo_uuid_":false,
+					"1P_JAR":false,
+					"ads_prefs":false,
+					"external_referer":false,
+					"GoogleAdServingTest":false,
+					"personalization_id":false,
+					"S_adsense3-ui":false
 				}
 			},
 			"Pref_ReferHeader":{
 				"enabled":false,
-				"mainFunction":"remove",
 				"jsVariable":{
 					"enabled":true,
 					"method":"remove"
 				},
 				"httpHeader":{
-					"enabled":true,
-					"method":"remove",
-					"mainCase":1
-				},
-				"rules":{}
+					"allowSameHost":{
+						"enabled":true,
+						"fullUrl":true
+					},
+					"allowSameDomain":{
+						"enabled":true,
+						"fullUrl":true
+					},
+					"allowThirdParty":{
+						"enabled":false,
+						"fullUrl":false
+					},
+					"onlySecureOrigins":{
+						"enabled":true
+					}
+				}
 			},
 			"Pref_GoogleHeader":{
 				"enabled":false,
@@ -2153,7 +2312,7 @@ var Trace = {
 				}
 			},
 			"Pref_NetworkInformation":{
-				"enabled":true,
+				"enabled":false,
 				"customNet":{
 					"enabled":false,
 					"info":{
@@ -2173,9 +2332,15 @@ var Trace = {
 				"commonResolutions":{
 					"enabled":false,
 					"resolutions":[]
+				},
+				"modifyDepths":{
+					"enabled":false
 				}
 			},
 			"Pref_BatteryApi":{
+				"enabled":false
+			},
+			"Pref_ClientRects":{
 				"enabled":false
 			},
 			"Pref_PluginHide":{
@@ -2252,12 +2417,24 @@ var Trace = {
 					"user_set":""
 				}
 			},
+			"Main_Interface":{
+				"enabled":true,
+				"Theme":{
+					"name":"tracedefault",
+					"timeAlterations":true,
+					"navPlacement":"nav_left"
+				}
+			},
 			"Main_Trace":{
 				"DebugApp":{
 					"enabled":false
 				},
 				"DomainCache":{
 					"enabled":true
+				},
+				"ProtectionSessions":{
+					"enabled":true,
+					"affects":[]
 				},
 				"ProtectionStats":{
 					"enabled":true
@@ -2273,16 +2450,30 @@ var Trace = {
 				},
 				"PremiumCode":""
 			},
-			"Main_Interface":{
-				"enabled":true,
-				"NavPosition":"lside",
-				"Theme":{
-					"name":"tracedefault",
-					"timealterations":true
-				}
-			},
-			"tracenewprefs":true
+			"Main_ExecutionOrder":{
+				"AllPage":[
+					"Pref_CanvasFingerprint",
+					"Pref_AudioFingerprint",
+					"Pref_GoogleHeader",
+					"Pref_ETagTrack",
+					"Pref_PingBlock",
+					"Pref_NetworkInformation",
+					"Pref_ClientRects",
+					"Pref_HardwareSpoof",
+					"Pref_ScreenRes",
+					"Pref_PluginHide",
+					"Pref_WebRTC"
+				],
+				"PerPage":[
+					"Pref_CookieEater",
+					"Pref_ReferHeader",
+					"Pref_UserAgent",
+					"Pref_BatteryApi",
+					"Pref_IPSpoof"
+				]
+			}
 		},
+		Current:{},
 		SetDefaults:function(apply,cb){
 			Trace.Notify("Setting new default settings...","prefd");
 
@@ -2296,46 +2487,13 @@ var Trace = {
 			if (!window.chrome.storage) alert("Trace encountered an error: Couldn't access Storage API.");
 
 			if (Trace.DEBUG) console.info("[prefd]-> Trace[0] is loading your settings.");
-			Trace.v.s.get(
-				[
-					"tracenewprefs",
-					"pref_webrtc"
-				],
-				function(s){
-					if (typeof s.tracenewprefs !== "boolean"){
-						Trace.p.SetDefaults(true,cb);
-					} else {
-						if (typeof s.pref_webrtc === "boolean"){
-							Trace.v.s.remove([
-								"data_debugmsg",
-								"pref_domainblock",
-								"pref_domainwhite",
-								"pref_canvasfinger",
-								"pref_audiofinger",
-								"pref_chromeheader",
-								"pref_etagremove",
-								"pref_pingblock",
-								"pref_pluginhide",
-								"pref_uarandom",
-								"pref_webrtc",
-								"pref_adv_ipspoof",
-								"pref_adv_blockcc",
-								"pref_adv_blocktld",
-								"pref_adv_pageinject",
-								"sett_domaincache",
-								"sett_protstats",
-								"sett_brownotif",
-								"sett_reporting",
-								"code_premium",
-								"code_tld_level"
-							],function(){
-								console.log("Removed old settings");
-							});
-						}
-						Trace.p.NewLoad(cb);
-					}
+			Trace.v.s.get(["tracenewprefs"],function(s){
+				if (typeof s.tracenewprefs !== "boolean"){
+					Trace.p.SetDefaults(true,cb);
+				} else {
+					Trace.p.NewLoad(cb);
 				}
-			);
+			});
 		},
 		NewLoad:function(cb){
 			if (!window.chrome.storage) alert("Trace encountered an error: Couldn't access Storage API.");
@@ -2346,6 +2504,7 @@ var Trace = {
 					"Pref_WebController",
 					"Pref_CanvasFingerprint",
 					"Pref_AudioFingerprint",
+					"Pref_HardwareSpoof",
 					"Pref_CookieEater",
 					"Pref_ReferHeader",
 					"Pref_GoogleHeader",
@@ -2354,12 +2513,14 @@ var Trace = {
 					"Pref_NetworkInformation",
 					"Pref_ScreenRes",
 					"Pref_BatteryApi",
+					"Pref_ClientRects",
 					"Pref_PluginHide",
 					"Pref_UserAgent",
 					"Pref_WebRTC",
 					"Pref_IPSpoof",
+					"Main_Interface",
 					"Main_Trace",
-					"Main_Interface"
+					"Main_ExecutionOrder"
 				],
 				function(prefs){
 					// Check that there are settings
@@ -2385,6 +2546,8 @@ var Trace = {
 
 							if (typeof Trace.p.Defaults[k][j] === "object"){
 								for (var i in Trace.p.Defaults[k][j]){
+									if (k === "Main_ExecutionOrder") continue;
+
 									if (typeof prefs[k][j][i] !== typeof Trace.p.Defaults[k][j][i]) {
 										prefs[k][j][i] = Trace.p.Defaults[k][j][i];
 										changes = true;
@@ -2405,10 +2568,17 @@ var Trace = {
 						}
 					}
 
-					// Fix for 1.8.12 - 1.8.15 clients (Remove in 2.0)
-					if (prefs.Main_Interface.Theme.name === "default"){
-						prefs.Main_Interface.Theme.name = "tracedefault";
-						changes = true;
+					var currProts = [], defProts = [];
+					currProts = currProts.concat(prefs.Main_ExecutionOrder.AllPage,prefs.Main_ExecutionOrder.PerPage);
+					defProts = defProts.concat(Trace.p.Defaults.Main_ExecutionOrder.AllPage,Trace.p.Defaults.Main_ExecutionOrder.PerPage);
+					if (currProts.length < defProts.length){
+						for (var p = 0;p<defProts.length;p++){
+							if (currProts.indexOf(defProts[p]) === -1) {
+								console.log("[PrefRepair]-> Fixing Main_ExecutionOrder",defProts[p]);
+								prefs.Main_ExecutionOrder.PerPage.push(defProts[p]);
+								changes = true;
+							}
+						}
 					}
 
 					if (changes === true){
@@ -2420,7 +2590,7 @@ var Trace = {
 						if (prefs.Main_Trace.PremiumCode.length > 5) {
 							prefs.Pref_WebController.installCodes["a00000003"] = true;
 							prefs.Pref_WebController.installCodes["a00000001"] = true;
-							console.log("Fixed premium list");
+							console.log("[prefd]-> Fixed premium list");
 						}
 					}
 
@@ -2443,8 +2613,6 @@ var Trace = {
 			}
 
 			Trace.v.s.set(data,function(){
-				if (Trace.DEBUG) console.info("[stord]-> Toggled setting",setting);
-
 				Trace.p.TakeAction(setting,(setting.includes(".") ? Trace.p.Current[sett[0]][sett[1]]["enabled"]: data[setting]));
 				if (cb) cb();
 			});
@@ -2466,8 +2634,6 @@ var Trace = {
 			}
 
 			Trace.v.s.set(data,function(){
-				if (Trace.DEBUG) console.info("[stord]-> Updated setting",setting,"to",val);
-
 				Trace.p.TakeAction(setting,val);
 			});
 		},
@@ -2494,18 +2660,50 @@ var Trace = {
 				}
 			}
 
+			// Toggle Coookie Eater protection
+			if (setting === "Pref_CookieEater"){
+				if (val.enabled){
+					Trace.h.Cookie.Start();
+				} else {
+					Trace.h.Cookie.Stop();
+				}
+			}
+
 			// Toggle E-Tag protection
 			if (setting === "Pref_ETagTrack"){
 				if (val.enabled){
-					Trace.f.StartEtagProtection();
+					Trace.h.Etag.Start();
 				} else {
-					Trace.f.StopEtagProtection();
+					Trace.h.Etag.Stop();
+				}
+			}
+
+			// Toggle Google Header overall protection
+			if (setting === "Pref_GoogleHeader"){
+				if (val.enabled){
+					Trace.h.Google.Start();
+				} else {
+					Trace.h.Google.Stop();
+				}
+			}
+
+			// Toggle Google Header overall protection
+			if (setting === "Pref_ReferHeader"){
+				if (val.enabled){
+					Trace.h.Referer.Start();
+				} else {
+					Trace.h.Referer.Stop();
 				}
 			}
 
 			// Toggle user-agent randomiser background task
 			if (setting === "Pref_UserAgent"){
 				Trace.f.ToggleUserAgentRandomiser(false);
+				if (val.enabled){
+					Trace.h.UserAgent.Start();
+				} else {
+					Trace.h.UserAgent.Stop();
+				}
 			}
 
 			if (setting === "Pref_PingBlock.pingRequest.enabled" || setting === "Pref_PingBlock"){
@@ -2537,6 +2735,36 @@ var Trace = {
 				Trace.v.Premium = val;
 			}
 		},
+		CreateBackup:function(cb){
+			Trace.v.s.get(null, function(items) {
+				var backupObj = {
+					"compat":1,
+					"maxStoreSize":Trace.v.s.QUOTA_BYTES || 0,
+					"backupTime":(new Date).toString(),
+					"version":chrome.app.getDetails().version || null,
+					"app_id":chrome.app.getDetails().id || null,
+					"computed":{
+						"verified":null
+					},
+					"data":{}
+				};
+				var k = Object.keys(items);
+				for (var i = 0, l = k.length;i<l;i++){
+					//if (k[i].substr(0,4) === "Pref" || k[i].substr(0,4) === "Main" || k[i].substr(0,4) === "stats"){
+					if (k[i].substr(0,4) !== "WebC") {
+						backupObj["data"][k[i]] = items[k[i]];
+					} //}
+				}
+
+				try{
+					backupObj["computed"]["verified"] = MD5(JSON.stringify(backupObj["data"],null,2));
+				} catch(e){
+					_UserCrashReportService(e);
+				}
+
+				cb(backupObj);
+			});
+		},
 		EchoStorage:function(){
 			Trace.v.s.get(null, function(items) {
 				console.log(items);
@@ -2552,6 +2780,9 @@ var Trace = {
 		}
 	}
 };
+
+// MD5 function to verify backups
+var MD5 = function(s){function L(k,d){return(k<<d)|(k>>>(32-d))}function K(G,k){var I,d,F,H,x;F=(G&2147483648);H=(k&2147483648);I=(G&1073741824);d=(k&1073741824);x=(G&1073741823)+(k&1073741823);if(I&d){return(x^2147483648^F^H)}if(I|d){if(x&1073741824){return(x^3221225472^F^H)}else{return(x^1073741824^F^H)}}else{return(x^F^H)}}function r(d,F,k){return(d&F)|((~d)&k)}function q(d,F,k){return(d&k)|(F&(~k))}function p(d,F,k){return(d^F^k)}function n(d,F,k){return(F^(d|(~k)))}function u(G,F,aa,Z,k,H,I){G=K(G,K(K(r(F,aa,Z),k),I));return K(L(G,H),F)}function f(G,F,aa,Z,k,H,I){G=K(G,K(K(q(F,aa,Z),k),I));return K(L(G,H),F)}function D(G,F,aa,Z,k,H,I){G=K(G,K(K(p(F,aa,Z),k),I));return K(L(G,H),F)}function t(G,F,aa,Z,k,H,I){G=K(G,K(K(n(F,aa,Z),k),I));return K(L(G,H),F)}function e(G){var Z;var F=G.length;var x=F+8;var k=(x-(x%64))/64;var I=(k+1)*16;var aa=Array(I-1);var d=0;var H=0;while(H<F){Z=(H-(H%4))/4;d=(H%4)*8;aa[Z]=(aa[Z]| (G.charCodeAt(H)<<d));H++}Z=(H-(H%4))/4;d=(H%4)*8;aa[Z]=aa[Z]|(128<<d);aa[I-2]=F<<3;aa[I-1]=F>>>29;return aa}function B(x){var k="",F="",G,d;for(d=0;d<=3;d++){G=(x>>>(d*8))&255;F="0"+G.toString(16);k=k+F.substr(F.length-2,2)}return k}function J(k){k=k.replace(/rn/g,"n");var d="";for(var F=0;F<k.length;F++){var x=k.charCodeAt(F);if(x<128){d+=String.fromCharCode(x)}else{if((x>127)&&(x<2048)){d+=String.fromCharCode((x>>6)|192);d+=String.fromCharCode((x&63)|128)}else{d+=String.fromCharCode((x>>12)|224);d+=String.fromCharCode(((x>>6)&63)|128);d+=String.fromCharCode((x&63)|128)}}}return d}var C=Array();var P,h,E,v,g,Y,X,W,V;var S=7,Q=12,N=17,M=22;var A=5,z=9,y=14,w=20;var o=4,m=11,l=16,j=23;var U=6,T=10,R=15,O=21;s=J(s);C=e(s);Y=1732584193;X=4023233417;W=2562383102;V=271733878;for(P=0;P<C.length;P+=16){h=Y;E=X;v=W;g=V;Y=u(Y,X,W,V,C[P+0],S,3614090360);V=u(V,Y,X,W,C[P+1],Q,3905402710);W=u(W,V,Y,X,C[P+2],N,606105819);X=u(X,W,V,Y,C[P+3],M,3250441966);Y=u(Y,X,W,V,C[P+4],S,4118548399);V=u(V,Y,X,W,C[P+5],Q,1200080426);W=u(W,V,Y,X,C[P+6],N,2821735955);X=u(X,W,V,Y,C[P+7],M,4249261313);Y=u(Y,X,W,V,C[P+8],S,1770035416);V=u(V,Y,X,W,C[P+9],Q,2336552879);W=u(W,V,Y,X,C[P+10],N,4294925233);X=u(X,W,V,Y,C[P+11],M,2304563134);Y=u(Y,X,W,V,C[P+12],S,1804603682);V=u(V,Y,X,W,C[P+13],Q,4254626195);W=u(W,V,Y,X,C[P+14],N,2792965006);X=u(X,W,V,Y,C[P+15],M,1236535329);Y=f(Y,X,W,V,C[P+1],A,4129170786);V=f(V,Y,X,W,C[P+6],z,3225465664);W=f(W,V,Y,X,C[P+11],y,643717713);X=f(X,W,V,Y,C[P+0],w,3921069994);Y=f(Y,X,W,V,C[P+5],A,3593408605);V=f(V,Y,X,W,C[P+10],z,38016083);W=f(W,V,Y,X,C[P+15],y,3634488961);X=f(X,W,V,Y,C[P+4],w,3889429448);Y=f(Y,X,W,V,C[P+9],A,568446438);V=f(V,Y,X,W,C[P+14],z,3275163606);W=f(W,V,Y,X,C[P+3],y,4107603335);X=f(X,W,V,Y,C[P+8],w,1163531501);Y=f(Y,X,W,V,C[P+13],A,2850285829);V=f(V,Y,X,W,C[P+2],z,4243563512);W=f(W,V,Y,X,C[P+7],y,1735328473);X=f(X,W,V,Y,C[P+12],w,2368359562);Y=D(Y,X,W,V,C[P+5],o,4294588738);V=D(V,Y,X,W,C[P+8],m,2272392833);W=D(W,V,Y,X,C[P+11],l,1839030562);X=D(X,W,V,Y,C[P+14],j,4259657740);Y=D(Y,X,W,V,C[P+1],o,2763975236);V=D(V,Y,X,W,C[P+4],m,1272893353);W=D(W,V,Y,X,C[P+7],l,4139469664);X=D(X,W,V,Y,C[P+10],j,3200236656);Y=D(Y,X,W,V,C[P+13],o,681279174);V=D(V,Y,X,W,C[P+0],m,3936430074);W=D(W,V,Y,X,C[P+3],l,3572445317);X=D(X,W,V,Y,C[P+6],j,76029189);Y=D(Y,X,W,V,C[P+9],o,3654602809);V=D(V,Y,X,W,C[P+12],m,3873151461);W=D(W,V,Y,X,C[P+15],l,530742520);X=D(X,W,V,Y,C[P+2],j,3299628645);Y=t(Y,X,W,V,C[P+0],U,4096336452);V=t(V,Y,X,W,C[P+7],T,1126891415);W=t(W,V,Y,X,C[P+14],R,2878612391);X=t(X,W,V,Y,C[P+5],O,4237533241);Y=t(Y,X,W,V,C[P+12],U,1700485571);V=t(V,Y,X,W,C[P+3],T,2399980690);W=t(W,V,Y,X,C[P+10],R,4293915773);X=t(X,W,V,Y,C[P+1],O,2240044497);Y=t(Y,X,W,V,C[P+8],U,1873313359);V=t(V,Y,X,W,C[P+15],T,4264355552);W=t(W,V,Y,X,C[P+6],R,2734768916);X=t(X,W,V,Y,C[P+13],O,1309151649);Y=t(Y,X,W,V,C[P+4],U,4149444226);V=t(V,Y,X,W,C[P+11],T,3174756917);W=t(W,V,Y,X,C[P+2],R,718787259);X=t(X,W,V,Y,C[P+9],O,3951481745);Y=K(Y,h);X=K(X,E);W=K(W,v);V=K(V,g)}var i=B(Y)+B(X)+B(W)+B(V);return i.toLowerCase()};
 
 // Polyfill: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/includes#Polyfill
 if (!String.prototype.includes) {

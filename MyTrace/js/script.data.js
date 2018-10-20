@@ -1,4 +1,12 @@
-/* Copyright AbsoluteDouble Trace 2018 */
+/*
+ * 	Trace error reporter script
+ * 	Copyright AbsoluteDouble 2018
+ * 	Written by Jake Mcneill
+ * 	https://absolutedouble.co.uk/
+ */
+
+"use strict";
+
 window.onerror = function(o,r,e,c,l) {
 	var stmsg = "";
 	var stck = "";

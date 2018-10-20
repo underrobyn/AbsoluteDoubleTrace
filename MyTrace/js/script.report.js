@@ -1,4 +1,9 @@
-/* Copyright AbsoluteDouble Trace 2018 */
+/*
+ * 	Trace popup script
+ * 	Copyright AbsoluteDouble 2018
+ * 	Written by Jake Mcneill
+ * 	https://absolutedouble.co.uk/
+ */
 
 // A general fix for browser that use window.browser instead of window.chrome
 if (window["chrome"] === null || typeof (window["chrome"]) === "undefined"){
@@ -8,10 +13,31 @@ if (window["chrome"] === null || typeof (window["chrome"]) === "undefined"){
 var TraceTool = {
 
 	DEBUG:false,
-	currentOpenURL:"",
-	currentRootDomain:"",
-	currentHostname:"",
+	whitelistData:{
+		"currentOpenURL":""
+	},
 	currentStatistics:{"code":0,"media":0,"webpage":0,"other":0},
+
+	ProtectionTemplate:{
+		SiteBlocked:false,
+		InitRequests:true,
+		Protections:{
+			Pref_AudioFingerprint:true,
+			Pref_BatteryApi:false,
+			Pref_CanvasFingerprint: true,
+			Pref_CookieEater:false,
+			Pref_ETagTrack:false,
+			Pref_GoogleHeader:false,
+			Pref_IPSpoof:false,
+			Pref_NetworkInformation:false,
+			Pref_PingBlock:false,
+			Pref_PluginHide:false,
+			Pref_ReferHeader:false,
+			Pref_ScreenRes:false,
+			Pref_UserAgent:false,
+			Pref_WebRTC:false
+		}
+	},
 
 	init:function(){
 		TraceTool.assignEvents();
@@ -51,7 +77,7 @@ var TraceTool = {
 					TraceTool.createHomePage();
 				} else if (sel === "report"){
 					TraceTool.createReportPanel();
-				} else if (sel === "whitelist"){
+				} else if (sel === "scope"){
 					TraceTool.createWhitelistPanel();
 				} else if (sel === "settings"){
 					TraceTool.settingsWindow();
@@ -62,6 +88,8 @@ var TraceTool = {
 		});
 	},
 	loadTodaysStats:function(){
+		if (typeof chrome.extension.getBackgroundPage() !== "object") return;
+
 		var stats = chrome.extension.getBackgroundPage().Trace.s.Current;
 		if (typeof stats !== "object" || stats === undefined) return;
 		if (Object.keys(stats).length === 0) return;
@@ -73,21 +101,16 @@ var TraceTool = {
 		chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
 			var currTab = tabs[0];
 			if (currTab) {
-				TraceTool.currentOpenURL = currTab.url;
+				TraceTool.whitelistData.currentOpenURL = currTab.url;
 			}
 
-			if (!TraceTool.currentOpenURL){
-				TraceTool.currentOpenURL = false;
+			if (!TraceTool.whitelistData.currentOpenURL){
+				TraceTool.whitelistData.currentOpenURL = false;
 			}
 
 			// Make sure its a URL we are allowed to interact with
-			if (TraceTool.currentOpenURL.substring(0,4).toLowerCase() !== "http" && TraceTool.currentOpenURL.substring(0,5).toLowerCase() !== "https"){
-				TraceTool.currentOpenURL = false;
-			}
-
-			if (TraceTool.currentOpenURL !== false){
-				TraceTool.currentHostname = TraceTool.extractHostname(TraceTool.currentOpenURL);
-				TraceTool.currentRootDomain = TraceTool.extractRootDomain(TraceTool.currentOpenURL);
+			if (TraceTool.whitelistData.currentOpenURL.substring(0,4).toLowerCase() !== "http"){
+				TraceTool.whitelistData.currentOpenURL = false;
 			}
 		});
 	},
@@ -102,7 +125,7 @@ var TraceTool = {
 		$("#title").text("Trace");
 		if (TraceTool.currentStatistics === undefined){
 			$("#current_section").empty().append(
-				$("<h1/>").text("Trace 1.9")
+				$("<h1/>").text("Trace")
 			);
 		}
 		$("#current_section").empty().append(
@@ -119,12 +142,8 @@ var TraceTool = {
 		$("#title").text("Report Website");
 		$("#current_section").empty().append(
 			$("<span/>",{"class":"msg", "id":"report_msg"}).text(""),
-			$("<div/>",{
-				"id":"page_form"
-			}).append(
-				$("<div/>",{
-					"id":"user_in"
-				}).append(
+			$("<div/>",{"id":"page_form"}).append(
+				$("<div/>",{"id":"user_in"}).append(
 					$("<input/>",{
 						"type":"text",
 						"placeholder":"Page URL",
@@ -144,24 +163,25 @@ var TraceTool = {
 			)
 		);
 
-		if (TraceTool.currentOpenURL === false){
+		if (TraceTool.whitelistData.currentOpenURL === false){
 			$("#page_form").empty().append(
 				$("<h1/>").text("Unsupported URL"),
 				$("<span/>").text("You can only send reports about pages that are http or https")
 			);
 		} else {
-			$("#report_url").val(TraceTool.currentOpenURL);
+			$("#report_url").val(TraceTool.whitelistData.currentOpenURL);
 		}
 	},
 	sendPageReport:function(){
 		var user_text = $("#user_message").val();
+		var rep_msg = $("#report_msg");
 		if (!navigator.onLine){
-			$("#report_msg").html("<h2>No internet connection found</h2>");
+			rep_msg.html("<h2>No internet connection found</h2>");
 			return;
 		}
 
 		var dataStr = "type=report";
-		dataStr += "&url=" + btoa(TraceTool.currentOpenURL);
+		dataStr += "&url=" + btoa(TraceTool.whitelistData.currentOpenURL);
 		dataStr += "&msg=" + btoa(user_text);
 		dataStr += "&ver=" + btoa(chrome.runtime.getManifest().version);
 		dataStr += "&brw=" + btoa(navigator.userAgent);
@@ -181,98 +201,126 @@ var TraceTool = {
 				if (d === "") {
 					$("#user_in").slideUp(500);
 					setTimeout(function(){
-						$("#report_msg").html("<h2>Report Successful</h2>");
+						rep_msg.html("<h2>Report Successful</h2>");
 					},500);
 				} else {
-					$("#report_msg").html("<h2>Report Sending Failed</h2>");
+					rep_msg.html("<h2>Report Sending Failed</h2>");
 				}
 			},
 			error:function(e){
 				$("#send_report").html("Send Report").prop("disabled","false");
 				if (!navigator.onLine){
-					$("#report_msg").html("<h2>No internet connection found</h2>");
+					rep_msg.html("<h2>No internet connection found</h2>");
 				} else {
 					if (e.status === 0){
-						$("#report_msg").html("<h2>Report Sending Failed</h2><h3>Unable to establish a connection to the server</h3>");
+						rep_msg.html("<h2>Report Sending Failed</h2><h3>Unable to establish a connection to the server</h3>");
 						return;
 					}
-					$("#report_msg").html("<h2>Report Sending Failed<br />Error Code: " + e.status + "</h2>");
+					rep_msg.html("<h2>Report Sending Failed<br />Error Code: " + e.status + "</h2>");
 					console.log(e);
 				}
 			}
 		});
 	},
 	createWhitelistPanel:function(){
-		// Check if whitelisting is enabled in settings
-		if (chrome.extension.getBackgroundPage().Trace.p.Current.Pref_WebController.Whitelist.enabled !== true){
-			$("#current_section").empty().append(
-				$("<br />"),
-				$("<span/>",{"class":"msg"}).text("Enable whitelisting in settings to use this feature.")
-			);
-			return;
-		}
+		if (typeof chrome.extension.getBackgroundPage() !== "object") return;
 
 		// Start writing the UI
 		$("#current_section").empty().append($("<div/>",{"id":"page_form"}));
-		$("#title").text("Whitelist Website");
-
-		// Check if hostname is affected by the whitelist
-		if (chrome.extension.getBackgroundPage().Trace.c.whitelist[TraceTool.currentHostname] !== undefined){
-			$("#current_section").empty().append(
-				$("<br/>"),$("<span/>",{"class":"msg"}).text("Hostname already in whitelist"),$("<br/>"),$("<br/>"),
-				$("<div/>",{"id":"user_in"}).append(
-					$("<button/>",{"id":"whitelist_rmhostname"}).text("Remove Hostname").on("click enter",function(e){TraceTool.whitelistRemove("host",e);})
-				)
-			);
-			return;
-		}
-
-		// Check if root domain is affected by the whitelist
-		if (chrome.extension.getBackgroundPage().Trace.c.whitelist[TraceTool.currentRootDomain] !== undefined){
-			$("#current_section").empty().append(
-				$("<br/>"),$("<span/>",{"class":"msg"}).text("Domain already in whitelist"),$("<br/>"),$("<br/>"),
-				$("<div/>",{"id":"user_in"}).append(
-					$("<button/>",{"id":"whitelist_rmdomain"}).text("Remove Domain").on("click enter",function(e){TraceTool.whitelistRemove("root",e);})
-				)
-			);
-			return;
-		}
-
-		$("<div/>",{"id":"user_in"}).append(
-			$("<label/>",{"for":"whitelist_root"}).text("Current Root Domain:"),$("<br/>"),
-			$("<input/>",{
-				"type":"text",
-				"value":"Couldn't get tab information",
-				"id":"whitelist_root",
-				"readonly":"true"
-			}),
-			$("<br/>"),
-			$("<label/>",{"for":"whitelist_host"}).text("Current Hostname"),$("<br/>"),
-			$("<input/>",{
-				"type":"text",
-				"value":"Couldn't get tab information",
-				"id":"whitelist_host",
-				"readonly":"true"
-			}),
-			$("<br/>"),$("<br/>"),
-			$("<span/>",{"class":"smsg"}).text("This will add the site to the whitelist which will stop TracePage and the Web Request Controller from affecting the site and requests it makes."),
-			$("<br/>"), $("<br/>"),
-			$("<button/>",{"id":"whitelist_doroot"}).text("Whitelist Domain").on("click enter",function(e){TraceTool.whitelistItem("root",e);}),
-			$("<button/>",{"id":"whitelist_dohost"}).text("Whitelist Hostname").on("click enter",function(e){TraceTool.whitelistItem("host",e);})
-		).appendTo("#page_form");
+		$("#title").text("Protection Scope");
 
 		if (TraceTool.currentOpenURL === false){
 			$("#page_form").empty().append(
 				$("<h1/>").text("Unsupported URL"),
 				$("<span/>").text("You can only whitelist pages that are http or https")
 			);
-		} else {
-			$("#whitelist_root").val(TraceTool.currentRootDomain);
-			$("#whitelist_host").val(TraceTool.currentHostname);
+			return;
 		}
-	},
-	ValidateDomain:function(clean){
-		return /^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$|^(([a-zA-Z]|[a-zA-Z][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z]|[A-Za-z][A-Za-z0-9\-]*[A-Za-z0-9])$|^\s*((([0-9A-Fa-f]{1,4}:){7}([0-9A-Fa-f]{1,4}|:))|(([0-9A-Fa-f]{1,4}:){6}(:[0-9A-Fa-f]{1,4}|((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){5}(((:[0-9A-Fa-f]{1,4}){1,2})|:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){4}(((:[0-9A-Fa-f]{1,4}){1,3})|((:[0-9A-Fa-f]{1,4})?:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){3}(((:[0-9A-Fa-f]{1,4}){1,4})|((:[0-9A-Fa-f]{1,4}){0,2}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){2}(((:[0-9A-Fa-f]{1,4}){1,5})|((:[0-9A-Fa-f]{1,4}){0,3}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){1}(((:[0-9A-Fa-f]{1,4}){1,6})|((:[0-9A-Fa-f]{1,4}){0,4}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(:(((:[0-9A-Fa-f]{1,4}){1,7})|((:[0-9A-Fa-f]{1,4}){0,5}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:)))(%.+)?\s*$/.test(clean);
+
+		// Check if hostname is affected by the whitelist
+		var wl = chrome.extension.getBackgroundPage().Trace.c.decodedWhitelist;
+		for (var i = 0, l = wl.keys.length;i<l;i++){
+			if (wl.keys[i].test(TraceTool.whitelistData.currentOpenURL)){
+				if (wl.values[i].SiteBlocked === false){
+					TraceTool.whitelistData.entry = wl.keys[i];
+					$("#current_section").empty().append(
+						$("<br/>"),$("<span/>",{"class":"msg"}).text("This URL matches an item already in the Scope List."),$("<br/>"),$("<br/>"),
+						$("<div/>",{"id":"user_in"}).append(
+							$("<button/>",{"id":"whitelist_rmdomain"}).text("Remove Entry").on("click enter",TraceTool.whitelistRemove)
+						)
+					);
+				}
+			}
+		}
+
+		var url = new URL(TraceTool.whitelistData.currentOpenURL);
+		TraceTool.whitelistData["origin"] = url.origin + "/*";
+		TraceTool.whitelistData["path"] = "*" + url + "*";
+		TraceTool.whitelistData["host"] = "*" + TraceTool.extractHostname(TraceTool.whitelistData.currentOpenURL) + "*";
+		TraceTool.whitelistData["root"] = "*" + TraceTool.extractRootDomain(TraceTool.whitelistData.currentOpenURL) + "*";
+
+		var el = $("#page_form");
+
+		if (typeof TraceTool.whitelistData["origin"] === "string"){
+			el.append(
+				$("<label/>",{"for":"url_origin"}).text("Unblock the Origin URL: "),
+				$("<a/>",{"href":window.location.hash}).text("Apply this").on("click enter",function(){TraceTool.whitelistURL("origin");}),
+				$("<input/>",{
+					"type":"text",
+					"name":"url_origin",
+					"id":"url_origin",
+					"placeholder":"Origin URL",
+					"readonly":true,
+					"value":TraceTool.whitelistData["origin"]
+				}),
+				$("<br/>")
+			);
+		}
+		if (typeof TraceTool.whitelistData["path"] === "string" && TraceTool.whitelistData["path"] !== "*/*" && TraceTool.whitelistData["path"].split("/").length > 4){
+			el.append(
+				$("<label/>",{"for":"url_path"}).text("Unblock the URL path: "),
+				$("<a/>",{"href":window.location.hash}).text("Apply this").on("click enter",function(){TraceTool.whitelistURL("path");}),
+				$("<input/>",{
+					"type":"text",
+					"name":"url_path",
+					"id":"url_path",
+					"placeholder":"URL pathname",
+					"readonly":true,
+					"value":TraceTool.whitelistData["path"]
+				}),
+				$("<br/>")
+			);
+		}
+		if (typeof TraceTool.whitelistData["host"] === "string" && TraceTool.whitelistData.host !== TraceTool.whitelistData.root){
+			el.append(
+				$("<label/>",{"for":"url_host"}).text("Unblock the Host URL: "),
+				$("<a/>",{"href":window.location.hash}).text("Apply this").on("click enter",function(){TraceTool.whitelistURL("host");}),
+				$("<input/>",{
+					"type":"text",
+					"name":"url_host",
+					"id":"url_host",
+					"placeholder":"Hostname",
+					"readonly":true,
+					"value":TraceTool.whitelistData["host"]
+				}),
+				$("<br/>")
+			);
+		}
+		if (typeof TraceTool.whitelistData["root"] === "string"){
+			el.append(
+				$("<label/>",{"for":"url_root"}).text("Unblock the Root Domain: "),
+				$("<a/>",{"href":window.location.hash}).text("Apply this").on("click enter",function(){TraceTool.whitelistURL("root");}),
+				$("<input/>",{
+					"type":"text",
+					"name":"url_root",
+					"id":"url_root",
+					"placeholder":"Root Domain Name",
+					"readonly":true,
+					"value":TraceTool.whitelistData["root"]
+				})
+			);
+		}
+
 	},
 	// Thanks to https://stackoverflow.com/a/23945027/
 	extractHostname:function(url){
@@ -308,31 +356,24 @@ var TraceTool = {
 		}
 		return domain;
 	},
-	whitelistItem:function(item,e){
-		$(e).text("Whitelisting...");
+	whitelistURL:function(type){
+		var url = TraceTool.whitelistData[type], result;
 
-		var add = TraceTool.currentHostname;
-		if (item === "root"){
-			add = TraceTool.currentRootDomain;
+		result = confirm("Are you sure you wish to allow access to:\n"+url);
+		if (result !== true){
+			return;
 		}
 
-		chrome.extension.getBackgroundPage().Trace.c.AddItem(add,function(){
+		chrome.extension.getBackgroundPage().Trace.c.AddItem(url,TraceTool.ProtectionTemplate,function(){
 			$("#current_section .msg").html("Whitelisted domain");
-			$("#user_in").empty().html("<span class='msg'>The domain: <br />" + add + "<br /><br /> Has been added to the whitelist.</span>");
+			$("#user_in").empty().html("<span class='msg'>The domain: <br />" + add + "<br /><br /> Has been added to the list.</span>");
 			TraceTool.Auth.SafePost({action:"ReloadWhitelist"});
 		});
 	},
-	whitelistRemove:function(item,e){
-		$(e).text("Removing...");
-
-		var rem = TraceTool.currentHostname;
-		if (item === "root"){
-			rem = TraceTool.currentRootDomain;
-		}
-
-		chrome.extension.getBackgroundPage().Trace.c.RemoveItem(rem,function(){
-			$("#current_section .msg").html("Removed site from whitelist");
-			$("#user_in").empty().html("<span class='msg'><br />" + rem + "<br /> Has been removed from the whitelist.<br /><br />Reload page to apply action</span>");
+	whitelistRemove:function(){
+		chrome.extension.getBackgroundPage().Trace.c.RemoveItem(TraceTool.whitelistData.entry,function(){
+			$("#current_section .msg").html("Action Completed!");
+			$("#user_in").empty().html("<span class='msg'><br />" + TraceTool.whitelistData.entry + "<br /> Has been removed from the list.<br /><br />Reload page to apply action</span>");
 			TraceTool.Auth.SafePost({action:"ReloadWhitelist"});
 		});
 	}

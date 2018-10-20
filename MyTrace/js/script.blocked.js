@@ -1,4 +1,9 @@
-/* Copyright AbsoluteDouble Trace 2018 */
+/*
+ * 	Trace blocked page script
+ * 	Copyright AbsoluteDouble 2018
+ * 	Written by Jake Mcneill
+ * 	https://absolutedouble.co.uk/
+ */
 
 // Polyfill: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/includes#Polyfill
 if (!String.prototype.includes) {
@@ -15,6 +20,8 @@ if (!String.prototype.includes) {
 	};
 }
 
+window.URL = window.URL || window.webkitURL;
+
 // A general fix for browser that use window.browser instead of window.chrome
 if (window["chrome"] === null || typeof (window["chrome"]) === "undefined"){
 	window.chrome = window.browser;
@@ -23,7 +30,27 @@ if (window["chrome"] === null || typeof (window["chrome"]) === "undefined"){
 var TraceBlock = {
 	blockedURL:"",
 	blockReason:0,
-	whitelistData:{"host":"","root":""},
+	whitelistData:{},
+	ProtectionTemplate:{
+		SiteBlocked:false,
+		InitRequests:true,
+		Protections:{
+			Pref_AudioFingerprint:true,
+			Pref_BatteryApi:false,
+			Pref_CanvasFingerprint: true,
+			Pref_CookieEater:false,
+			Pref_ETagTrack:false,
+			Pref_GoogleHeader:false,
+			Pref_IPSpoof:false,
+			Pref_NetworkInformation:false,
+			Pref_PingBlock:false,
+			Pref_PluginHide:false,
+			Pref_ReferHeader:false,
+			Pref_ScreenRes:false,
+			Pref_UserAgent:false,
+			Pref_WebRTC:false
+		}
+	},
 	init:function(){
 		TraceBlock.Auth.Init();
 		TraceBlock.assignButtonEvents();
@@ -116,37 +143,87 @@ var TraceBlock = {
 		document.getElementById("reason").innerHTML = types[TraceBlock.blockReason];
 	},
 	setWhitelistOptions:function(){
-		TraceBlock.whitelistData.host = TraceBlock.extractHostname(TraceBlock.blockedURL);
-		TraceBlock.whitelistData.root = TraceBlock.extractRootDomain(TraceBlock.blockedURL);
+		if (TraceBlock.blockedURL === null) return;
 
-		// If the URL blocked was not a subdomain of root domain, hide host option
-		if (TraceBlock.whitelistData.host === TraceBlock.whitelistData.root) {
-			document.getElementById("whitelist_host").style.display = "none";
+		var url = new URL(TraceBlock.blockedURL);
+		TraceBlock.whitelistData["origin"] = url.origin + "/*";
+		TraceBlock.whitelistData["path"] = "*" + url + "*";
+		TraceBlock.whitelistData["host"] = "*" + TraceBlock.extractHostname(TraceBlock.blockedURL) + "*";
+		TraceBlock.whitelistData["root"] = "*" + TraceBlock.extractRootDomain(TraceBlock.blockedURL) + "*";
+
+		var el = $("#whitelist_opts");
+
+		if (typeof TraceBlock.whitelistData["origin"] === "string"){
+			el.append(
+				$("<label/>",{"for":"url_origin"}).text("Unblock the Origin URL: "),
+				$("<a/>",{"href":window.location.hash}).text("Apply this").on("click enter",function(){TraceBlock.whitelistURL("origin");}),
+				$("<input/>",{
+					"type":"text",
+					"name":"url_origin",
+					"id":"url_origin",
+					"placeholder":"Origin URL",
+					"readonly":true,
+					"value":TraceBlock.whitelistData["origin"]
+				}),
+				$("<br/>")
+			);
 		}
-		document.getElementById("whitelist_host").addEventListener("click",function(){
-			TraceBlock.whitelistURL("host");
-		},false);
-		document.getElementById("whitelist_root").addEventListener("click",function(){
-			TraceBlock.whitelistURL("root");
-		},false);
+		if (typeof TraceBlock.whitelistData["path"] === "string" && TraceBlock.whitelistData["path"] !== "*/*" && TraceBlock.whitelistData["path"].split("/").length > 4){
+			el.append(
+				$("<label/>",{"for":"url_path"}).text("Unblock the URL path: "),
+				$("<a/>",{"href":window.location.hash}).text("Apply this").on("click enter",function(){TraceBlock.whitelistURL("path");}),
+				$("<input/>",{
+					"type":"text",
+					"name":"url_path",
+					"id":"url_path",
+					"placeholder":"URL pathname",
+					"readonly":true,
+					"value":TraceBlock.whitelistData["path"]
+				}),
+				$("<br/>")
+			);
+		}
+		if (typeof TraceBlock.whitelistData["host"] === "string" && TraceBlock.whitelistData.host !== TraceBlock.whitelistData.root){
+			el.append(
+				$("<label/>",{"for":"url_host"}).text("Unblock the Host URL: "),
+				$("<a/>",{"href":window.location.hash}).text("Apply this").on("click enter",function(){TraceBlock.whitelistURL("host");}),
+				$("<input/>",{
+					"type":"text",
+					"name":"url_host",
+					"id":"url_host",
+					"placeholder":"Hostname",
+					"readonly":true,
+					"value":TraceBlock.whitelistData["host"]
+				}),
+				$("<br/>")
+			);
+		}
+		if (typeof TraceBlock.whitelistData["root"] === "string"){
+			el.append(
+				$("<label/>",{"for":"url_root"}).text("Unblock the Root Domain: "),
+				$("<a/>",{"href":window.location.hash}).text("Apply this").on("click enter",function(){TraceBlock.whitelistURL("root");}),
+				$("<input/>",{
+					"type":"text",
+					"name":"url_root",
+					"id":"url_root",
+					"placeholder":"Root Domain Name",
+					"readonly":true,
+					"value":TraceBlock.whitelistData["root"]
+				})
+			);
+		}
 	},
 	whitelistURL:function(type){
 		var url = TraceBlock.whitelistData[type], result;
 
-		if (type === "host"){
-			result = confirm("Are you sure you wish to whitelist the hostname\n"+url+"\nThis will only unblock this hostname, not the full domain.")
-		} else {
-			result = confirm("Are you sure you wish to whitelist the domain\n"+url+"\nThis will unblock the domain, and all its subdomains.")
-		}
-
+		result = confirm("Are you sure you wish to allow access to:\n"+url);
 		if (result !== true){
 			return;
 		}
 
-		chrome.extension.getBackgroundPage().Trace.c.AddItem(url,function(){
-			var lnk = "<a href='"+ TraceBlock.blockedURL +"'>Go to site</a>";
-			document.getElementById("whitelist_opts").innerHTML = "<h2>Site whitelisted</h2><br />" + lnk;
+		chrome.extension.getBackgroundPage().Trace.c.AddItem(url,TraceBlock.ProtectionTemplate,function(){
 			TraceBlock.Auth.SafePost({action:"ReloadWhitelist"});
+			window.location.href = TraceBlock.blockedURL;
 		});
 	}
 };

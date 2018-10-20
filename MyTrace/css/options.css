@@ -18,8 +18,13 @@ html, body {
 	font-weight:100;
 }
 .hidden {display: none;}
-.blurred {filter:blur(10px);}
-#ux{transition:filter .3s ease-in-out;}
+.blurred {
+	filter:blur(11px);
+}
+#ux{
+	min-height:100vh !important;
+	transition:filter .3s ease-in-out;
+}
 #e_msg{
 	display: none;
 	text-align: center;
@@ -52,6 +57,7 @@ html, body {
 	padding-top:85px;
 	width:100%;
 	height:100%;
+	max-height:100vh;
 	overflow-x:hidden;
 	cursor:pointer;
 }
@@ -142,8 +148,9 @@ h1 {
 	font-size:1.2em !important;
 }
 #blc_lists{
+	width:100%;
 	position: fixed;
-	max-height:70%;
+	max-height:65%;
 	max-width:80%;
 	overflow-y:scroll;
 }
@@ -162,6 +169,12 @@ h4{
 	padding:0;
 	margin:0 0 2% 0;
 	font-size:1.35em;
+}
+h5{
+	font-weight:700;
+	padding:0;
+	margin:1.5% 0 1% 0;
+	font-size:1.5em;
 }
 a{
 	color:#fff;
@@ -224,11 +237,15 @@ a.dark{
 	margin-bottom:1%;
 }
 .sect_adv_header{
-	font-size:1.4em;
+	font-size:1.45em;
 	height:5vh;
 	line-height:5vh;
 	width:100%;
+	transition: background-color .4s ease-in-out;
 	background-color:rgba(0,0,0,0.8);
+}
+.sect_adv_header:hover{
+	background-color:rgba(0,0,0,0.85);
 }
 .sect_adv_cont{
 	width:98%;
@@ -251,20 +268,46 @@ a.dark{
 .regular{
 	font-size:1em !important;
 }
-.tld_blockdom {
+.xregular{
+	font-size:1.3em !important;
+}
+.large{
+	font-size:1.5em !important;
+}
+.xlarge {
+	font-size:1.8em !important;
+}
+.setting_disabled{
+	color:white;
+	background-color:rgba(255,0,0,0.7);
+	padding:2px 10px 3px 10px;
+	width:auto;
+	display:inline-block;
+}
+.setting_traffic {
 	display:block;
 	float:left;
-	padding:.5em 1em;
-	background-color:#ffffff;
+	padding:.6em 1em;
+	margin:.25%;
+	background-color:#fff;
+	transition:.2s ease-in-out background-color,.2s ease-in-out color;
+	font-size:1.2em;
+	font-weight:500;
+	cursor:pointer;
+	-webkit-user-select:none;
+	-moz-user-select:none;
+	-ms-user-select:none;
+	user-select: none;
 }
-.tld_colsafe{background-color:#22ff47;}
-.tld_colreg{background-color:#f9ff3a;}
-.tld_colrisk{background-color:#ffba37;}
-.tld_colextr{background-color:#e4092a;}
-#atld_blockedlist{
-	font-size:1.3em;
+.setting_traffic:hover {
+	background-color: #313131;
+}
+.tld_enabled{color:#22ea46;}.tld_enabled:hover{color:#22ff46;}
+.tld_disabled{color:#dd092a;}.tld_disabled:hover{color: #ff092c;}
+#adv_tldlist{
+	display:block;
+	float:left;
 	width:100%;
-	min-height:25vh;
 	height:auto;
 }
 #sr_currentresolutions{
@@ -288,6 +331,16 @@ a.dark{
 }
 .sr_cresolution:hover {
 	background-color:rgba(255,255,255,0.5);
+}
+#newuser_protections ul {
+	list-style-type: square;
+	text-align:left;
+	margin:0;
+}
+.prot_config {
+	width:33.33%;
+	float:left;
+	text-align:center;
 }
 .text_box {
 	display:inline-block;
@@ -328,7 +381,7 @@ table th{
 }
 table tr {
 	border-bottom:.05em #000 solid;
-	height:2.2em;
+	height:2.1em;
 	transition:all .2s ease-in-out;
 }
 table tr:hover, table tr:focus {
@@ -378,6 +431,13 @@ button:hover,button:focus{
 	-ms-user-select:none;
 	user-select: none;
 }
+.scheckbox_cont{
+	padding-left:29px;
+	margin-bottom:12px;
+	cursor:pointer;
+	line-height:1.1em;
+	font-size:1.2em;
+}
 .checkbox_cont input[type="checkbox"] {
 	position:absolute;
 	opacity:0;
@@ -390,6 +450,11 @@ button:hover,button:focus{
 	height:25px;
 	width:25px;
 	background-color:#303030;
+}
+.sccheck {
+	top:3px;
+	height:23px;
+	width:23px;
 }
 .checkbox_cont:hover input ~ .ccheck {
 	background-color:#1a1a1a;
@@ -454,6 +519,38 @@ button:hover,button:focus{
 table tr.hiddensettinginfo{
 	background-color:rgba(0,0,0,0.1);
 }
+.settings_title_execorder{
+	box-sizing:border-box;
+	width:50%;
+	padding:.5% 0;
+	float:left;
+	border-bottom:.05em #000 solid;
+}
+.settings_cont_execorder{
+	box-sizing:border-box;
+	width:50%;
+	padding:0 2%;
+	margin:2% 0;
+	float:left;
+}
+.settings_execorder{
+	display:block;
+	float:left;
+	background-color:rgba(255,255,255,0.1);
+	padding:2px 8px;
+	margin:.5%;
+	cursor:pointer;
+	transition:background .3s ease-in-out;
+}
+.settings_execorder:hover{
+	background-color:rgba(0,0,0,0.5);
+}
+.rborder{
+	border-right:.05em #000 solid;
+}
+#trace_order:hover {
+	background-color:rgba(0,0,0,0.05) !important;
+}
 #graph_controls{
 	padding:0;
 	background-color:rgba(255,255,255,0.3);
@@ -510,7 +607,38 @@ table tr.hiddensettinginfo{
 .larger_button:hover,.larger_button:focus{
 	background-color:rgba(0,0,0,0.4) !important;
 }
+.nopad{
+	padding:0;
+	margin:0;
+}
+.mtop{
+	padding-top:20px;
+	margin-bottom:1px;
+}
+.mbot{
+	margin-bottom:10px;
+}
+.sinksect{
+	display:block;
+	clear:both;
+}
+.floatsect{
+	display:block;
+	float:left;
+}
 
+input[type="number"] {
+	width:3.2em;
+	height:2em;
+	line-height:2em;
+	float:left;
+	display:block;
+	padding:0;
+	margin:0;
+	padding-left:20px;
+	border:1px solid #eee;
+	font-size:2em;
+}
 input[type="text"]{
 	font-size:1.2em;
 	height:2.2em;
@@ -529,6 +657,9 @@ input[type="text"]{
 	margin:.75em 0;
 	text-align:center;
 }
+.align_c{
+	text-align:center;
+}
 .float_r{
 	display:block;
 	float:right;
@@ -544,6 +675,14 @@ input[type="text"]{
 	margin:0 0 2% 0;
 	float:left;
 }
+#wl_ctrl input[type='text']{
+	width:96%;
+	padding:.5% 2%;
+	margin:0 0 2% 0;
+	height:1.9em;
+	line-height:1.9em;
+	font-size:.85em;
+}
 #wl_biglist {
 	width:80%;
 	min-height:60vh;
@@ -556,15 +695,20 @@ input[type="text"]{
 }
 .wl_blist_domain{
 	width:100%;
+	float:left;
 	background-color:rgba(255,255,255,0.1);
-	transition:background-color .3s ease-in-out;
+	transition:background-color .2s ease-in-out;
 	text-align:center;
-	height:1.5em;
-	line-height:1.5em;
+	font-size:1.1em;
+	height:1.7em;
+	line-height:1.7em;
 	cursor:pointer;
 	box-shadow:#1a1a1a 1px 1px 0px;
 }
 .wl_blist_domain:hover{
+	background-color:rgba(0,0,0,0.2);
+}
+.wl_blist_domain:focus{
 	background-color:rgba(0,0,0,0.6);
 }
 .wl_selected{
@@ -572,6 +716,16 @@ input[type="text"]{
 }
 .wl_selected:hover{
 	background-color:rgba(0,0,0,0.8);
+}
+#s_add_protections{
+	width:100%;
+	max-height:50%;
+	overflow-y:scroll;
+}
+.s_protside {
+	width:50%;
+	float:left;
+	max-height:40vh;
 }
 .premhelp_q{
 	font-size:1.3em;
@@ -584,6 +738,12 @@ input[type="text"]{
 .textscrollable{
 	height:50vh;
 	overflow-y:scroll;
+}
+#restore_info {
+	font-size:1.15em;
+}
+#restore_info strong {
+	font-size:1.2em;
 }
 
 .faded{opacity:.6;transition:opacity .4s ease-in-out;}
@@ -640,6 +800,7 @@ input[type="text"]{
 	}
 	#blc_lists{
 		max-width:90%;
+		max-height:60%;
 	}
 	table{
 		font-size:1.1em;

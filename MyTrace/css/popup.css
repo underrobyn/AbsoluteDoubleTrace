@@ -82,9 +82,14 @@ ul{
 	list-style-type:none;
 	font-size:1.8em;
 }
+a{
+	color:#f9f9f9;
+	font-size:1.4em;
+}
 #page_form{
 	width:95%;
 	padding:3.5% 3%;
+	font-size:1.3em;
 }
 #sections{
 	width:25%;
