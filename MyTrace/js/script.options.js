@@ -18,12 +18,12 @@ if (typeof window.JSON !== "object"){
 }
 
 // A general fix for browser that use window.browser instead of window.chrome
-if (window["chrome"] === null || typeof (window["chrome"]) === "undefined"){
-	window.chrome = window.browser;
-}
-if (typeof chrome.extension.getBackgroundPage !== "function"){
+if (!window.chrome.hasOwnProperty("extension")) window.chrome = (function (){ return window.msBrowser || window.browser || window.chrome; })();
+
+if (!chrome.hasOwnProperty("extension") || typeof chrome.extension.getBackgroundPage !== "function"){
 	showErr("Extension failed to connect to background page. Please try reloading the page.");
 }
+
 
 window.URL = window.URL || window.webkitURL;
 
@@ -324,10 +324,12 @@ var TraceOpt = {
 		$("#settings_straceorder, #settings_straceadvanced, #settings_sbrowserfeature, #settings_stracesetting").hide();
 
 		// Get statistics loaded and ready
-		TraceOpt.Stats.StructureGraph();
-		TraceOpt.Stats.GetStatsData(function(d){
-			TraceOpt.Stats.MakeData(d,TraceOpt.Stats.MakeGraph);
-		});
+		if (!(/Edge/.test(navigator.userAgent))) {
+			TraceOpt.Stats.StructureGraph();
+			TraceOpt.Stats.GetStatsData(function (d) {
+				TraceOpt.Stats.MakeData(d, TraceOpt.Stats.MakeGraph);
+			});
+		}
 
 		// Assign click events to stats page
 		TraceOpt.Stats.AssignGraphOptions();
@@ -353,9 +355,7 @@ var TraceOpt = {
 	BrowserCompatibility:function(){
 		if (/Edge/.test(navigator.userAgent)){
 			$("#home .sect_cont").append(
-				$("<div/>",{
-					"class":"sect_adv"
-				}).append(
+				$("<div/>",{"class":"sect_adv"}).append(
 					$("<div/>",{"class":"sect_adv_header"}).html("&nbsp;Developer Message"),
 					$("<div/>",{"class":"sect_adv_cont"}).text("This is a beta version of Trace for Edge, feel free to report bugs to absolutedouble@gmail.com")
 				)
@@ -1055,7 +1055,6 @@ var TraceOpt = {
 			var redFlags = 0;
 			if (TraceOpt.Backup.Data["backupTime"] === undefined) redFlags++;
 			if (TraceOpt.Backup.Data["version"] === undefined) redFlags++;
-			if (TraceOpt.Backup.Data["app_id"] === undefined) redFlags++;
 			if (TraceOpt.Backup.Data["data"] === undefined) redFlags++;
 			if (keys.length > 10) redFlags++;
 
@@ -1067,12 +1066,9 @@ var TraceOpt = {
 			}
 
 			var backupIdentifier = "";
-			if (TraceOpt.Backup.Data.app_id !== chrome.app.getDetails().id){
-				backupIdentifier = "This backup was created by an alternative version of Trace and may not be compatible.";
-			}
 
 			var versionInfo = $("<span/>").text("This backup is the same version as your current version of Trace.");
-			if (TraceOpt.Backup.Data.version !== chrome.app.getDetails().version){
+			if (TraceOpt.Backup.Data.version !== chrome.runtime.getManifest().version){
 				versionInfo = $(
 					$("<p/>").append(
 						$("<strong/>").text("Trace Backup Version: "),
@@ -1080,7 +1076,7 @@ var TraceOpt = {
 					),
 					$("<p/>").append(
 						$("<strong/>").text("Trace Current Version: "),
-						$("<span/>").text(chrome.app.getDetails().version || "Unknown."),
+						$("<span/>").text(chrome.runtime.getManifest().version || "Unknown."),
 					)
 				);
 			}
@@ -1594,7 +1590,7 @@ var TraceOpt = {
 			});
 		},
 		GetStatsData:function(cb){
-			if (typeof chrome.extension.getBackgroundPage !== "function"){
+			if (!chrome.hasOwnProperty("extension") || typeof chrome.extension.getBackgroundPage !== "function"){
 				return;
 			}
 			chrome.extension.getBackgroundPage().Trace.s.Data(function(d){

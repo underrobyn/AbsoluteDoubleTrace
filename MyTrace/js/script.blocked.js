@@ -23,9 +23,7 @@ if (!String.prototype.includes) {
 window.URL = window.URL || window.webkitURL;
 
 // A general fix for browser that use window.browser instead of window.chrome
-if (window["chrome"] === null || typeof (window["chrome"]) === "undefined"){
-	window.chrome = window.browser;
-}
+if (!window.chrome.hasOwnProperty("extension")) window.chrome = (function (){ return window.msBrowser || window.browser || window.chrome; })();
 
 var TraceBlock = {
 	blockedURL:"",

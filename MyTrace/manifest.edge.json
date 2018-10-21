@@ -5,16 +5,16 @@
 	"short_name":"Trace",
   	"author":"AbsoluteDouble",
 	"description":"Browse online without leaving a Trace, because who wants to be tracked?",
-	"minimum_chrome_version":"32",
+	"minimum_edge_version":"42.17134.1.0",
 	"version":"2.0.1",
   	"homepage_url":"https://absolutedouble.co.uk/trace/",
   	"options_page":"html/options.html",
-  	"incognito":"spanning",
 	"options_ui": {
 	  	"page":"html/options.html",
 	  	"chrome_style":false,
 	  	"open_in_tab":true
 	},
+  	"incognito":"spanning",
 
 	"browser_action": {
 		"default_icon": {
@@ -40,13 +40,6 @@
 				"mac":"Command+Shift+F"
 		  	},
 		  	"description": "Force the blocklist to update"
-		},
-		"OpenTraceSettings": {
-		  	"suggested_key": {
-				"default":"Ctrl+Shift+X",
-				"mac":"Command+Shift+X"
-		  	},
-		  	"description": "Open the Trace dashboard"
 		}
   	},
 	"icons": {
@@ -72,8 +65,7 @@
 			"js/lib.jquery.js",
 		  	"js/script.background.js",
 		  	"js/script.data.js"
-		],
-	  	"persistent":true
+		]
 	},
   	"content_scripts":[
 	  	{

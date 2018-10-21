@@ -6,9 +6,7 @@
  */
 
 // A general fix for browser that use window.browser instead of window.chrome
-if (window["chrome"] === null || typeof (window["chrome"]) === "undefined"){
-	window.chrome = window.browser;
-}
+if (!window.chrome.hasOwnProperty("extension")) window.chrome = (function (){ return window.msBrowser || window.browser || window.chrome; })();
 
 window.URL = window.URL || window.webkitURL;
 
@@ -143,7 +141,7 @@ var Trace = {
 		// Blocklist URLs
 		blocklistURL:"https://absolutedouble.co.uk/trace/app/weblist.php",
 		blocklistFallback:"https://raw.githubusercontent.com/jake-cryptic/hmfp_lists/master/fallback.json",
-		blocklistOffline:chrome.extension.getURL("data/blocklist.json"),
+		blocklistOffline:(chrome.hasOwnProperty("extension") ? chrome.extension.getURL("data/blocklist.json") : browser.extension.getURL("data/blocklist.json")),
 		blocklistBase:"https://absolutedouble.co.uk/trace/app/weblist.php?p=",
 
 		// Notification constant
@@ -534,26 +532,41 @@ var Trace = {
 			}
 		},
 		StartAlarmEvent:function(){
-			chrome.alarms.onAlarm.addListener(function(a){
-				if (a.name === "UserAgentRefresh" && Trace.p.Current.Pref_UserAgent.enabled === true){
-					Trace.f.ChooseUserAgent();
-				}
-				if (a.name === "StatsDatabaseRefresh" && Trace.p.Current.Main_Trace.ProtectionStats.enabled === true){
-					Trace.s.SaveStats();
-				}
-				if (a.name === "UserFakeIPRefresh" && Trace.p.Current.Pref_IPSpoof.enabled === true){
-					if (Trace.p.Current.Pref_IPSpoof.traceIP.enabled === true){
-						Trace.i.StopIPRefresh();
-						return;
+			if (!chrome.alarms) {
+				console.error("Alarms aren't supported in this browser.");
+				return false;
+			}
+			try{
+				chrome.alarms.onAlarm.addListener(function(a){
+					if (a.name === "UserAgentRefresh" && Trace.p.Current.Pref_UserAgent.enabled === true){
+						Trace.f.ChooseUserAgent();
 					}
-					Trace.i.RefreshFakeUserIP();
-				} else if (a.name === "UserFakeIPRefresh" && Trace.p.Current.Pref_IPSpoof.enabled !== true){
-					Trace.i.StopIPRefresh();
+					if (a.name === "StatsDatabaseRefresh" && Trace.p.Current.Main_Trace.ProtectionStats.enabled === true){
+						Trace.s.SaveStats();
+					}
+					if (a.name === "UserFakeIPRefresh" && Trace.p.Current.Pref_IPSpoof.enabled === true){
+						if (Trace.p.Current.Pref_IPSpoof.traceIP.enabled === true){
+							Trace.i.StopIPRefresh();
+							return;
+						}
+						Trace.i.RefreshFakeUserIP();
+					} else if (a.name === "UserFakeIPRefresh" && Trace.p.Current.Pref_IPSpoof.enabled !== true){
+						Trace.i.StopIPRefresh();
+					}
+				});
+			} catch(e){
+				if (e.message){
+					console.log(e.message);
+				} else {
+					console.warn("Error starting alarm events, mabye browser doesn't support them?");
 				}
-			});
+			}
 		},
 		ToggleWebRtc:function(){
-			if (!window.chrome.privacy) alert("Trace encountered an error: Couldn't access Privacy API.");
+			if (!window.chrome.privacy) {
+				Trace.Notify("WebRTC Setting isn't supported in this browser or Trace doesn't have permission to access it.");
+				return false;
+			}
 			if (!chrome.privacy.network.webRTCIPHandlingPolicy) {
 				Trace.Notify("WebRTC Setting requires Chrome 48 or newer.");
 				return false;
@@ -879,7 +892,7 @@ var Trace = {
 							["blocking"]
 						);
 					} catch(e){
-						if (e.message.toLowerCase().includes("invalid value for argument 1")){
+						if (e.message && e.message.toLowerCase().includes("invalid value for argument 1")){
 							Trace.Notify("Ping blocks are not supported by your browser.","pingd");
 						}
 					}
@@ -1113,7 +1126,7 @@ var Trace = {
 					"urls":Trace.d.params.urlPatterns
 				},["blocking"]);
 			} catch(e){
-				if (e.message.toLowerCase().includes("invalid value for argument 1.")){
+				if (e.message && e.message.toLowerCase().includes("invalid value for argument 1.")){
 					Trace.d.params.dataTypes.splice(8,4);
 					Trace.d.params.dataTypes.splice(7,1);
 					chrome.webRequest.onBeforeRequest.addListener(Trace.d.RequestChecker,{
@@ -1774,6 +1787,7 @@ var Trace = {
 			}
 		},
 		StopIPRefresh:function(){
+			if (!chrome.alarms) console.error("Alarms aren't supported in this browser.");
 			chrome.alarms.getAll(function(list){
 				for (var alarm in list){
 					if (alarm.name === "UserFakeIPRefresh"){
@@ -2741,8 +2755,7 @@ var Trace = {
 					"compat":1,
 					"maxStoreSize":Trace.v.s.QUOTA_BYTES || 0,
 					"backupTime":(new Date).toString(),
-					"version":chrome.app.getDetails().version || null,
-					"app_id":chrome.app.getDetails().id || null,
+					"version":chrome.runtime.getManifest().version || null,
 					"computed":{
 						"verified":null
 					},
