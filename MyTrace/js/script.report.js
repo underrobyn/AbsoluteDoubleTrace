@@ -44,7 +44,7 @@ var TraceTool = {
 		TraceTool.createHomePage();
 		TraceTool.Auth.Init();
 
-		if (/Firefox/.test(navigator.userAgent)) {
+		if (/Firefox/.test(navigator.userAgent) || /Edge/.test(navigator.userAgent)) {
 			$("body").css("font-size", "0.8em");
 		}
 	},
@@ -106,8 +106,8 @@ var TraceTool = {
 				TraceTool.whitelistData.currentOpenURL = false;
 			}
 
-			// Make sure its a URL we are allowed to interact with
-			if (TraceTool.whitelistData.currentOpenURL.substring(0,4).toLowerCase() !== "http"){
+			// Make sure its a URL we are allowed to interact with and that the URL object can decode
+			if (TraceTool.whitelistData.currentOpenURL.substring(0,4).toLowerCase() !== "http" || !TraceTool.whitelistData.currentOpenURL.includes("://")){
 				TraceTool.whitelistData.currentOpenURL = false;
 			}
 		});

@@ -6,7 +6,7 @@
   	"author":"AbsoluteDouble",
 	"description":"Browse online without leaving a Trace, because who wants to be tracked?",
 	"minimum_edge_version":"42.17134.1.0",
-	"version":"2.0.1",
+	"version":"2.0.2",
   	"homepage_url":"https://absolutedouble.co.uk/trace/",
   	"options_page":"html/options.html",
 	"options_ui": {

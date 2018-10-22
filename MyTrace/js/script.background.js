@@ -51,16 +51,34 @@ var Trace = {
 	// Chrome runtime functions
 	a:{
 		AssignRuntime:function(){
+			var uninstallUrl = "https://absolutedouble.co.uk/trace/extension-uninstall?e=";
+
 			if (/Chrome/.test(navigator.userAgent) && !(/Edge/.test(navigator.userAgent))) {
 				chrome.runtime.onSuspend.addListener(Trace.a.SuspendSave);
-				try {
-					chrome.runtime.setUninstallURL("https://absolutedouble.co.uk/trace/uninstall.html",function(){
-						if (Trace.DEBUG) console.log("[mangd]-> Set uninstall URL");
-					});
-				} catch(e){
-					chrome.runtime.setUninstallURL("https://absolutedouble.co.uk/trace/uninstall.html");
-					if (Trace.DEBUG) console.log("[mangd]-> Set uninstall URL using method 2");
-				}
+
+				// Set uninstall URL
+				var storage_type = (!window.chrome.storage.sync ? window.chrome.storage.local : window.chrome.storage.sync);
+				storage_type.get('userid',function(items) {
+
+					if (typeof items === "undefined" || !items.hasOwnProperty("userid")) {
+						items = {'userid': "Unknown"};
+					}
+
+					// We pass the users error reporting ID so that their data can be purged from the error reporting database
+					var usr = items.userid;
+					uninstallUrl = uninstallUrl + usr;
+
+					try {
+						chrome.runtime.setUninstallURL(uninstallUrl,function(){
+							if (Trace.DEBUG) console.log("[mangd]-> Set uninstall URL");
+						});
+					} catch(e){
+						chrome.runtime.setUninstallURL(uninstallUrl);
+						if (Trace.DEBUG) console.log("[mangd]-> Set uninstall URL using method 2");
+					}
+				});
+			} else {
+				chrome.runtime.setUninstallURL(uninstallUrl);
 			}
 		},
 		NewInstall:function(details){

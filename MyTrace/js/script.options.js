@@ -78,6 +78,19 @@ var TraceOpt = {
 			}
 		});
 	},
+	Store:function(key,value){
+		try {
+			localStorage.setItem(key,value);
+		} catch(e) {
+			if (e.name === 'NS_ERROR_DOM_QUOTA_REACHED'){
+				alert("Your localStorage is full, please increase the size.");
+				console.error(e);
+			} else {
+				_UserCrashReportService(e);
+			}
+		}
+
+	},
 
 	Auth:{
 		Channel:null,
@@ -139,10 +152,10 @@ var TraceOpt = {
 			$("#overlay_close").on("click enter",freshInstall);
 
 			if (TraceOpt.storage === true){
-				localStorage["showSettingsTutorial"] = true;
-				localStorage["showRequestTutorial"] = true;
-				localStorage["showScopeTutorial"] = true;
-				localStorage["showVer2Message"] = true;
+				TraceOpt.Store("showSettingsTutorial",true);
+				TraceOpt.Store("showRequestTutorial",true);
+				TraceOpt.Store("showScopeTutorial",true);
+				TraceOpt.Store("showVer2Message",true);
 			}
 
 			$(window).click(function(e){
@@ -207,7 +220,7 @@ var TraceOpt = {
 			$("#overlay_message").slideDown(300);
 			$("#overlay_close").click(TraceOpt.CloseOverlay);
 
-			if (TraceOpt.storage === true) localStorage["showRequestTutorial"] = false;
+			if (TraceOpt.storage === true) TraceOpt.Store("showRequestTutorial",false);
 		},
 		ShowSettings:function(){
 			$("#drop_message").empty().append(
@@ -230,7 +243,7 @@ var TraceOpt = {
 			$("#overlay_message").slideDown(300);
 			$("#overlay_close").click(TraceOpt.CloseOverlay);
 
-			if (TraceOpt.storage === true) localStorage["showSettingsTutorial"] = false;
+			if (TraceOpt.storage === true) TraceOpt.Store("showSettingsTutorial",false);
 		},
 		ShowScope:function(){
 			$("#drop_message").empty().append(
@@ -250,7 +263,7 @@ var TraceOpt = {
 			$("#overlay_message").slideDown(300);
 			$("#overlay_close").click(TraceOpt.CloseOverlay);
 
-			if (TraceOpt.storage === true) localStorage["showScopeTutorial"] = false;
+			if (TraceOpt.storage === true) TraceOpt.Store("showScopeTutorial",false);
 		},
 		ShowVer2:function(){
 			$("#drop_message").empty().append(
@@ -271,7 +284,7 @@ var TraceOpt = {
 			$("#overlay_close").click(TraceOpt.CloseOverlay);
 			TraceOpt.AssignCloseOverlay();
 
-			if (TraceOpt.storage === true) localStorage["showVer2Message"] = false;
+			if (TraceOpt.storage === true) TraceOpt.Store("showVer2Message",false);
 		}
 	},
 
@@ -680,8 +693,8 @@ var TraceOpt = {
 				attn++;
 			}
 
-			localStorage.setItem("attn",attn);
-			localStorage.setItem("atme",ntme);
+			TraceOpt.Store("attn",attn);
+			TraceOpt.Store("atme",ntme);
 		} else {
 			alert("Nice try.");
 			return;
@@ -871,7 +884,7 @@ var TraceOpt = {
 
 		switch (name){
 			case "pref_netpredict":
-				if (typeof chrome.privacy.network.networkPredictionEnabled === "undefined") {
+				if (!chrome.privacy.hasOwnProperty("network") || typeof chrome.privacy.network.networkPredictionEnabled === "undefined") {
 					$("#row_netpredict").hide();
 					return;
 				}
@@ -893,7 +906,7 @@ var TraceOpt = {
 				});
 				break;
 			case "pref_alterrpage":
-				if (typeof chrome.privacy.services.alternateErrorPagesEnabled === "undefined" || !chrome.privacy.services.alternateErrorPagesEnabled) {
+				if (!chrome.privacy.hasOwnProperty("services") || typeof chrome.privacy.services.alternateErrorPagesEnabled === "undefined" || !chrome.privacy.services.alternateErrorPagesEnabled) {
 					$("#row_alterrpage").hide();
 					return;
 				}
@@ -915,7 +928,7 @@ var TraceOpt = {
 				});
 				break;
 			case "pref_autofill":
-				if (typeof chrome.privacy.services.autofillEnabled === "undefined" || !chrome.privacy.services.autofillEnabled) {
+				if (!chrome.privacy.hasOwnProperty("services") || typeof chrome.privacy.services.autofillEnabled === "undefined" || !chrome.privacy.services.autofillEnabled) {
 					$("#row_autofill").hide();
 					return;
 				}
@@ -937,7 +950,7 @@ var TraceOpt = {
 				});
 				break;
 			case "pref_sbextendedrep":
-				if (typeof chrome.privacy.services.safeBrowsingExtendedReportingEnabled === "undefined") {
+				if (!chrome.privacy.hasOwnProperty("services") || typeof chrome.privacy.services.safeBrowsingExtendedReportingEnabled === "undefined") {
 					$("#row_sbextendedrep").hide();
 					return;
 				}
@@ -959,7 +972,7 @@ var TraceOpt = {
 				});
 				break;
 			case "pref_hyperlinkaudit":
-				if (typeof chrome.privacy.websites.hyperlinkAuditingEnabled === "undefined") {
+				if (!chrome.privacy.hasOwnProperty("websites") || typeof chrome.privacy.websites.hyperlinkAuditingEnabled === "undefined") {
 					$("#row_hyperlinkaudit").hide();
 					return;
 				}
@@ -995,7 +1008,7 @@ var TraceOpt = {
 					$("<span/>").text("The backup will save all of your settings, scope entries and statistics, you can choose what to restore. The file will be in JSON format and is editable."),
 					$("<br/>"),$("<br/>"),
 					$("<button/>",{"style":"font-size:1em"}).text("Download Backup").on("click",TraceOpt.Backup.Create),
-					$("<h2/>").text("Restore a backup"),
+					$("<h2/>").text("Restore a backup")
 				),
 				$("<input/>",{
 					"type":"file",
@@ -1632,6 +1645,10 @@ var TraceOpt = {
 
 			if (dLen === 0){
 				$("#graph_controls").hide();
+				if (typeof chrome.extension.getBackgroundPage().Trace.p.Current.Main_Trace === "undefined"){
+					$("#graph_container").html("Error.<br /><br />Please try restarting your browser.<br />").css("height","auto");
+					return;
+				}
 				if (chrome.extension.getBackgroundPage().Trace.p.Current.Main_Trace.ProtectionStats.enabled === true){
 					$("#graph_container").html("Statistics are enabled, but there is no data available yet.<br /><br />Try browsing the web a bit and then check back here!<br />").css("height","auto");
 				} else {
