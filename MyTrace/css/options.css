@@ -747,6 +747,19 @@ input[type="text"]{
 }
 
 .faded{opacity:.6;transition:opacity .4s ease-in-out;}
+
+/*table,thead,tbody,tr,th {
+	width:100%;
+	display:block;
+}
+tr,th{
+	height:100%;
+}
+td{
+	height:auto;
+	width:33.3%;
+}*/
+
 @media (max-width:1500px){
 	#overlay_cont{
 		width:82.5%;

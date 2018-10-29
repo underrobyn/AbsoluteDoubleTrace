@@ -943,6 +943,7 @@ var Trace = {
 			"Pref_GoogleHeader":true,
 			"Pref_IPSpoof":true,
 			"Pref_NetworkInformation":true,
+			"Pref_HardwareSpoof":true,
 			"Pref_PingBlock":true,
 			"Pref_PluginHide":true,
 			"Pref_ReferHeader":true,

@@ -252,8 +252,6 @@ var TraceOpt = {
 				$("<br/>"),$("<br/>"),
 				$("<span/>").text("Add entries to the list and use the check boxes to select what protections are allowed to run on that page."),
 				$("<br/>"),$("<br/>"),
-				$("<strong/>").text("Whitelisting specific protections is coming in the 2.0.1 update"),
-				$("<br/>"),$("<br/>"),
 				$("<button/>",{
 					"title":"Close"
 				}).text("Okay").click(TraceOpt.CloseOverlay)
@@ -1958,14 +1956,64 @@ var TraceOpt = {
 	},
 	HardwareSpoof:{
 		OpenDialog:function(){
+			var optsCpu = {"type":"checkbox", "id":"hwspoof_use_fakecpu"}, cpuVal = TraceOpt.Config.CurrentSel["hardware"]["hardwareConcurrency"].value;
+			var optsRam = {"type":"checkbox", "id":"hwspoof_use_fakeram"}, ramVal = TraceOpt.Config.CurrentSel["hardware"]["deviceMemory"].value;
+			if (TraceOpt.Config.CurrentSel["hardware"]["hardwareConcurrency"].enabled === true){
+				optsCpu["checked"] = "checked";
+			}
+			if (TraceOpt.Config.CurrentSel["hardware"]["deviceMemory"].enabled === true){
+				optsRam["checked"] = "checked";
+			}
+
 			$("#drop_message").empty().append(
 				$("<h1/>").text("Hardware Fingerprinting Protection"),
+				$("<div/>").append(
+					$("<div/>",{"class":"setting_conf_opt xregular"}).append(
+						$("<label/>",{
+							"for":optsCpu["id"],
+							"class":"checkbox_cont"
+						}).text("Spoof CPU Core Count").append(
+							$("<input/>",optsCpu),
+							$("<span/>",{"class":"ccheck"})
+						)
+					),
+					$("<input/>",{
+						"type":"number",
+						"id":"hwspoof_val_fakecpu",
+						"placeholder":"CPU Cores",
+						"value":cpuVal
+					})
+				),
+				$("<br/>"),$("<br/>"),$("<br/>"),$("<br/>"),
+				$("<div/>").append(
+					$("<div/>",{"class":"setting_conf_opt xregular"}).append(
+						$("<label/>",{
+							"for":optsRam["id"],
+							"class":"checkbox_cont"
+						}).text("Spoof RAM amount").append(
+							$("<input/>",optsRam),
+							$("<span/>",{"class":"ccheck"})
+						)
+					),
+					$("<input/>",{
+						"type":"number",
+						"id":"hwspoof_val_fakeram",
+						"placeholder":"RAM Amount",
+						"value":ramVal
+					})
+				),
 				$("<br/>"),$("<br/>"),
-				$("<button/>",{"title":"Close","class":"float_r"}).text("Close").click(TraceOpt.CloseOverlay)
+				$("<button/>",{"class":"float_r"}).text("Save").click(TraceOpt.HardwareSpoof.SaveParameters),
 			);
 			TraceOpt.AssignCloseOverlay(true);
+		},
+		SaveParameters:function(){
+			chrome.extension.getBackgroundPage().Trace.p.SetSetting("Pref_HardwareSpoof.hardware.hardwareConcurrency.enabled",$("#hwspoof_use_fakecpu").is(":checked"));
+			chrome.extension.getBackgroundPage().Trace.p.SetSetting("Pref_HardwareSpoof.hardware.deviceMemory.enabled",$("#hwspoof_use_fakeram").is(":checked"));
+			chrome.extension.getBackgroundPage().Trace.p.SetSetting("Pref_HardwareSpoof.hardware.hardwareConcurrency.value",$("#hwspoof_val_fakecpu").val());
+			chrome.extension.getBackgroundPage().Trace.p.SetSetting("Pref_HardwareSpoof.hardware.deviceMemory.value",$("#hwspoof_val_fakeram").val());
+			TraceOpt.CloseOverlay();
 		}
-
 	},
 	UserAgent:{
 		StringNames:{
@@ -2813,6 +2861,11 @@ var TraceOpt = {
 		AddToUI:function(array,cb){
 			var len = Object.keys(array).length;
 			var lst = $("#wl_biglist");
+
+			var parseEntry = function(e){
+				return e.replace(/</g,"&lt;").replace(/\*/g,"<strong>*</strong>");
+			};
+
 			for (var i = 0;i < len;i++){
 				var pos = i;
 				lst.append(
@@ -2822,7 +2875,7 @@ var TraceOpt = {
 						"data-itmkey":Object.keys(array)[pos],
 						"data-pos":pos,
 						"id":"wle_id_" + TraceOpt.makeRandomID(7)
-					}).text(Object.keys(array)[pos]).on("keyup",TraceOpt.Scope.AlterSelect).click(TraceOpt.Scope.SelectDomain)
+					}).html(parseEntry(Object.keys(array)[pos])).on("keyup",TraceOpt.Scope.AlterSelect).click(TraceOpt.Scope.SelectDomain)
 				);
 			}
 
@@ -3034,6 +3087,7 @@ var TraceOpt = {
 					$("<option>",{"value":"tracelight"}).text("Trace Light"),
 					$("<option>",{"value":"tracegreyscale"}).text("Trace Greyscale")
 				).on("change",function (){
+					_UserCrashReportService({"UserChoseTheme":$(this).val()});
 					chrome.extension.getBackgroundPage().Trace.p.SetSetting("Main_Interface.Theme.name",$(this).val());
 					reloadTheme();
 				}),
@@ -3044,6 +3098,7 @@ var TraceOpt = {
 					$("<option>",{"value":"nav_right"}).text("Right")
 				).on("change",function () {
 					chrome.extension.getBackgroundPage().Trace.p.SetSetting("Main_Interface.Theme.navPlacement",$(this).val());
+					_UserCrashReportService({"UserChoseNavPos":$(this).val()});
 					reloadTheme();
 				}),
 				$("<div/>",{"class":"setting_conf_opt xregular"}).append(
@@ -3173,7 +3228,7 @@ var TraceOpt = {
 			TraceOpt.URLCleaner.LoadParams();
 		},
 		LoadParams:function(){
-			var s = chrome.extension.getBackgroundPage().Trace.p.Current.Pref_WebController.urlCleaner.queryString.params;
+			var s = chrome.extension.getBackgroundPage().Trace.p.Current.Pref_WebController.urlCleaner.queryString.params || {};
 			var k = Object.keys(s);
 			var r = $("<div/>",{"id":"adv_urlparams"});
 			for (var i = 0,l = k.length;i<l;i++){
@@ -3187,6 +3242,11 @@ var TraceOpt = {
 				);
 			}
 
+			if (k.length === 0){
+				r = $("<div/>",{"id":"adv_urlparams"}).append(
+					$("<h2/>").text("Trace was unable to load the list of URL parameters")
+				);
+			}
 			$("#adv_urlparams").replaceWith(r);
 		},
 		SaveParams:function(){
@@ -3205,8 +3265,7 @@ var TraceOpt = {
 		OpenDialog:function(){
 			var opts = {
 				"type":"checkbox",
-				"id":"trcanv_custrgba",
-				"data-conf":TraceOpt.Config.SelectedOption + "." + "theme" + "."
+				"id":"trcanv_custrgba"
 			};
 			var rgba = TraceOpt.Config.CurrentSel["customRGBA"]["rgba"];
 			if (TraceOpt.Config.CurrentSel["customRGBA"].enabled === true){
@@ -3216,10 +3275,7 @@ var TraceOpt = {
 			$("#drop_message").empty().append(
 				$("<h1/>").text("Configure Canvas Fingerprinting Protection"),
 				$("<h2/>").text("If you don't use custom RGBA values then random ones will be generated at each page load."),
-				$("<div/>",{
-					"class":"setting_conf_opt",
-					"style":"font-size:1.3em"
-				}).append(
+				$("<div/>",{"class":"setting_conf_opt xregular"}).append(
 					$("<label/>",{
 						"for":opts["id"],
 						"class":"checkbox_cont"
@@ -3283,8 +3339,7 @@ var TraceOpt = {
 				$("<h1/>").text("Cookie Eater Settings"),
 				$("<h2/>",{"style":"padding-top:0;font-weight:500",class:"sinksect mtop xlarge"}).text("'Cookie' Header Settings"),
 				$("<div/>",{
-					"class":"setting_conf_opt mbot",
-					"style":"font-size:1.3em"
+					"class":"setting_conf_opt mbot xregular",
 				}).append(
 					$("<label/>",{
 						"for":rc_opts["id"],
@@ -3316,8 +3371,7 @@ var TraceOpt = {
 				),
 				$("<h2/>",{class:"sinksect mtop xlarge","style":"font-weight:500"}).text("'Set-Cookie' Header Settings"),
 				$("<div/>",{
-					"class":"setting_conf_opt mbot",
-					"style":"font-size:1.3em"
+					"class":"setting_conf_opt mbot xregular",
 				}).append(
 					$("<label/>",{
 						"for":sc_opts["id"],
@@ -3437,7 +3491,7 @@ var TraceOpt = {
 			$("#drop_message").empty().append(
 				$("<h1/>").text("HTTP 'Referer' Header Settings"),
 				$("<h2/>").text("When staying on same hostname"),
-				$("<div/>",{"class":"setting_conf_opt mbot", "style":"font-size:1.3em"}).append(
+				$("<div/>",{"class":"setting_conf_opt mbot xregular"}).append(
 					$("<label/>",{
 						"for":"referhead_ash",
 						"class":"checkbox_cont scheckbox_cont"
@@ -3450,7 +3504,7 @@ var TraceOpt = {
 						$("<span/>",{"class":"ccheck sccheck"})
 					)
 				),
-				$("<div/>",{"class":"setting_conf_opt mbot", "style":"font-size:1.3em"}).append(
+				$("<div/>",{"class":"setting_conf_opt mbot xregular"}).append(
 					$("<label/>",{
 						"for":"referhead_ashu",
 						"class":"checkbox_cont scheckbox_cont"
@@ -3460,7 +3514,7 @@ var TraceOpt = {
 					)
 				),
 				$("<h2/>").text("When staying on the same domain"),
-				$("<div/>",{"class":"setting_conf_opt mbot", "style":"font-size:1.3em"}).append(
+				$("<div/>",{"class":"setting_conf_opt mbot xregular"}).append(
 					$("<label/>",{
 						"for":"referhead_asd",
 						"class":"checkbox_cont scheckbox_cont"
@@ -3473,7 +3527,7 @@ var TraceOpt = {
 						$("<span/>",{"class":"ccheck sccheck"})
 					)
 				),
-				$("<div/>",{"class":"setting_conf_opt mbot", "style":"font-size:1.3em"}).append(
+				$("<div/>",{"class":"setting_conf_opt mbot xregular"}).append(
 					$("<label/>",{
 						"for":"referhead_asdu",
 						"class":"checkbox_cont scheckbox_cont"
@@ -3483,7 +3537,7 @@ var TraceOpt = {
 					)
 				),
 				$("<h2/>").text("When navigating to a third party"),
-				$("<div/>",{"class":"setting_conf_opt mbot", "style":"font-size:1.3em"}).append(
+				$("<div/>",{"class":"setting_conf_opt mbot xregular"}).append(
 					$("<label/>",{
 						"for":"referhead_atp",
 						"class":"checkbox_cont scheckbox_cont"
@@ -3496,7 +3550,7 @@ var TraceOpt = {
 						$("<span/>",{"class":"ccheck sccheck"})
 					)
 				),
-				$("<div/>",{"class":"setting_conf_opt mbot", "style":"font-size:1.3em"}).append(
+				$("<div/>",{"class":"setting_conf_opt mbot xregular"}).append(
 					$("<label/>",{
 						"for":"referhead_atpu",
 						"class":"checkbox_cont scheckbox_cont"
@@ -3506,7 +3560,7 @@ var TraceOpt = {
 					)
 				),
 				$("<h2/>").text("General settings"),
-				$("<div/>",{"class":"setting_conf_opt mbot", "style":"font-size:1.3em"}).append(
+				$("<div/>",{"class":"setting_conf_opt mbot xregular"}).append(
 					$("<label/>",{
 						"for":"referhead_oso",
 						"class":"checkbox_cont scheckbox_cont"
@@ -3515,7 +3569,7 @@ var TraceOpt = {
 						$("<span/>",{"class":"ccheck sccheck"})
 					)
 				),
-				/*$("<div/>",{"class":"setting_conf_opt mbot", "style":"font-size:1.3em"}).append(
+				/*$("<div/>",{"class":"setting_conf_opt mbot xregular"}).append(
 					$("<label/>",{
 						"for":"referhead_jsvar_cb",
 						"class":"checkbox_cont scheckbox_cont"

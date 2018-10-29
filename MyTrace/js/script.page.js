@@ -8,7 +8,7 @@
 // A general fix for browser that use window.browser instead of window.chrome
 if (!window.chrome.hasOwnProperty("extension")) window.chrome = (function (){ return window.msBrowser || window.browser || window.chrome; })();
 
-var TracePage = {
+var TPage = {
 	debug:2,
 	Prefs:{
 		BlockPing:{enabled:true,sendBeacon:{enabled:true}},
@@ -25,23 +25,24 @@ var TracePage = {
 		Hardware:{enabled:false,hardware:{enabled:true,hardwareConcurrency:{enabled:true,value:4},deviceMemory:{enabled:true,value:4}}}
 	},
 	protections:{},
+	css:"font-size:1em;line-height:1.5em;color:#fff;background-color:#1a1a1a;border:.1em solid #00af00;",
 
 	startTracePage:function(){
 		chrome.runtime.sendMessage({msg: "checkList", url:location.href},function(response) {
-			TracePage.init(response);
+			TPage.init(response);
 		});
 	},
 
 	/* Function to check if protections are allowed to run */
 	canExec: function(protection){
-		return TracePage.protections[protection];
+		return TPage.protections[protection];
 	},
 
 	/* Load information about settings from extension storage */
 	init:function(data){
-		TracePage.protections = data.data;
-		console.log(data);
-		console.timeStamp("tracePageGo");
+		TPage.protections = data.data;
+		//console.log(data);
+		//console.timeStamp("tracePageGo");
 
 		// In future version this will be received via content messaging system
 		chrome.storage.local.get(
@@ -61,7 +62,7 @@ var TracePage = {
 				"Pref_ClientRects",
 				"Pref_HardwareSpoof"
 			],function(prefs){
-				TracePage.Prefs = {
+				TPage.Prefs = {
 					BlockPing:prefs.Pref_PingBlock,
 					BlockPlugin:prefs.Pref_PluginHide,
 					BlockBattery:prefs.Pref_BatteryApi,
@@ -76,72 +77,73 @@ var TracePage = {
 					Hardware:prefs.Pref_HardwareSpoof
 				};
 
-				console.timeStamp("tracePageGo");
+				//console.timeStamp("tracePageGo");
 
-				TracePage.runProtections();
+				TPage.runProtections();
 			}
 		)
 	},
 
 	/* Depending on what is enabled - run some protections */
 	runProtections:function(){
-		if (Object.keys(TracePage.Prefs).length === 0){
+		if (Object.keys(TPage.Prefs).length === 0){
 			return;
 		}
 
-		// TracePage.protectWebGL();
+		// TPage.protectWebGL();
+		//TPage.protectCommonTracking();
 
-		if (TracePage.Prefs.ClientRects.enabled === true && TracePage.canExec("Pref_ClientRects")){
-			TracePage.protectClientRects();
+		if (TPage.Prefs.ClientRects.enabled === true && TPage.canExec("Pref_ClientRects")){
+			TPage.protectClientRects();
 		}
 
-		if (TracePage.Prefs.BlockCanvasFinger.enabled === true && TracePage.canExec("Pref_CanvasFingerprint")){
-			TracePage.protectCanvasFinger();
+		if (TPage.Prefs.BlockCanvasFinger.enabled === true && TPage.canExec("Pref_CanvasFingerprint")){
+			TPage.protectCanvasFinger();
 		}
 
-		if (TracePage.Prefs.BlockAudioFinger.enabled === true && TracePage.canExec("Pref_AudioFingerprint")){
-			TracePage.protectAudioFinger();
+		if (TPage.Prefs.BlockAudioFinger.enabled === true && TPage.canExec("Pref_AudioFingerprint")){
+			TPage.protectAudioFinger();
 		}
 
-		if (TracePage.Prefs.BlockWebRTC.enabled === true && TracePage.canExec("Pref_WebRTC")){
-			TracePage.protectWebRTC();
+		if (TPage.Prefs.BlockWebRTC.enabled === true && TPage.canExec("Pref_WebRTC")){
+			TPage.protectWebRTC();
 		}
 
-		if (TracePage.Prefs.BlockNetInfo.enabled === true && TracePage.canExec("Pref_NetworkInformation")){
-			TracePage.protectNavConnection();
+		if (TPage.Prefs.BlockNetInfo.enabled === true && TPage.canExec("Pref_NetworkInformation")){
+			TPage.protectNavConnection();
 		}
 
-		if (TracePage.Prefs.BlockReferHeader.enabled === true && TracePage.Prefs.BlockReferHeader.jsVariable.enabled === true && TracePage.canExec("Pref_ReferHeader")){
-			TracePage.protectReferDocument();
+		if (TPage.Prefs.BlockReferHeader.enabled === true && TPage.Prefs.BlockReferHeader.jsVariable.enabled === true && TPage.canExec("Pref_ReferHeader")){
+			TPage.protectReferDocument();
 		}
 
-		if (TracePage.Prefs.BlockPing.enabled === true && TracePage.Prefs.BlockPing.sendBeacon.enabled === true && TracePage.canExec("Pref_PingBlock")){
-			TracePage.protectSendBeacon();
+		if (TPage.Prefs.BlockPing.enabled === true && TPage.Prefs.BlockPing.sendBeacon.enabled === true && TPage.canExec("Pref_PingBlock")){
+			TPage.protectSendBeacon();
 		}
 
-		if (TracePage.Prefs.BlockPlugin.enabled === true && TracePage.canExec("Pref_PluginHide")){
-			TracePage.protectNavPlugins();
+		if (TPage.Prefs.BlockPlugin.enabled === true && TPage.canExec("Pref_PluginHide")){
+			TPage.protectNavPlugins();
 		}
 
-		if (TracePage.Prefs.BlockBattery.enabled === true && TracePage.canExec("Pref_BatteryApi")){
-			TracePage.protectBatteryFunction();
+		if (TPage.Prefs.BlockBattery.enabled === true && TPage.canExec("Pref_BatteryApi")){
+			TPage.protectBatteryFunction();
 		}
 
-		if (TracePage.Prefs.BlockScreenRes.enabled === true && TracePage.canExec("Pref_ScreenRes")){
-			TracePage.protectScreenRes();
+		if (TPage.Prefs.BlockScreenRes.enabled === true && TPage.canExec("Pref_ScreenRes")){
+			TPage.protectScreenRes();
 		}
 
-		if (TracePage.Prefs.Hardware.enabled === true && TracePage.canExec("Pref_HardwareSpoof")){
-			TracePage.protectDeviceHardware();
+		if (TPage.Prefs.Hardware.enabled === true && TPage.canExec("Pref_HardwareSpoof")){
+			TPage.protectDeviceHardware();
 		}
 
-		if (TracePage.Prefs.RandUserAgent.enabled === true && TracePage.canExec("Pref_UserAgent")){
+		if (TPage.Prefs.RandUserAgent.enabled === true && TPage.canExec("Pref_UserAgent")){
 			chrome.runtime.sendMessage({msg: "uaReq"},function(response) {
-				TracePage.protectUserAgent(response);
+				TPage.protectUserAgent(response);
 			});
 		}
 
-		console.timeEnd("tracePageGo");
+		//console.timeEnd("tracePageGo");
 	},
 
 	/* Function to inject javascript code into pages */
@@ -156,10 +158,10 @@ var TracePage = {
 	/* Individual protections start here */
 	protectAudioFinger:function(){
 		var opts = {
-			audioBuffer:{enabled:TracePage.Prefs.BlockAudioFinger.audioBuffer.enabled},
-			audioData:{enabled:TracePage.Prefs.BlockAudioFinger.audioData.enabled},
-			audioOfflineMain:{enabled:TracePage.Prefs.BlockAudioFinger.audioOfflineMain.enabled},
-			audioMain:{enabled:TracePage.Prefs.BlockAudioFinger.audioMain.enabled}
+			audioBuffer:{enabled:TPage.Prefs.BlockAudioFinger.audioBuffer.enabled},
+			audioData:{enabled:TPage.Prefs.BlockAudioFinger.audioData.enabled},
+			audioOfflineMain:{enabled:TPage.Prefs.BlockAudioFinger.audioOfflineMain.enabled},
+			audioMain:{enabled:TPage.Prefs.BlockAudioFinger.audioMain.enabled}
 		};
 
 		// If nothing is enabled just don't run the protection
@@ -167,7 +169,7 @@ var TracePage = {
 			return;
 		}
 
-		TracePage.codeInject(function(opts){
+		TPage.codeInject(function(opts){
 			var opts = JSON.parse(opts);
 
 			if (typeof opts !== "object"){
@@ -244,10 +246,10 @@ var TracePage = {
 			});
 		},"'" + JSON.stringify(opts) + "'");
 
-		if (TracePage.debug <= 2) console.info("%c[TracePage]->[AF] Disabled Audio Tracking.","font-size:1em;line-height:1.5em;color:#fff;background-color:#1a1a1a;border:.1em solid #00af00;");
+		if (TPage.debug <= 2) console.info("%c[TracePage]->[AF] Disabled Audio Tracking.",TPage.css);
 	},
 	protectBatteryFunction:function() {
-		TracePage.codeInject(function(){
+		TPage.codeInject(function(){
 			function disableFunction(frame){
 				if (frame === null) return;
 				if (frame.traceDefinedBattery === true) return;
@@ -278,10 +280,10 @@ var TracePage = {
 			});
 		});
 
-		if (TracePage.debug <= 2) console.info("%c[TracePage]->[BA] Disabled Battery API Tracking.","font-size:1em;line-height:1.5em;color:#fff;background-color:#1a1a1a;border:.1em solid #00af00;");
+		if (TPage.debug <= 2) console.info("%c[TracePage]->[BA] Disabled Battery API Tracking.",TPage.css);
 	},
 	protectSendBeacon:function() {
-		TracePage.codeInject(function(){
+		TPage.codeInject(function(){
 			Object.defineProperty(navigator,"sendBeacon",{
 				enumerable:true,
 				configurable:false,
@@ -292,10 +294,10 @@ var TracePage = {
 			});
 		});
 
-		if (TracePage.debug <= 2) console.info("%c[TracePage]->[SB] Disabled Ping Tracking.","font-size:1em;line-height:1.5em;color:#fff;background-color:#1a1a1a;border:.1em solid #00af00;");
+		if (TPage.debug <= 2) console.info("%c[TracePage]->[SB] Disabled Ping Tracking.",TPage.css);
 	},
 	protectReferDocument:function() {
-		TracePage.codeInject(function(){
+		TPage.codeInject(function(){
 			Object.defineProperty(document,"referrer",{
 				enumerable:true,
 				configurable:false,
@@ -303,10 +305,10 @@ var TracePage = {
 			});
 		});
 
-		if (TracePage.debug <= 2) console.info("%c[TracePage]->[RJ] Disabled Referer Tracking.","font-size:1em;line-height:1.5em;color:#fff;background-color:#1a1a1a;border:.1em solid #00af00;");
+		if (TPage.debug <= 2) console.info("%c[TracePage]->[RJ] Disabled Referer Tracking.",TPage.css);
 	},
 	protectClientRects:function(){
-		TracePage.codeInject(function(){
+		TPage.codeInject(function(){
 			function disableFunction(frame){
 				if (frame === null) return;
 				if (frame.traceDefinedRects === true) return;
@@ -370,10 +372,10 @@ var TracePage = {
 			});
 		});
 
-		if (TracePage.debug <= 2) console.info("%c[TracePage]->[CR] Disabled getClientRects Tracking.","font-size:1em;line-height:1.5em;color:#fff;background-color:#1a1a1a;border:.1em solid #00af00;");
+		if (TPage.debug <= 2) console.info("%c[TracePage]->[CR] Disabled getClientRects Tracking.",TPage.css);
 	},
 	protectNavPlugins:function() {
-		TracePage.codeInject(function(){
+		TPage.codeInject(function(){
 			function disableFunction(frame){
 				if (frame === null) return;
 				if (frame.traceDefinedPlugins === true) return;
@@ -423,7 +425,7 @@ var TracePage = {
 			});
 		});
 
-		if (TracePage.debug <= 2) console.info("%c[TracePage]->[NP] Disabled Plugin Tracking.","font-size:1em;line-height:1.5em;color:#fff;background-color:#1a1a1a;border:.1em solid #00af00;");
+		if (TPage.debug <= 2) console.info("%c[TracePage]->[NP] Disabled Plugin Tracking.",TPage.css);
 	},
 	protectNavConnection:function() {
 		var ret = {
@@ -433,11 +435,11 @@ var TracePage = {
 			rtt:100
 		};
 
-		if (TracePage.Prefs.BlockNetInfo.customNet.enabled === true){
-			ret = TracePage.Prefs.BlockNetInfo.customNet.info;
+		if (TPage.Prefs.BlockNetInfo.customNet.enabled === true){
+			ret = TPage.Prefs.BlockNetInfo.customNet.info;
 		}
 
-		TracePage.codeInject(function(ret){
+		TPage.codeInject(function(ret){
 			var dret = JSON.parse(ret);
 			dret.addEventListener = function(){
 				console.log("%c [TracePage]->Protected[NE] ","font-size:1em;line-height:2em;color:#1a1a1a;background-color:#ffffff;border:.2em solid #0f0;");
@@ -452,13 +454,13 @@ var TracePage = {
 			});
 		},"'" + JSON.stringify(ret) + "'");
 
-		if (TracePage.debug <= 2) console.info("%c[TracePage]->[NP] Disabled Plugin Tracking.","font-size:1em;line-height:1.5em;color:#fff;background-color:#1a1a1a;border:.1em solid #00af00;");
+		if (TPage.debug <= 2) console.info("%c[TracePage]->[NP] Disabled Plugin Tracking.",TPage.css);
 	},
 	protectWebRTC:function(){
 		var opts = {
-			wrtcPeerConnection:{enabled:TracePage.Prefs.BlockWebRTC.wrtcPeerConnection.enabled},
-			wrtcDataChannel:{enabled:TracePage.Prefs.BlockWebRTC.wrtcDataChannel.enabled},
-			wrtcRtpReceiver:{enabled:TracePage.Prefs.BlockWebRTC.wrtcRtpReceiver.enabled}
+			wrtcPeerConnection:{enabled:TPage.Prefs.BlockWebRTC.wrtcPeerConnection.enabled},
+			wrtcDataChannel:{enabled:TPage.Prefs.BlockWebRTC.wrtcDataChannel.enabled},
+			wrtcRtpReceiver:{enabled:TPage.Prefs.BlockWebRTC.wrtcRtpReceiver.enabled}
 		};
 
 		// If nothing is enabled just don't run the protection
@@ -466,7 +468,7 @@ var TracePage = {
 			return;
 		}
 
-		TracePage.codeInject(function(opts){
+		TPage.codeInject(function(opts){
 			var opts = JSON.parse(opts);
 
 			if (typeof opts !== "object") {
@@ -506,17 +508,17 @@ var TracePage = {
 			}
 		},"'" + JSON.stringify(opts) + "'");
 
-		if (TracePage.debug <= 2) console.info("%c[TracePage]->[UA] Disabled User Agent Tracking.","font-size:1em;line-height:1.5em;color:#fff;background-color:#1a1a1a;border:.1em solid #00af00;");
+		if (TPage.debug <= 2) console.info("%c[TracePage]->[UA] Disabled User Agent Tracking.",TPage.css);
 	},
 	protectScreenRes:function(){
 		var opts = {
 			randomOpts:{
-				enabled:TracePage.Prefs.BlockScreenRes.randomOpts.enabled,
-				values:TracePage.Prefs.BlockScreenRes.randomOpts.values
+				enabled:TPage.Prefs.BlockScreenRes.randomOpts.enabled,
+				values:TPage.Prefs.BlockScreenRes.randomOpts.values
 			},
 			commonResolutions:{
-				enabled:TracePage.Prefs.BlockScreenRes.commonResolutions.enabled,
-				resolutions:TracePage.Prefs.BlockScreenRes.commonResolutions.resolutions
+				enabled:TPage.Prefs.BlockScreenRes.commonResolutions.enabled,
+				resolutions:TPage.Prefs.BlockScreenRes.commonResolutions.resolutions
 			},
 			modifyDepths:{
 				enabled:false
@@ -531,7 +533,7 @@ var TracePage = {
 			return;
 		}
 
-		TracePage.codeInject(function(opts){
+		TPage.codeInject(function(opts){
 			var opts = JSON.parse(opts);
 
 			function disableFunction(frame){
@@ -607,7 +609,7 @@ var TracePage = {
 			});
 		},"'" + JSON.stringify(opts) + "'");
 
-		if (TracePage.debug <= 2) console.info("%c[TracePage]->[SC] Disabled Screen Resolution Tracking.","font-size:1em;line-height:1.5em;color:#fff;background-color:#1a1a1a;border:.1em solid #00af00;");
+		if (TPage.debug <= 2) console.info("%c[TracePage]->[SC] Disabled Screen Resolution Tracking.",TPage.css);
 	},
 	protectUserAgent:function(resp){
 		var opts = {
@@ -617,7 +619,7 @@ var TracePage = {
 		};
 
 		// Set user-agent variables
-		TracePage.codeInject(function(opts){
+		TPage.codeInject(function(opts){
 			opts = JSON.parse(opts);
 
 			Object.defineProperty(navigator, "userAgent",{
@@ -638,7 +640,7 @@ var TracePage = {
 		},"'" + JSON.stringify(opts) + "'");
 
 		// Remove browser specific variables
-		TracePage.codeInject(function(){
+		TPage.codeInject(function(){
 			function disableFunction(frame){
 				if (frame === null) return;
 
@@ -689,28 +691,66 @@ var TracePage = {
 			});
 		});
 
-		if (TracePage.debug <= 2) console.info("%c[TracePage]->[UA] Disabled User Agent Tracking.","font-size:1em;line-height:1.5em;color:#fff;background-color:#1a1a1a;border:.1em solid #00af00;");
+		if (TPage.debug <= 2) console.info("%c[TracePage]->[UA] Disabled User Agent Tracking.",TPage.css);
 	},
 	protectDeviceHardware:function(){
-		var opts = {};
+		var opts = [
+			TPage.Prefs.Hardware.hardware.hardwareConcurrency.enabled,
+			TPage.Prefs.Hardware.hardware.hardwareConcurrency.value,
+			TPage.Prefs.Hardware.hardware.deviceMemory.enabled,
+			TPage.Prefs.Hardware.hardware.deviceMemory.value
+		];
 
-		var val = 6;
-		TracePage.codeInject(function(val){
-			Object.defineProperty(navigator, "deviceMemory",{
-				enumerable:true,
-				configurable:false,
-				value:val
-			});
-		},val);
-		TracePage.codeInject(function(val){
-			Object.defineProperty(navigator, "hardwareConcurrency",{
-				enumerable:true,
-				configurable:false,
-				value:val
-			});
-		},val);
+		TPage.codeInject(function(opts){
+			opts = JSON.parse(opts);
 
-		if (TracePage.debug <= 2) console.info("%c[TracePage]->[HW] Modified hardware information.","font-size:1em;line-height:1.5em;color:#fff;background-color:#1a1a1a;border:.1em solid #00af00;");
+			if (opts[0] === true){
+				Object.defineProperty(navigator, "hardwareConcurrency",{
+					enumerable:true,
+					configurable:false,
+					value:opts[1] || 4
+				});
+			}
+			if (opts[2] === true){
+				Object.defineProperty(navigator, "deviceMemory",{
+					enumerable:true,
+					configurable:false,
+					value:opts[3] || 6
+				});
+			}
+		},"'" + JSON.stringify(opts) + "'");
+
+		if (TPage.debug <= 2) console.info("%c[TracePage]->[HW] Modified hardware information.",TPage.css);
+	},
+	protectCommonTracking:function(){
+		TPage.codeInject(function(){
+			function makeRandomStr() {
+				var text = "";
+				var charset = "abcdefghijklmnopqrstuvwxyz";
+				for (var i = 0; i < 5; i++)
+					text += charset.charAt(Math.floor(Math.random() * charset.length));
+				return text;
+			}
+
+			var docId = makeRandomStr();
+			var script = document.createElement('script');
+			script.id = makeRandomStr();
+			script.type = "text/javascript";
+
+			var newChild = document.createTextNode('\
+				const _gaq = false;\
+				const GoogleAnalyticsObject = false;\
+				const ga = false;\
+				const _paq = {push:function(data){console.log("Trace protected you against a tracking event! Data->");console.log(data);console.log("=========================================================")}};\
+			');
+			script.appendChild(newChild);
+
+			var node = (document.documentElement || document.head || document.body);
+			if (typeof node[docId] === 'undefined') {
+				node.insertBefore(script,node.firstChild);
+				node[docId] = makeRandomStr();
+			}
+		});
 	},
 	protectWebGL:function(){
 		// More work needs to be done on this - revisit for 2.1
@@ -719,7 +759,7 @@ var TracePage = {
 		if (true){
 			//gpu += "ANGLE (" + gpuOptions + ")";
 		}
-		TracePage.codeInject(function(){
+		TPage.codeInject(function(){
 			// https://browserleaks.com/webgl
 			function disableFunction(frame){
 				if (frame === null) return;
@@ -787,8 +827,8 @@ var TracePage = {
 
 		var opts = [0,0,0,0];
 
-		if (TracePage.Prefs.BlockCanvasFinger.customRGBA.enabled === true){
-			opts = TracePage.Prefs.BlockCanvasFinger.customRGBA.rgba;
+		if (TPage.Prefs.BlockCanvasFinger.customRGBA.enabled === true){
+			opts = TPage.Prefs.BlockCanvasFinger.customRGBA.rgba;
 		} else {
 			var rn = function(a,b){
 				return (10-Math.floor(Math.random()*(b-a)+a));
@@ -802,7 +842,7 @@ var TracePage = {
 			];
 		}
 
-		TracePage.codeInject(function(t){
+		TPage.codeInject(function(t){
 			var t = JSON.parse(t);
 			function TraceCanvas(r,g,b,a,scriptId){
 				var injectedEl = document.getElementById(scriptId);
@@ -928,10 +968,10 @@ var TracePage = {
 			}
 		},"'" + JSON.stringify(opts) + "'");
 
-		if (TracePage.debug <= 2) console.info("%c[TracePage]->[CF] Disabled Canvas Tracking.","font-size:1em;line-height:1.5em;color:#fff;background-color:#1a1a1a;border:.1em solid #00af00;");
+		if (TPage.debug <= 2) console.info("%c[TracePage]->[CF] Disabled Canvas Tracking.",TPage.css);
 	}
 };
 
-console.time("tracePageGo");
+//console.time("tracePageGo");
 // Let's begin
-TracePage.startTracePage();
+TPage.startTracePage();

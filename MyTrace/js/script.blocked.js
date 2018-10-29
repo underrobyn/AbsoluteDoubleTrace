@@ -41,6 +41,7 @@ var TraceBlock = {
 			Pref_GoogleHeader:false,
 			Pref_IPSpoof:false,
 			Pref_NetworkInformation:false,
+			Pref_HardwareSpoof:false,
 			Pref_PingBlock:false,
 			Pref_PluginHide:false,
 			Pref_ReferHeader:false,
