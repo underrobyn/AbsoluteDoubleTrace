@@ -41,7 +41,7 @@ var TPage = {
 	/* Load information about settings from extension storage */
 	init:function(data){
 		TPage.protections = data.data;
-		//console.log(data);
+		console.log(data);
 		//console.timeStamp("tracePageGo");
 
 		// In future version this will be received via content messaging system
@@ -89,6 +89,7 @@ var TPage = {
 		if (Object.keys(TPage.Prefs).length === 0){
 			return;
 		}
+		console.log(TPage.Prefs);
 
 		// TPage.protectWebGL();
 		//TPage.protectCommonTracking();
@@ -508,7 +509,7 @@ var TPage = {
 			}
 		},"'" + JSON.stringify(opts) + "'");
 
-		if (TPage.debug <= 2) console.info("%c[TracePage]->[UA] Disabled User Agent Tracking.",TPage.css);
+		if (TPage.debug <= 2) console.info("%c[TracePage]->[WR] WebRTC JS Object Tracking.",TPage.css);
 	},
 	protectScreenRes:function(){
 		var opts = {
@@ -621,12 +622,21 @@ var TPage = {
 		// Set user-agent variables
 		TPage.codeInject(function(opts){
 			opts = JSON.parse(opts);
+			console.log(opts);
 
 			Object.defineProperty(navigator, "userAgent",{
 				enumerable:true,
 				configurable:true,
 				value:opts.ua || ""
 			});
+			if (opts.ua){
+				var appVer = opts.ua.substring(8);
+				Object.defineProperty(navigator, "appVersion",{
+					enumerable:true,
+					configurable:true,
+					value:appVer || ""
+				});
+			}
 			Object.defineProperty(navigator, "oscpu",{
 				enumerable:true,
 				configurable:true,

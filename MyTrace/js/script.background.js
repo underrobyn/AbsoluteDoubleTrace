@@ -2495,15 +2495,14 @@ var Trace = {
 					"Pref_HardwareSpoof",
 					"Pref_ScreenRes",
 					"Pref_PluginHide",
-					"Pref_WebRTC"
-				],
-				"PerPage":[
+					"Pref_WebRTC",
 					"Pref_CookieEater",
 					"Pref_ReferHeader",
 					"Pref_UserAgent",
 					"Pref_BatteryApi",
 					"Pref_IPSpoof"
-				]
+				],
+				"PerPage":[]
 			}
 		},
 		Current:{},

@@ -155,7 +155,6 @@ var TraceOpt = {
 				TraceOpt.Store("showSettingsTutorial",true);
 				TraceOpt.Store("showRequestTutorial",true);
 				TraceOpt.Store("showScopeTutorial",true);
-				TraceOpt.Store("showVer2Message",true);
 			}
 
 			$(window).click(function(e){
@@ -262,27 +261,6 @@ var TraceOpt = {
 			$("#overlay_close").click(TraceOpt.CloseOverlay);
 
 			if (TraceOpt.storage === true) TraceOpt.Store("showScopeTutorial",false);
-		},
-		ShowVer2:function(){
-			$("#drop_message").empty().append(
-				$("<h1/>").text("Trace Updated!"),
-				$("<span/>").text("Welcome to Trace 2.0!"),
-				$("<br/>"),$("<br/>"),
-				$("<span/>").text("There are lots of new features and improvements in this version which you can check out "),
-				$("<a/>",{"class":"dark","href":"https://absolutedouble.co.uk/trace/information.html"}).text("here."),
-				$("<br/>"),$("<br/>"),
-				$("<span/>").text("If you find any bugs please email me (contact details are in the 'Info' section) as this version has changed a lot and is very likely to contain bugs."),
-				$("<br/>"),$("<br/>"),
-				$("<button/>",{"title":"Close"}).text("Okay").click(TraceOpt.CloseOverlay)
-			);
-			$("#overlay_cont").css("background-color","rgba(255,255,255,0.9");
-
-			$("#ux").addClass("blurred");
-			$("#overlay_message").slideDown(300);
-			$("#overlay_close").click(TraceOpt.CloseOverlay);
-			TraceOpt.AssignCloseOverlay();
-
-			if (TraceOpt.storage === true) TraceOpt.Store("showVer2Message",false);
 		}
 	},
 
@@ -349,12 +327,6 @@ var TraceOpt = {
 		TraceOpt.Scope.Init();
 		TraceOpt.BadTopLevelBlock.AssignEvents();
 		TraceOpt.URLCleaner.AssignEvents();
-
-		if (TraceOpt.storage === true){
-			if (localStorage.getItem("showVer2Message") === null || localStorage["showVer2Message"] === "true" && window.location.hash !== "#v2installed"){
-				TraceOpt.Tutorial.ShowVer2();
-			}
-		}
 
 		TraceOpt.GenerateTip();
 
@@ -658,7 +630,7 @@ var TraceOpt = {
 			$("<button/>").text("Disable Premium").click(TraceOpt.RemovePremium),
 			$("<span/>").text(" "),
 			$("<button/>").text(
-				(chrome.extension.getBackgroundPage().Trace.p.Current.Pref_WebController.enabled === true ? "Force Blocklist Update" : "Enable Domain Blocking")
+				(chrome.extension.getBackgroundPage().Trace.p.Current.Pref_WebController.enabled === true ? "Force Blocklist Update" : "Enable Web Request Controller")
 			).click(TraceOpt.UpdateBlocklist),
 			$("<span/>").text(" "),
 			$("<button/>").on("click enter",function(){
@@ -1083,11 +1055,11 @@ var TraceOpt = {
 				versionInfo = $(
 					$("<p/>").append(
 						$("<strong/>").text("Trace Backup Version: "),
-						$("<span/>").text(TraceOpt.Backup.Data.version || "Unknown."),
+						$("<span/>").text(TraceOpt.Backup.Data.version || "Unknown.")
 					),
 					$("<p/>").append(
 						$("<strong/>").text("Trace Current Version: "),
-						$("<span/>").text(chrome.runtime.getManifest().version || "Unknown."),
+						$("<span/>").text(chrome.runtime.getManifest().version || "Unknown.")
 					)
 				);
 			}
@@ -1111,7 +1083,7 @@ var TraceOpt = {
 				$("<h2/>").text("You are about to restore a backup..."),
 				$("<p/>").append(
 					$("<strong/>").text("Date: "),
-					$("<span/>").text(TraceOpt.Backup.Data.backupTime || "Unknown."),
+					$("<span/>").text(TraceOpt.Backup.Data.backupTime || "Unknown.")
 				),
 				versionInfo,
 				$("<p/>").text(backupIdentifier),
@@ -1166,7 +1138,7 @@ var TraceOpt = {
 			perpage.empty();
 
 			for (var si = 0, sl = p.AllPage.length;si<sl;si++){
-				if (disallowed.indexOf(p.AllPage[si]) !== -1) continue;
+				//if (disallowed.indexOf(p.AllPage[si]) !== -1) continue;
 				allpage.append(
 					$("<a/>",{
 						"class":"settings_execorder",
@@ -1179,7 +1151,7 @@ var TraceOpt = {
 			}
 
 			for (var i = 0, l = p.PerPage.length;i<l;i++){
-				if (disallowed.indexOf(p.PerPage[i]) !== -1) continue;
+				//if (disallowed.indexOf(p.PerPage[i]) !== -1) continue;
 				perpage.append(
 					$("<a/>",{
 						"class":"settings_execorder",
@@ -2614,11 +2586,17 @@ var TraceOpt = {
 
 			allPage.empty();
 			for (var i = 0;i<dpAllPage.length;i++){
-				if (disallowed.indexOf(dpAllPage[i]) !== -1) continue;
+				var style = "", protmsg = "When checked, this setting is allowed to run";
+				if (disallowed.indexOf(dpAllPage[i]) !== -1) {
+					style = "color:red;";
+					protmsg = "This setting currently won't be applied. It will be in a future update."
+				}
 				allPage.append(
 					$("<div/>",{"class":"setting_conf_opt"}).append(
 						$("<label/>",{
-							"class":"checkbox_cont xlarge"
+							"class":"checkbox_cont xlarge",
+							"style":style,
+							"title":protmsg
 						}).text(TraceOpt.ExecutionOrder.SettingName[dpAllPage[i]] || dpAllPage[i]).append(
 							$("<input/>",{
 								"type":"checkbox",
@@ -2633,11 +2611,17 @@ var TraceOpt = {
 
 			perPage.empty();
 			for (var i = 0;i<dpPerPage.length;i++){
-				if (disallowed.indexOf(dpPerPage[i]) !== -1) continue;
+				var style = "", protmsg = "When checked, this setting is allowed to run";
+				if (disallowed.indexOf(dpAllPage[i]) !== -1) {
+					style = "color:red;";
+					protmsg = "This setting currently won't be applied. It will be in a future update."
+				}
 				perPage.append(
 					$("<div/>",{"class":"setting_conf_opt"}).append(
 						$("<label/>",{
-							"class":"checkbox_cont xlarge"
+							"class":"checkbox_cont xlarge",
+							"style":style,
+							"title":protmsg
 						}).text(TraceOpt.ExecutionOrder.SettingName[dpPerPage[i]] || dpPerPage[i]).append(
 							$("<input/>",{
 								"type":"checkbox",

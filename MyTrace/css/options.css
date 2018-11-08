@@ -933,6 +933,11 @@ td{
 		font-size:1.2em;
 	}
 }
+@media (max-width:600px){
+	#ux {
+		font-size:0.9em;
+	}
+}
 @media (max-height:800px){
 	.sect_adv_header{
 		height:6vh;

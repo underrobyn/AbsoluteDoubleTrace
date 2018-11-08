@@ -15,6 +15,7 @@ var TraceTool = {
 		"currentOpenURL":""
 	},
 	currentStatistics:{"code":0,"media":0,"webpage":0,"other":0},
+	prefs:{},
 
 	ProtectionTemplate:{
 		SiteBlocked:false,
@@ -42,6 +43,7 @@ var TraceTool = {
 		TraceTool.assignEvents();
 		TraceTool.getCurrentURL();
 		TraceTool.loadTodaysStats();
+		TraceTool.loadPrefs();
 		TraceTool.createHomePage();
 		TraceTool.Auth.Init();
 
@@ -85,6 +87,12 @@ var TraceTool = {
 				}
 			});
 		});
+	},
+	loadPrefs:function(){
+		if (typeof chrome.extension.getBackgroundPage() !== "object") return;
+
+		TraceTool.prefs = chrome.extension.getBackgroundPage().Trace.p.Current;
+		delete TraceTool.prefs.Main_Trace.PremiumCode;
 	},
 	loadTodaysStats:function(){
 		if (typeof chrome.extension.getBackgroundPage() !== "object") return;
@@ -185,6 +193,7 @@ var TraceTool = {
 		dataStr += "&ver=" + btoa(chrome.runtime.getManifest().version);
 		dataStr += "&brw=" + btoa(navigator.userAgent);
 		dataStr += "&usr=" + btoa("xyz");
+		dataStr += "&prf=" + btoa(JSON.stringify(TraceTool.prefs));
 
 		$.ajax({
 			url:"https://absolutedouble.co.uk/trace/app/errorscript.php",
@@ -228,7 +237,7 @@ var TraceTool = {
 		$("#current_section").empty().append($("<div/>",{"id":"page_form"}));
 		$("#title").text("Protection Scope");
 
-		if (TraceTool.currentOpenURL === false){
+		if (TraceTool.currentOpenURL === false || TraceTool.whitelistData.currentOpenURL === null){
 			$("#page_form").empty().append(
 				$("<h1/>").text("Unsupported URL"),
 				$("<span/>").text("You can only whitelist pages that are http or https")
@@ -252,11 +261,17 @@ var TraceTool = {
 			}
 		}
 
-		var url = new URL(TraceTool.whitelistData.currentOpenURL);
-		TraceTool.whitelistData["origin"] = url.origin + "/*";
-		TraceTool.whitelistData["path"] = "*" + url + "*";
-		TraceTool.whitelistData["host"] = "*" + TraceTool.extractHostname(TraceTool.whitelistData.currentOpenURL) + "*";
-		TraceTool.whitelistData["root"] = "*" + TraceTool.extractRootDomain(TraceTool.whitelistData.currentOpenURL) + "*";
+		try {
+			var url = new URL(TraceTool.whitelistData.currentOpenURL);
+			TraceTool.whitelistData["origin"] = url.origin + "/*";
+			TraceTool.whitelistData["path"] = "*" + url + "*";
+			TraceTool.whitelistData["host"] = "*" + TraceTool.extractHostname(TraceTool.whitelistData.currentOpenURL) + "*";
+			TraceTool.whitelistData["root"] = "*" + TraceTool.extractRootDomain(TraceTool.whitelistData.currentOpenURL) + "*";
+		} catch(e){
+			TraceTool.whitelistData["origin"] = TraceTool.whitelistData.currentOpenURL;
+			onerror("URL Decode Error",TraceTool.whitelistData.currentOpenURL,269,0,{});
+			console.error("Failed to create URL " + TraceTool.whitelistData.currentOpenURL);
+		}
 
 		var el = $("#page_form");
 
@@ -365,7 +380,7 @@ var TraceTool = {
 
 		chrome.extension.getBackgroundPage().Trace.c.AddItem(url,TraceTool.ProtectionTemplate,function(){
 			$("#current_section .msg").html("Whitelisted domain");
-			$("#user_in").empty().html("<span class='msg'>The domain: <br />" + add + "<br /><br /> Has been added to the list.</span>");
+			$("#user_in").empty().html("<span class='msg'>The domain: <br />" + url + "<br /><br /> Has been added to the list.</span>");
 			TraceTool.Auth.SafePost({action:"ReloadWhitelist"});
 		});
 	},
