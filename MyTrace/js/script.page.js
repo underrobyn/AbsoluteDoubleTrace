@@ -41,7 +41,6 @@ var TPage = {
 	/* Load information about settings from extension storage */
 	init:function(data){
 		TPage.protections = data.data;
-		console.log(data);
 		//console.timeStamp("tracePageGo");
 
 		// In future version this will be received via content messaging system
@@ -89,7 +88,6 @@ var TPage = {
 		if (Object.keys(TPage.Prefs).length === 0){
 			return;
 		}
-		console.log(TPage.Prefs);
 
 		// TPage.protectWebGL();
 		//TPage.protectCommonTracking();
@@ -622,7 +620,6 @@ var TPage = {
 		// Set user-agent variables
 		TPage.codeInject(function(opts){
 			opts = JSON.parse(opts);
-			console.log(opts);
 
 			Object.defineProperty(navigator, "userAgent",{
 				enumerable:true,

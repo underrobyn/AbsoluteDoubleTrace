@@ -192,6 +192,7 @@ a.dark{
 #trace_info {
 	font-size:1.05em;
 	line-height:1.4em;
+	will-change:contents;
 }
 #trace_info span {
 	font-size:1.35em;

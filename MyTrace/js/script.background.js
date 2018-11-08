@@ -185,14 +185,18 @@ var Trace = {
 					"linux 32bit":"X11; Linux x86_32"
 				},
 				"macos":{
-					"macos High Sierra":"Macintosh; U; Intel Mac OS X 10_13",
-					"macos Sierra":"Macintosh; U; Intel Mac OS X 10_12_2",
-					"MacOS El Capitan":"Macintosh; Intel Mac OS X 10_11_6",
-					"MacOS Yosemite":"Macintosh; U; Intel Mac OS X 10_10_5"
+					"macos mojave2":"Macintosh; Intel Mac OS X 10_14_0",
+					"macos mojave":"Macintosh; Intel Mac OS X 10_14",
+					"macos high sierra2":"Macintosh; Intel Mac OS X 10_13_6",
+					"macos high sierra":"Macintosh; Intel Mac OS X 10_13",
+					"macos sierra":"Macintosh; Intel Mac OS X 10_12_2",
+					"macos el capitan":"Macintosh; Intel Mac OS X 10_11_6",
+					"macos yosemite":"Macintosh; Intel Mac OS X 10_10_5"
 				}
 			},
 			"wb":{
 				"chrome":{
+					"70":"AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.77 Safari/537.36",
 					"69":"AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3493.3 Safari/537.36",
 					"68":"AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.75 Safari/537.36",
 					"67":"AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.79 Safari/537.36",
@@ -539,7 +543,16 @@ var Trace = {
 			}
 
 			Trace.n.oscpu = rA(uaOSPool);
-			Trace.n.useragent = "Mozilla/5.0 (" + Trace.n.oscpu + ") " + rA(uaWBPool);
+			var browser = rA(uaWBPool);
+
+			// Special case for firefox on mac, Thanks: https://github.com/jake-cryptic/AbsoluteDoubleTrace/issues/3#issuecomment-437178452
+			if (Trace.n.oscpu.toLowerCase().includes("mac")){
+				if (browser.includes("Firefox")){
+					Trace.n.oscpu = Trace.n.oscpu.replace(/_/g,".");
+				}
+			}
+
+			Trace.n.useragent = "Mozilla/5.0 (" + Trace.n.oscpu + ") " + browser;
 
 			if (Trace.n.oscpu.toLowerCase().includes("win")){
 				Trace.n.platform = rA(["Win32","Win64"]);
@@ -1214,7 +1227,7 @@ var Trace = {
 			if (Trace.c.wlEnabled === true){
 				var initUrl, reqUrl = request.url;
 				if (typeof request.initiator === "string") initUrl = request.initiator;
-				if (typeof request.originUrl === "string") initUrl = request.initiator;
+				if (typeof request.originUrl === "string") initUrl = request.originUrl;
 
 				for (var i = 0, l = Trace.c.decodedWhitelist.keys.length;i<l;i++){
 					//console.log(Trace.c.decodedWhitelist.keys[i]);
@@ -1349,7 +1362,7 @@ var Trace = {
 			// URL that made the request (Cross browser solution)
 			getInitiator:function(request){
 				if (typeof request.initiator === "string") return request.initiator;	// Chrome, Opera...
-				if (typeof request.originUrl === "string") return request.initiator;	// Firefox
+				if (typeof request.originUrl === "string") return request.originUrl;	// Firefox
 				if (typeof request.url === "string") return request.url;				// Started by user
 
 				return "";

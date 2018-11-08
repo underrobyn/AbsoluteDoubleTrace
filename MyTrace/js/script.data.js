@@ -32,10 +32,7 @@ window.onerror = function(o,r,e,c,l) {
 // A general fix for browser that use window.browser instead of window.chrome
 if (!window.chrome.hasOwnProperty("extension")) window.chrome = (function (){ return window.msBrowser || window.browser || window.chrome; })();
 
-var storage_type = (!window.chrome.storage.sync ? window.chrome.storage.local : window.chrome.storage.sync);
-
 var _UserCrashReportService = function(d,o){
-
 	var report = false;
 
 	// Check for premium override
@@ -49,6 +46,7 @@ var _UserCrashReportService = function(d,o){
 		report = true;
 	}
 
+	var storage_type = (!window.chrome.storage.sync ? window.chrome.storage.local : window.chrome.storage.sync);
 	storage_type.get('userid',function(items){
 
 		if (typeof items === "undefined"){
@@ -59,6 +57,15 @@ var _UserCrashReportService = function(d,o){
 		if (usr){
 			useToken(usr);
 		} else {
+			var token = function(){
+				var randomPool = new Uint8Array(32);
+				crypto.getRandomValues(randomPool);
+				var hex = '';
+				for (var i = 0; i < randomPool.length; ++i) {
+					hex += randomPool[i].toString(16);
+				}
+				return hex;
+			};
 			usr = token();
 			storage_type.set({userid: usr},function(){
 				useToken(usr);
@@ -96,13 +103,4 @@ var _UserCrashReportService = function(d,o){
 
 	});
 	
-};
-var token = function(){
-    var randomPool = new Uint8Array(32);
-    crypto.getRandomValues(randomPool);
-    var hex = '';
-    for (var i = 0; i < randomPool.length; ++i) {
-        hex += randomPool[i].toString(16);
-    }
-    return hex;
 };
