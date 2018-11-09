@@ -237,7 +237,7 @@ var TraceTool = {
 		$("#current_section").empty().append($("<div/>",{"id":"page_form"}));
 		$("#title").text("Protection Scope");
 
-		if (TraceTool.currentOpenURL === false || TraceTool.whitelistData.currentOpenURL === null){
+		if (TraceTool.whitelistData.currentOpenURL === false || TraceTool.whitelistData.currentOpenURL === null){
 			$("#page_form").empty().append(
 				$("<h1/>").text("Unsupported URL"),
 				$("<span/>").text("You can only whitelist pages that are http or https")
@@ -261,17 +261,11 @@ var TraceTool = {
 			}
 		}
 
-		try {
-			var url = new URL(TraceTool.whitelistData.currentOpenURL);
-			TraceTool.whitelistData["origin"] = url.origin + "/*";
-			TraceTool.whitelistData["path"] = "*" + url + "*";
-			TraceTool.whitelistData["host"] = "*" + TraceTool.extractHostname(TraceTool.whitelistData.currentOpenURL) + "*";
-			TraceTool.whitelistData["root"] = "*" + TraceTool.extractRootDomain(TraceTool.whitelistData.currentOpenURL) + "*";
-		} catch(e){
-			TraceTool.whitelistData["origin"] = TraceTool.whitelistData.currentOpenURL;
-			onerror("URL Decode Error",TraceTool.whitelistData.currentOpenURL,269,0,{});
-			console.error("Failed to create URL " + TraceTool.whitelistData.currentOpenURL);
-		}
+		var url = new URL(TraceTool.whitelistData.currentOpenURL);
+		TraceTool.whitelistData["origin"] = url.origin + "/*";
+		TraceTool.whitelistData["path"] = "*" + url + "*";
+		TraceTool.whitelistData["host"] = "*" + TraceTool.extractHostname(TraceTool.whitelistData.currentOpenURL) + "*";
+		TraceTool.whitelistData["root"] = "*" + TraceTool.extractRootDomain(TraceTool.whitelistData.currentOpenURL) + "*";
 
 		var el = $("#page_form");
 

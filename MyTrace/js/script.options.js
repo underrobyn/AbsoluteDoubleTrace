@@ -370,7 +370,7 @@ var TraceOpt = {
 		$("#user_tip").html(tips[Math.floor(Math.random()*tips.length)]);
 	},
 	GetMainPage:function(){
-		if (typeof chrome.extension.getBackgroundPage !== "function"){
+		if (!chrome.extension || typeof chrome.extension.getBackgroundPage !== "function"){
 			return;
 		}
 		chrome.extension.getBackgroundPage().Trace.s.MainText(function(i,t,d){
@@ -598,7 +598,7 @@ var TraceOpt = {
 		$(this).text("Working...");
 	},
 	GetPremiumStatus:function(){
-		if (typeof chrome.extension.getBackgroundPage !== "function"){
+		if (!chrome.extension || typeof chrome.extension.getBackgroundPage !== "function"){
 			return;
 		}
 
@@ -652,10 +652,10 @@ var TraceOpt = {
 	},
 	EnterPremiumCode:function(){
 		var dto = new Date();
-		if (TraceOpt.storage === true){
-			var attn = 0, atme = 0;
-			var ntme = Math.round(dto.getTime()/1000);
+		var attn = 0, atme = 0;
+		var ntme = Math.round(dto.getTime()/1000);
 
+		if (TraceOpt.storage === true){
 			if (typeof localStorage.getItem("attn") === "string" && typeof localStorage.getItem("atme") === "string"){
 				attn = parseInt(localStorage.getItem("attn"));
 				atme = parseInt(localStorage.getItem("atme"));
@@ -666,8 +666,8 @@ var TraceOpt = {
 			TraceOpt.Store("attn",attn);
 			TraceOpt.Store("atme",ntme);
 		} else {
-			alert("Nice try.");
-			return;
+			alert("Issue with localStorage!");
+
 		}
 
 		var uTimeOut = function(t){
@@ -1975,7 +1975,7 @@ var TraceOpt = {
 					})
 				),
 				$("<br/>"),$("<br/>"),
-				$("<button/>",{"class":"float_r"}).text("Save").click(TraceOpt.HardwareSpoof.SaveParameters),
+				$("<button/>",{"class":"float_r"}).text("Save").click(TraceOpt.HardwareSpoof.SaveParameters)
 			);
 			TraceOpt.AssignCloseOverlay(true);
 		},
