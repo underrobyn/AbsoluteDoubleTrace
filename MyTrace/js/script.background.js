@@ -1488,7 +1488,13 @@ var Trace = {
 				if (details.frameId < 0) return;
 				if (details.url.substring(0,4).toLowerCase() !== "http") return;
 
-				//console.log(details);
+				var cookieList = Trace.g.CookieEater.GetList();
+				var method = "fp_method";
+
+				if (Trace.h.Helpers.isRequestThirdParty(details)) {
+					method = "tp_method";
+				}
+
 				// Loop each header
 				for (var i=0;i<details.responseHeaders.length;++i){
 					var headerName = details.responseHeaders[i].name.toString().toLowerCase();
@@ -1497,21 +1503,20 @@ var Trace = {
 					if (headerName !== "set-cookie") continue;
 
 					var p = new SetCookieParser(details.responseHeaders[i].value);
-					console.log(p.parsed);
-					console.log(p.cookiename,p.cookievalue);
-					/**************** SORT THIS OUT ***************************************/
-					break;
-					if (Trace.h.Helpers.isRequestThirdParty(details)){
-						if (settings.tp_method === "removeall"){
+
+					if (settings[method] === "removeall"){
+						details.responseHeaders.splice(i,1);
+					} else if (settings[method] === "randomiseall"){
+						p.updateCookie(Trace.makeRandomID(15));
+						details.responseHeaders[i].value = p.setcookie;
+					} else if (settings[method] === "remove"){
+						if (cookieList.indexOf(p.cookiename) !== -1){
 							details.responseHeaders.splice(i,1);
-						} else if (settings.tp_method === "randomiseall"){
-							details.responseHeaders[i].value = Trace.makeRandomID(15);
 						}
-					} else {
-						if (settings.fp_method === "removeall"){
-							details.responseHeaders.splice(i,1);
-						} else if (settings.fp_method === "randomiseall"){
-							details.responseHeaders[i].value = Trace.makeRandomID(15);
+					} else if (settings[method] === "randomise"){
+						if (cookieList.indexOf(p.cookiename) !== -1){
+							p.updateCookie(Trace.makeRandomID(15));
+							details.responseHeaders[i].value = p.setcookie;
 						}
 					}
 				}
@@ -2404,7 +2409,7 @@ var Trace = {
 				"enabled":false,
 				"randomOpts":{
 					"enabled":true,
-					"values":[-10,10]
+					"values":[-50,50]
 				},
 				"commonResolutions":{
 					"enabled":false,

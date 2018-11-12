@@ -127,6 +127,7 @@ var CookieParser = function(string){
 
 var SetCookieParser = function(string){
 	this.setcookie = string || "";
+	this.initial = string;
 
 	this.parsed = {};
 	this.cookiename = "";
@@ -169,6 +170,28 @@ var SetCookieParser = function(string){
 		}
 
 		return r;
+	};
+
+	this.update = function(){
+		var string = '';
+		var names = Object.keys(this.parsed);
+		var values = Object.values(this.parsed);
+		var i = 0, l = names.length;
+
+		for (;i<l;i++){
+			string += names[i] + (values[i].length !== 0 ? '=' + values[i] : '') + '; ';
+		}
+
+		string = string.slice(0,-2);
+
+		this.setcookie = string;
+	};
+
+	this.updateCookie = function(value){
+		if (this.parsed[this.cookiename] === undefined) return false;
+
+		this.parsed[this.cookiename] = value;
+		this.update();
 	};
 
 	this.parsed = this.parse();

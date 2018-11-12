@@ -97,7 +97,10 @@ var TraceTool = {
 	loadTodaysStats:function(){
 		if (typeof chrome.extension.getBackgroundPage() !== "object") return;
 
-		var stats = chrome.extension.getBackgroundPage().Trace.s.Current;
+		var stats = {};
+		try {
+			stats = chrome.extension.getBackgroundPage().Trace.s.Current;
+		} catch(e){}
 		if (typeof stats !== "object" || stats === undefined) return;
 		if (Object.keys(stats).length === 0) return;
 

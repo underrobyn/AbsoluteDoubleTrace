@@ -24,7 +24,6 @@ if (!chrome.hasOwnProperty("extension") || typeof chrome.extension.getBackground
 	showErr("Extension failed to connect to background page. Please try reloading the page.");
 }
 
-
 window.URL = window.URL || window.webkitURL;
 
 var TraceOpt = {
@@ -180,7 +179,7 @@ var TraceOpt = {
 			});
 		},
 		SelectProtection:function(level){
-			var set = chrome.extension.getBackgroundPage().Trace.p.SetSetting;
+			var set = chrome.extension.getBackgroundPage().Trace.p.Set;
 			if (level === 0){
 				_UserCrashReportService({"installProtection":"default"});
 				set("Pref_ETagTrack.enabled",true);
@@ -210,9 +209,7 @@ var TraceOpt = {
 				$("<br/>"),$("<br/>"),
 				$("<span/>").text("The URL Tracking Cleaner removes information from URLs that is used to track you, it has lots of configuration options and I recommend you enable it at some level to improve your privacy."),
 				$("<br/>"),$("<br/>"),
-				$("<button/>",{
-					"title":"Close"
-				}).text("Okay").click(TraceOpt.CloseOverlay)
+				$("<button/>",{"title":"Close"}).text("Okay").click(TraceOpt.CloseOverlay)
 			);
 
 			$("#ux").addClass("blurred");
@@ -233,9 +230,7 @@ var TraceOpt = {
 				$("<span/>").text("You can find settings such as URL Parameter editing and Bad TLD Protection in the 'Requests' section."),
 				$("<br/>"),$("<br/>"),
 				$("<h3/>").html("If you find a bug with anything, especially features marked as 'Beta', please report it to <a class='dark' href='mailto:absolutedouble@gmail.com'>absolutedouble@gmail.com</a>"),
-				$("<button/>",{
-					"title":"Close"
-				}).text("Okay").click(TraceOpt.CloseOverlay)
+				$("<button/>",{"title":"Close"}).text("Okay").click(TraceOpt.CloseOverlay)
 			);
 
 			$("#ux").addClass("blurred");
@@ -251,9 +246,7 @@ var TraceOpt = {
 				$("<br/>"),$("<br/>"),
 				$("<span/>").text("Add entries to the list and use the check boxes to select what protections are allowed to run on that page."),
 				$("<br/>"),$("<br/>"),
-				$("<button/>",{
-					"title":"Close"
-				}).text("Okay").click(TraceOpt.CloseOverlay)
+				$("<button/>",{"title":"Close"}).text("Okay").click(TraceOpt.CloseOverlay)
 			);
 
 			$("#ux").addClass("blurred");
@@ -1979,10 +1972,12 @@ var TraceOpt = {
 			TraceOpt.AssignCloseOverlay(true);
 		},
 		SaveParameters:function(){
-			chrome.extension.getBackgroundPage().Trace.p.Set("Pref_HardwareSpoof.hardware.hardwareConcurrency.enabled",$("#hwspoof_use_fakecpu").is(":checked"));
-			chrome.extension.getBackgroundPage().Trace.p.Set("Pref_HardwareSpoof.hardware.deviceMemory.enabled",$("#hwspoof_use_fakeram").is(":checked"));
-			chrome.extension.getBackgroundPage().Trace.p.Set("Pref_HardwareSpoof.hardware.hardwareConcurrency.value",$("#hwspoof_val_fakecpu").val());
-			chrome.extension.getBackgroundPage().Trace.p.Set("Pref_HardwareSpoof.hardware.deviceMemory.value",$("#hwspoof_val_fakeram").val());
+			chrome.extension.getBackgroundPage().Trace.p.SetMultiple({
+				"Pref_HardwareSpoof.hardware.hardwareConcurrency.enabled": $("#hwspoof_use_fakecpu").is(":checked"),
+				"Pref_HardwareSpoof.hardware.deviceMemory.enabled": $("#hwspoof_use_fakeram").is(":checked"),
+				"Pref_HardwareSpoof.hardware.hardwareConcurrency.value": $("#hwspoof_val_fakecpu").val(),
+				"Pref_HardwareSpoof.hardware.deviceMemory.value": $("#hwspoof_val_fakeram").val()
+			});
 			TraceOpt.CloseOverlay();
 		}
 	},
@@ -2156,7 +2151,11 @@ var TraceOpt = {
 			}
 			for (var item in r){
 				d.append(
-					$("<div/>",{"class":"sr_cresolution","data-listid":item}).text(r[item][0] + "x" + r[item][1]).on("click enter",TraceOpt.ScreenRes.RemoveResolution)
+					$("<div/>",{
+						"class":"sr_cresolution",
+						"data-listid":item,
+						"title":"Click to delete this resolution"
+					}).text(r[item][0] + "x" + r[item][1]).on("click enter",TraceOpt.ScreenRes.RemoveResolution)
 				);
 			}
 		},
@@ -3353,9 +3352,7 @@ var TraceOpt = {
 					)
 				),
 				$("<h2/>",{class:"sinksect mtop xlarge","style":"font-weight:500"}).text("'Set-Cookie' Header Settings"),
-				$("<div/>",{
-					"class":"setting_conf_opt mbot xregular",
-				}).append(
+				$("<div/>",{"class":"setting_conf_opt mbot xregular"}).append(
 					$("<label/>",{
 						"for":sc_opts["id"],
 						"class":"checkbox_cont scheckbox_cont"
@@ -3405,12 +3402,14 @@ var TraceOpt = {
 			var sc_ena = $("#ce_sett_setcookieheadmod").is(":checked");
 			var sc_fpm = $("#ce_sett_fpsetcookiehead").val();
 			var sc_tpm = $("#ce_sett_tpsetcookiehead").val();
-			chrome.extension.getBackgroundPage().Trace.p.Set("Pref_CookieEater.settings.cookie.enabled", rc_ena);
-			chrome.extension.getBackgroundPage().Trace.p.Set("Pref_CookieEater.settings.setcookie.enabled", sc_ena);
-			chrome.extension.getBackgroundPage().Trace.p.Set("Pref_CookieEater.settings.cookie.fp_method", rc_fpm);
-			chrome.extension.getBackgroundPage().Trace.p.Set("Pref_CookieEater.settings.setcookie.fp_method", sc_fpm);
-			chrome.extension.getBackgroundPage().Trace.p.Set("Pref_CookieEater.settings.cookie.tp_method", rc_tpm);
-			chrome.extension.getBackgroundPage().Trace.p.Set("Pref_CookieEater.settings.setcookie.tp_method", sc_tpm);
+			chrome.extension.getBackgroundPage().Trace.p.SetMultiple({
+				"Pref_CookieEater.settings.cookie.enabled":rc_ena,
+				"Pref_CookieEater.settings.setcookie.enabled":sc_ena,
+				"Pref_CookieEater.settings.cookie.fp_method":rc_fpm,
+				"Pref_CookieEater.settings.setcookie.fp_method":sc_fpm,
+				"Pref_CookieEater.settings.cookie.tp_method":rc_tpm,
+				"Pref_CookieEater.settings.setcookie.tp_method":sc_tpm
+			});
 
 			TraceOpt.CloseOverlay();
 		},
