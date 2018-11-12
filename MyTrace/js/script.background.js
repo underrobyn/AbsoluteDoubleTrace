@@ -996,6 +996,7 @@ var Trace = {
 		GetStoredWhitelist:function(cb){
 			delete Trace.c.storedWhitelist;
 
+			Trace.c.storedWhitelist = {};
 			Trace.v.s.get(["WebData_Whitelist","Main_PageList"],function(s){
 				if ((typeof s.Main_PageList === "undefined" || s.Main_PageList === null) && typeof s.WebData_Whitelist !== "object"){
 					// If new whitelist isn't set and old one isn't either save a blank one
@@ -1016,6 +1017,10 @@ var Trace = {
 		},
 		LoadWhitelist:function(cb){
 			delete Trace.c.decodedWhitelist;
+			Trace.c.decodedWhitelist = {
+				"keys":[],
+				"values":[]
+			};
 
 			var keys = Object.keys(Trace.c.storedWhitelist);
 			var vals = Object.values(Trace.c.storedWhitelist);
