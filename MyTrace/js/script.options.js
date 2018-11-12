@@ -641,7 +641,7 @@ var TraceOpt = {
 	},
 	RemovePremium:function(){
 		if (confirm("Are you sure you wish to remove your premium code from Trace?\nThis will not delete your code from our servers.\n\nYour code:\n" + chrome.extension.getBackgroundPage().Trace.p.Current.Main_Trace.PremiumCode)){
-			chrome.extension.getBackgroundPage().Trace.p.SetSetting("Main_Trace.PremiumCode","");
+			chrome.extension.getBackgroundPage().Trace.p.Set("Main_Trace.PremiumCode","");
 			chrome.extension.getBackgroundPage().Trace.b.ClearDomainCache();
 
 			$(".premium_inner").empty().html("<h1>Please wait...</h1>");
@@ -797,7 +797,7 @@ var TraceOpt = {
 			success:function(l){
 				if (l === TraceOpt.s) {
 					pt.text("Applying Code...");
-					chrome.extension.getBackgroundPage().Trace.p.SetSetting("Main_Trace.PremiumCode", eden);
+					chrome.extension.getBackgroundPage().Trace.p.Set("Main_Trace.PremiumCode", eden);
 					chrome.extension.getBackgroundPage()._UserCrashReportService({
 						"PremiumTrace": "AcceptedCode",
 						"CodeUsed": eden
@@ -809,8 +809,8 @@ var TraceOpt = {
 
 					if (chrome.extension.getBackgroundPage().Trace.p.Current.Pref_WebController.enabled === true){
 						pt.text("Please wait... Initialising Premium :)");
-						chrome.extension.getBackgroundPage().Trace.p.SetSetting("Pref_WebController.installCodes.a00000001",true);
-						chrome.extension.getBackgroundPage().Trace.p.SetSetting("Pref_WebController.installCodes.a00000003",true);
+						chrome.extension.getBackgroundPage().Trace.p.Set("Pref_WebController.installCodes.a00000001",true);
+						chrome.extension.getBackgroundPage().Trace.p.Set("Pref_WebController.installCodes.a00000003",true);
 						chrome.extension.getBackgroundPage().Trace.b.BlocklistLoader(true);
 						setTimeout(TraceOpt.GetMainPage,750);
 						setTimeout(TraceOpt.GetPremiumStatus,3000);
@@ -1193,13 +1193,12 @@ var TraceOpt = {
 		},
 		Options:function(setting){
 			TraceOpt.Config.SelectedOption = setting;
-			TraceOpt.Config.CurrentSettings = chrome.extension.getBackgroundPage().Trace.p.Current;
-			TraceOpt.Config.CurrentSel = TraceOpt.Config.CurrentSettings[TraceOpt.Config.SelectedOption];
+			TraceOpt.Config.CurrentSettings = chrome.extension.getBackgroundPage().Trace.p.GetSetting;
+			TraceOpt.Config.CurrentSel = TraceOpt.Config.CurrentSettings(TraceOpt.Config.SelectedOption);
 
 			var enabled = false;
 			if (TraceOpt.Config.SelectedOption.includes(".")){
-				var option = TraceOpt.Config.SelectedOption.split(".");
-				enabled = TraceOpt.Config.CurrentSettings[option[0]][option[1]].enabled;
+				enabled = TraceOpt.Config.CurrentSettings(TraceOpt.Config.SelectedOption).enabled;
 			} else {
 				enabled = TraceOpt.Config.CurrentSel.enabled;
 			}
@@ -1271,7 +1270,7 @@ var TraceOpt = {
 			if ($(a).is(":checked")){
 				v = true;
 			}
-			chrome.extension.getBackgroundPage().Trace.p.SetSetting(s,v);
+			chrome.extension.getBackgroundPage().Trace.p.Set(s,v);
 		},
 		GetConf:function(){
 			var el = $("<div/>",{
@@ -1423,7 +1422,7 @@ var TraceOpt = {
 				if (TraceOpt.PIPSpoof.IPSaveTimeout) clearTimeout(TraceOpt.PIPSpoof.IPSaveTimeout);
 
 				TraceOpt.PIPSpoof.IPSaveTimeout = setTimeout(function(){
-					chrome.extension.getBackgroundPage().Trace.p.SetSetting("Pref_IPSpoof.traceIP.user_set",potential);
+					chrome.extension.getBackgroundPage().Trace.p.Set("Pref_IPSpoof.traceIP.user_set",potential);
 					$("#" + elID).css({
 						"background":"#70ff71",
 						"color":"#fff"
@@ -1449,7 +1448,7 @@ var TraceOpt = {
 				if (TraceOpt.PIPSpoof.ViaSaveTimeout) clearTimeout(TraceOpt.PIPSpoof.ViaSaveTimeout);
 
 				TraceOpt.PIPSpoof.ViaSaveTimeout = setTimeout(function(){
-					chrome.extension.getBackgroundPage().Trace.p.SetSetting("Pref_IPSpoof.traceVia.value",potential);
+					chrome.extension.getBackgroundPage().Trace.p.Set("Pref_IPSpoof.traceVia.value",potential);
 					$("#" + elID).css({
 						"background":"#70ff71",
 						"color":"#fff"
@@ -1980,10 +1979,10 @@ var TraceOpt = {
 			TraceOpt.AssignCloseOverlay(true);
 		},
 		SaveParameters:function(){
-			chrome.extension.getBackgroundPage().Trace.p.SetSetting("Pref_HardwareSpoof.hardware.hardwareConcurrency.enabled",$("#hwspoof_use_fakecpu").is(":checked"));
-			chrome.extension.getBackgroundPage().Trace.p.SetSetting("Pref_HardwareSpoof.hardware.deviceMemory.enabled",$("#hwspoof_use_fakeram").is(":checked"));
-			chrome.extension.getBackgroundPage().Trace.p.SetSetting("Pref_HardwareSpoof.hardware.hardwareConcurrency.value",$("#hwspoof_val_fakecpu").val());
-			chrome.extension.getBackgroundPage().Trace.p.SetSetting("Pref_HardwareSpoof.hardware.deviceMemory.value",$("#hwspoof_val_fakeram").val());
+			chrome.extension.getBackgroundPage().Trace.p.Set("Pref_HardwareSpoof.hardware.hardwareConcurrency.enabled",$("#hwspoof_use_fakecpu").is(":checked"));
+			chrome.extension.getBackgroundPage().Trace.p.Set("Pref_HardwareSpoof.hardware.deviceMemory.enabled",$("#hwspoof_use_fakeram").is(":checked"));
+			chrome.extension.getBackgroundPage().Trace.p.Set("Pref_HardwareSpoof.hardware.hardwareConcurrency.value",$("#hwspoof_val_fakecpu").val());
+			chrome.extension.getBackgroundPage().Trace.p.Set("Pref_HardwareSpoof.hardware.deviceMemory.value",$("#hwspoof_val_fakeram").val());
 			TraceOpt.CloseOverlay();
 		}
 	},
@@ -2110,11 +2109,11 @@ var TraceOpt = {
 		},
 		ToggleModeUI:function(){
 			if (TraceOpt.Config.CurrentSel.randomOpts.enabled === true){
-				chrome.extension.getBackgroundPage().Trace.p.SetSetting("Pref_ScreenRes.randomOpts.enabled",false);
-				chrome.extension.getBackgroundPage().Trace.p.SetSetting("Pref_ScreenRes.commonResolutions.enabled",true);
+				chrome.extension.getBackgroundPage().Trace.p.Set("Pref_ScreenRes.randomOpts.enabled",false);
+				chrome.extension.getBackgroundPage().Trace.p.Set("Pref_ScreenRes.commonResolutions.enabled",true);
 			} else {
-				chrome.extension.getBackgroundPage().Trace.p.SetSetting("Pref_ScreenRes.randomOpts.enabled",true);
-				chrome.extension.getBackgroundPage().Trace.p.SetSetting("Pref_ScreenRes.commonResolutions.enabled",false);
+				chrome.extension.getBackgroundPage().Trace.p.Set("Pref_ScreenRes.randomOpts.enabled",true);
+				chrome.extension.getBackgroundPage().Trace.p.Set("Pref_ScreenRes.commonResolutions.enabled",false);
 			}
 			TraceOpt.ScreenRes.OpenDialog();
 		},
@@ -2144,7 +2143,7 @@ var TraceOpt = {
 			for (var res in common){
 				TraceOpt.Config.CurrentSel.commonResolutions.resolutions.push([parseInt(common[res][0]),parseInt(common[res][1])]);
 			}
-			chrome.extension.getBackgroundPage().Trace.p.SetSetting("Pref_ScreenRes.commonResolutions.resolutions",TraceOpt.Config.CurrentSel.commonResolutions.resolutions);
+			chrome.extension.getBackgroundPage().Trace.p.Set("Pref_ScreenRes.commonResolutions.resolutions",TraceOpt.Config.CurrentSel.commonResolutions.resolutions);
 			TraceOpt.ScreenRes.UpdateResolutions();
 		},
 		UpdateResolutions:function(){
@@ -2164,7 +2163,7 @@ var TraceOpt = {
 		RemoveResolution:function(){
 			var id = $(this).data("listid");
 			TraceOpt.Config.CurrentSel.commonResolutions.resolutions.splice(id,1);
-			chrome.extension.getBackgroundPage().Trace.p.SetSetting("Pref_ScreenRes.commonResolutions.resolutions",TraceOpt.Config.CurrentSel.commonResolutions.resolutions);
+			chrome.extension.getBackgroundPage().Trace.p.Set("Pref_ScreenRes.commonResolutions.resolutions",TraceOpt.Config.CurrentSel.commonResolutions.resolutions);
 			TraceOpt.ScreenRes.UpdateResolutions();
 		},
 		AddNewResolution:function(){
@@ -2183,14 +2182,14 @@ var TraceOpt = {
 			}
 
 			TraceOpt.Config.CurrentSel.commonResolutions.resolutions.push([parseInt(res[0]),parseInt(res[1])]);
-			chrome.extension.getBackgroundPage().Trace.p.SetSetting("Pref_ScreenRes.commonResolutions.resolutions",TraceOpt.Config.CurrentSel.commonResolutions.resolutions);
+			chrome.extension.getBackgroundPage().Trace.p.Set("Pref_ScreenRes.commonResolutions.resolutions",TraceOpt.Config.CurrentSel.commonResolutions.resolutions);
 			TraceOpt.ScreenRes.UpdateResolutions();
 		},
 		UpdateOffset:function(){
 			var max = parseInt($("#sr_offsetmaxval").val()),
 				min = parseInt($("#sr_offsetminval").val());
 			TraceOpt.Config.CurrentSel.randomOpts.values = [min,max];
-			chrome.extension.getBackgroundPage().Trace.p.SetSetting("Pref_ScreenRes.randomOpts.values",TraceOpt.Config.CurrentSel.randomOpts.values);
+			chrome.extension.getBackgroundPage().Trace.p.Set("Pref_ScreenRes.randomOpts.values",TraceOpt.Config.CurrentSel.randomOpts.values);
 			TraceOpt.ScreenRes.UpdateOffsets();
 
 			$("#sr_updateoffsets").text("Saved!");
@@ -2431,7 +2430,7 @@ var TraceOpt = {
 			TraceOpt.Blocklist.updatedList = true;
 			$("#blc_updAlert").show();
 
-			chrome.extension.getBackgroundPage().Trace.p.SetSetting("Pref_WebController.installCodes",currentCodes);
+			chrome.extension.getBackgroundPage().Trace.p.Set("Pref_WebController.installCodes",currentCodes);
 		}
 	},
 	Scope:{
@@ -2880,7 +2879,7 @@ var TraceOpt = {
 			function runTest(){
 				// Get decoded wl and string we are testing
 				var val = $(this).val();
-				var currWl = chrome.extension.getBackgroundPage().Trace.c.decodedWhitelist;
+				var currWl = chrome.extension.getBackgroundPage().Trace.c.GetWhitelist();
 				var cont = $("#sl_testresp");
 				var matches = 0;
 
@@ -3019,7 +3018,7 @@ var TraceOpt = {
 				newList[enableList[tld]] = true;
 			}
 
-			chrome.extension.getBackgroundPage().Trace.p.SetSetting("Pref_WebController.tld.settings",newList);
+			chrome.extension.getBackgroundPage().Trace.p.Set("Pref_WebController.tld.settings",newList);
 			TraceOpt.BadTopLevelBlock.LoadTLDs();
 		},
 		LoadTLDs:function(){
@@ -3041,7 +3040,7 @@ var TraceOpt = {
 		},
 		SaveSelection:function(){
 			var newVal = ($(this).data("current") == true ? false : true);
-			chrome.extension.getBackgroundPage().Trace.p.SetSetting("Pref_WebController.tld.settings."+$(this).data("tldid"),newVal);
+			chrome.extension.getBackgroundPage().Trace.p.Set("Pref_WebController.tld.settings."+$(this).data("tldid"),newVal);
 			TraceOpt.BadTopLevelBlock.LoadTLDs();
 		}
 	},
@@ -3072,7 +3071,7 @@ var TraceOpt = {
 					$("<option>",{"value":"tracegreyscale"}).text("Trace Greyscale")
 				).on("change",function (){
 					_UserCrashReportService({"UserChoseTheme":$(this).val()});
-					chrome.extension.getBackgroundPage().Trace.p.SetSetting("Main_Interface.Theme.name",$(this).val());
+					chrome.extension.getBackgroundPage().Trace.p.Set("Main_Interface.Theme.name",$(this).val());
 					reloadTheme();
 				}),
 				$("<h2/>").text("Navigation bar position"),
@@ -3081,7 +3080,7 @@ var TraceOpt = {
 					$("<option>",{"value":"nav_left"}).text("Left"),
 					$("<option>",{"value":"nav_right"}).text("Right")
 				).on("change",function () {
-					chrome.extension.getBackgroundPage().Trace.p.SetSetting("Main_Interface.Theme.navPlacement",$(this).val());
+					chrome.extension.getBackgroundPage().Trace.p.Set("Main_Interface.Theme.navPlacement",$(this).val());
 					_UserCrashReportService({"UserChoseNavPos":$(this).val()});
 					reloadTheme();
 				}),
@@ -3091,7 +3090,7 @@ var TraceOpt = {
 						"class":"checkbox_cont"
 					}).text("Enable time-based alterations").append(
 						$("<input/>",opts).on("click enter",function(){
-							chrome.extension.getBackgroundPage().Trace.p.SetSetting("Main_Interface.Theme.timeAlterations",$(this).is(":checked"));
+							chrome.extension.getBackgroundPage().Trace.p.Set("Main_Interface.Theme.timeAlterations",$(this).is(":checked"));
 							reloadTheme();
 						}),
 						$("<span/>",{"class":"ccheck"})
@@ -3208,7 +3207,7 @@ var TraceOpt = {
 				newList[enableList[param]] = true;
 			}
 
-			chrome.extension.getBackgroundPage().Trace.p.SetSetting("Pref_WebController.urlCleaner.queryString.params",newList);
+			chrome.extension.getBackgroundPage().Trace.p.Set("Pref_WebController.urlCleaner.queryString.params",newList);
 			TraceOpt.URLCleaner.LoadParams();
 		},
 		LoadParams:function(){
@@ -3235,14 +3234,14 @@ var TraceOpt = {
 		},
 		SaveParams:function(){
 			var newVal = ($(this).data("current") == true ? false : true);
-			chrome.extension.getBackgroundPage().Trace.p.SetSetting("Pref_WebController.urlCleaner.queryString.params."+$(this).data("tldid"),newVal);
+			chrome.extension.getBackgroundPage().Trace.p.Set("Pref_WebController.urlCleaner.queryString.params."+$(this).data("tldid"),newVal);
 			TraceOpt.URLCleaner.LoadParams();
 		},
 		SaveSelection:function (){
 			var frameMethod = $("#afr_urlc_pmethod").val();
 			//var resMethod = $("#ars_urlc_pmethod").val();
-			chrome.extension.getBackgroundPage().Trace.p.SetSetting("Pref_WebController.urlCleaner.queryString.main_frame.method", frameMethod);
-			//chrome.extension.getBackgroundPage().Trace.p.SetSetting("Pref_WebController.urlCleaner.queryString.resources.method", resMethod);
+			chrome.extension.getBackgroundPage().Trace.p.Set("Pref_WebController.urlCleaner.queryString.main_frame.method", frameMethod);
+			//chrome.extension.getBackgroundPage().Trace.p.Set("Pref_WebController.urlCleaner.queryString.resources.method", resMethod);
 		}
 	},
 	CanvasRGBA:{
@@ -3305,8 +3304,8 @@ var TraceOpt = {
 				parseInt($("#trcanv_custb").val()),
 				parseInt($("#trcanv_custa").val())
 			];
-			chrome.extension.getBackgroundPage().Trace.p.SetSetting("Pref_CanvasFingerprint.customRGBA.enabled",$("#trcanv_custrgba").is(":checked"));
-			chrome.extension.getBackgroundPage().Trace.p.SetSetting("Pref_CanvasFingerprint.customRGBA.rgba",rgba);
+			chrome.extension.getBackgroundPage().Trace.p.Set("Pref_CanvasFingerprint.customRGBA.enabled",$("#trcanv_custrgba").is(":checked"));
+			chrome.extension.getBackgroundPage().Trace.p.Set("Pref_CanvasFingerprint.customRGBA.rgba",rgba);
 			TraceOpt.CloseOverlay();
 		}
 	},
@@ -3406,12 +3405,12 @@ var TraceOpt = {
 			var sc_ena = $("#ce_sett_setcookieheadmod").is(":checked");
 			var sc_fpm = $("#ce_sett_fpsetcookiehead").val();
 			var sc_tpm = $("#ce_sett_tpsetcookiehead").val();
-			chrome.extension.getBackgroundPage().Trace.p.SetSetting("Pref_CookieEater.settings.cookie.enabled", rc_ena);
-			chrome.extension.getBackgroundPage().Trace.p.SetSetting("Pref_CookieEater.settings.setcookie.enabled", sc_ena);
-			chrome.extension.getBackgroundPage().Trace.p.SetSetting("Pref_CookieEater.settings.cookie.fp_method", rc_fpm);
-			chrome.extension.getBackgroundPage().Trace.p.SetSetting("Pref_CookieEater.settings.setcookie.fp_method", sc_fpm);
-			chrome.extension.getBackgroundPage().Trace.p.SetSetting("Pref_CookieEater.settings.cookie.tp_method", rc_tpm);
-			chrome.extension.getBackgroundPage().Trace.p.SetSetting("Pref_CookieEater.settings.setcookie.tp_method", sc_tpm);
+			chrome.extension.getBackgroundPage().Trace.p.Set("Pref_CookieEater.settings.cookie.enabled", rc_ena);
+			chrome.extension.getBackgroundPage().Trace.p.Set("Pref_CookieEater.settings.setcookie.enabled", sc_ena);
+			chrome.extension.getBackgroundPage().Trace.p.Set("Pref_CookieEater.settings.cookie.fp_method", rc_fpm);
+			chrome.extension.getBackgroundPage().Trace.p.Set("Pref_CookieEater.settings.setcookie.fp_method", sc_fpm);
+			chrome.extension.getBackgroundPage().Trace.p.Set("Pref_CookieEater.settings.cookie.tp_method", rc_tpm);
+			chrome.extension.getBackgroundPage().Trace.p.Set("Pref_CookieEater.settings.setcookie.tp_method", sc_tpm);
 
 			TraceOpt.CloseOverlay();
 		},
@@ -3447,7 +3446,7 @@ var TraceOpt = {
 			},
 			SaveSelection:function(){
 				var newVal = ($(this).data("current") == true ? false : true);
-				chrome.extension.getBackgroundPage().Trace.p.SetSetting("Pref_CookieEater.list."+$(this).data("cookieid"),newVal);
+				chrome.extension.getBackgroundPage().Trace.p.Set("Pref_CookieEater.list."+$(this).data("cookieid"),newVal);
 				TraceOpt.CookieEaterUI.List.LoadCookies();
 			}
 		}
@@ -3576,13 +3575,15 @@ var TraceOpt = {
 			var rf_atp = $("#referhead_atp").is(":checked");
 			var rf_atpu = $("#referhead_atpu").is(":checked");
 			var rf_oso = $("#referhead_oso").is(":checked");
-			chrome.extension.getBackgroundPage().Trace.p.SetSetting("Pref_ReferHeader.httpHeader.allowSameHost.enabled", rf_ash);
-			chrome.extension.getBackgroundPage().Trace.p.SetSetting("Pref_ReferHeader.httpHeader.allowSameDomain.enabled", rf_asd);
-			chrome.extension.getBackgroundPage().Trace.p.SetSetting("Pref_ReferHeader.httpHeader.allowThirdParty.enabled", rf_atp);
-			chrome.extension.getBackgroundPage().Trace.p.SetSetting("Pref_ReferHeader.httpHeader.allowSameHost.fullUrl", rf_ashu);
-			chrome.extension.getBackgroundPage().Trace.p.SetSetting("Pref_ReferHeader.httpHeader.allowSameDomain.fullUrl", rf_asdu);
-			chrome.extension.getBackgroundPage().Trace.p.SetSetting("Pref_ReferHeader.httpHeader.allowThirdParty.fullUrl", rf_atpu);
-			chrome.extension.getBackgroundPage().Trace.p.SetSetting("Pref_ReferHeader.httpHeader.onlySecureOrigins.enabled", rf_oso);
+			chrome.extension.getBackgroundPage().Trace.p.SetMultiple({
+				"Pref_ReferHeader.httpHeader.allowSameHost.enabled":rf_ash,
+				"Pref_ReferHeader.httpHeader.allowSameDomain.enabled":rf_asd,
+				"Pref_ReferHeader.httpHeader.allowThirdParty.enabled":rf_atp,
+				"Pref_ReferHeader.httpHeader.allowSameHost.fullUrl":rf_ashu,
+				"Pref_ReferHeader.httpHeader.allowSameDomain.fullUrl":rf_asdu,
+				"Pref_ReferHeader.httpHeader.allowThirdParty.fullUrl":rf_atpu,
+				"Pref_ReferHeader.httpHeader.onlySecureOrigins.enabled":rf_oso
+			});
 
 			TraceOpt.CloseOverlay();
 		},

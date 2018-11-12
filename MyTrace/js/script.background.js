@@ -112,9 +112,10 @@ var Trace = {
 				if (Trace.c.wlEnabled === true){
 					var reqUrl = request.url;
 
-					for (var i = 0, l = Trace.c.decodedWhitelist.keys.length;i<l;i++){
-						if (Trace.c.decodedWhitelist.keys[i].test(reqUrl)){
-							var send = Trace.c.decodedWhitelist.values[i].Protections;
+					var wl = Trace.c.GetWhitelist();
+					for (var i = 0, l = wl.keys.length;i<l;i++){
+						if (wl.keys[i].test(reqUrl)){
+							var send = wl.values[i].Protections;
 	 						sendResponse({
 								"runProtection":true,
 								"data":send
@@ -134,6 +135,16 @@ var Trace = {
 					"runProtection":false,
 					"data":protections
 				});
+			} else if (request.msg === "getsetting"){
+
+				if (request.setting) {
+					sendResponse({
+						"data":Trace.p.Current[request.setting]
+					});
+				} else {
+					sendResponse(Trace.p.Current);
+				}
+
 			} else {
 				console.error("Invalid message recieved");
 			}
@@ -370,9 +381,9 @@ var Trace = {
 			Trace.b.ToggleBlockPings();
 
 			if (Trace.p.Current.Pref_WebController.enabled === true){
-				Trace.c.GetWhitelist();
+				Trace.c.GetStoredWhitelist();
 				Trace.d.AssignChecker();
-				Trace.d.LoadBlacklist();
+				Trace.b.BlocklistLoader(false);
 			}
 
 			// Any post-header modifications start here
@@ -608,7 +619,7 @@ var Trace = {
 			});
 		},
 		RemovePremium:function(){
-			Trace.p.SetSetting("Main_Trace.PremiumCode","");
+			Trace.p.Set("Main_Trace.PremiumCode","");
 			Trace.p.Current.Main_Trace.PremiumCode = "";
 		}
 	},
@@ -982,7 +993,9 @@ var Trace = {
 			}
 			return trNewWl;
 		},
-		GetWhitelist:function(cb){
+		GetStoredWhitelist:function(cb){
+			delete Trace.c.storedWhitelist;
+
 			Trace.v.s.get(["WebData_Whitelist","Main_PageList"],function(s){
 				if ((typeof s.Main_PageList === "undefined" || s.Main_PageList === null) && typeof s.WebData_Whitelist !== "object"){
 					// If new whitelist isn't set and old one isn't either save a blank one
@@ -1002,6 +1015,8 @@ var Trace = {
 			});
 		},
 		LoadWhitelist:function(cb){
+			delete Trace.c.decodedWhitelist;
+
 			var keys = Object.keys(Trace.c.storedWhitelist);
 			var vals = Object.values(Trace.c.storedWhitelist);
 			var defKeys = Object.keys(Trace.c.whitelistDefaults);
@@ -1018,17 +1033,23 @@ var Trace = {
 					continue;
 				}
 
-				if (typeof vals[i].Protections !== "object" || Object.keys(vals[i].Protections).length !== defKeys.length){
-					var repairedProts = vals[i].Protections;
-					for (var j = 0, k = defKeys.length;j<k;j++){
-						if (typeof repairedProts[defKeys[j]] === "undefined"){
-							repairedProts[defKeys[j]] = Trace.c.whitelistDefaults[defKeys[j]];
-							console.log("[plstd]-> Updated protections for",keys[i],defKeys[j]);
+				try {
+					if (typeof vals[i].Protections !== "object" || Object.keys(vals[i].Protections).length !== defKeys.length){
+						var repairedProts = vals[i].Protections;
+						for (var j = 0, k = defKeys.length;j<k;j++){
+							if (typeof repairedProts[defKeys[j]] === "undefined"){
+								repairedProts[defKeys[j]] = Trace.c.whitelistDefaults[defKeys[j]];
+								console.log("[plstd]-> Updated protections for",keys[i],defKeys[j]);
+							}
 						}
+						vals[i].Protections = repairedProts;
+						Trace.c.storedWhitelist[keys[i]].Protections = repairedProts;
+						Trace.c.UpdateStorage();
 					}
-					vals[i].Protections = repairedProts;
-					Trace.c.storedWhitelist[keys[i]].Protections = repairedProts;
-					Trace.c.UpdateStorage();
+				} catch(e){
+					console.warn("Caught error");
+					console.error(e);
+					onerror("WhiteListDecodeError","backgroundscript",1052,0,e);
 				}
 
 				decoded["values"].push(vals[i]);
@@ -1051,11 +1072,15 @@ var Trace = {
 			Trace.v.s.set({
 				"Main_PageList":Trace.c.storedWhitelist
 			},function(){
+				window.location.reload();
 				if (cb) cb();
 			});
 		},
 		ReturnWhitelist:function(callback){
 			callback(Trace.c.storedWhitelist);
+		},
+		GetWhitelist:function(){
+			return Trace.c.decodedWhitelist;
 		},
 		EmptyList:function(){
 			Trace.c.storedWhitelist = {};
@@ -1069,8 +1094,11 @@ var Trace = {
 			if (typeof item !== "string" || item.length < 2){
 				return "Invalid entry";
 			}
+			// this needs to stay as a variable statement to do some memory assignment trickery in firefox to fix issue #4
+			var newSafeObject = JSON.parse(JSON.stringify(newObject));
 
-			Trace.c.storedWhitelist[item] = newObject;
+			Trace.c.storedWhitelist[item] = newSafeObject;
+			//Trace.c.storedWhitelist[item] = newObject;
 			Trace.c.SaveWhitelist(cb);
 		},
 		RemoveItem:function(item,cb){
@@ -1178,9 +1206,6 @@ var Trace = {
 			Trace.d.RemoveChecker();
 			setTimeout(Trace.d.AssignChecker,2000);
 		},
-		LoadBlacklist:function(){
-			Trace.b.BlocklistLoader(false);
-		},
 		CleanURL:function(s,type){
 			// If no params to edit, return
 			if (!s.includes("?")) return s;
@@ -1229,12 +1254,13 @@ var Trace = {
 				if (typeof request.initiator === "string") initUrl = request.initiator;
 				if (typeof request.originUrl === "string") initUrl = request.originUrl;
 
-				for (var i = 0, l = Trace.c.decodedWhitelist.keys.length;i<l;i++){
-					//console.log(Trace.c.decodedWhitelist.keys[i]);
+				var wl = Trace.c.GetWhitelist();
+				for (var i = 0, l = wl.keys.length;i<l;i++){
+					//console.log(wl.keys[i]);
 					//console.log(reqUrl,initUrl);
 					// Check if this page is allowed to be accessed
-					if (Trace.c.decodedWhitelist.keys[i].test(reqUrl)){
-						if (Trace.c.decodedWhitelist.values[i].SiteBlocked === false){
+					if (wl.keys[i].test(reqUrl)){
+						if (wl.values[i].SiteBlocked === false){
 							return {cancel:false};
 						} else {
 							return {cancel:true};
@@ -1242,8 +1268,8 @@ var Trace = {
 					}
 					// Check if this item is allowed to make requests
 					if (typeof initUrl !== "undefined"){
-						if (Trace.c.decodedWhitelist.keys[i].test(initUrl)){
-							if (Trace.c.decodedWhitelist.values[i].InitRequests === true){
+						if (wl.keys[i].test(initUrl)){
+							if (wl.values[i].InitRequests === true){
 								return {cancel:false};
 							}
 						}
@@ -1800,7 +1826,7 @@ var Trace = {
 						Trace.h.IPSpoof.Stop();
 					}
 					if (typeof Trace.p.Current.Pref_IPSpoof.traceIP.user_set !== "string" || Trace.p.Current.Pref_IPSpoof.traceIP.user_set.length < 7){
-						Trace.p.SetSetting("Pref_IPSpoof.traceIP.user_set","128.128.128.128");
+						Trace.p.Set("Pref_IPSpoof.traceIP.user_set","128.128.128.128");
 						Trace.i.CurrentFakeIP = "128.128.128.128";
 						Trace.Notify("Proxy IP Spoofing found an error with the IP used, using 128.128.128.128 instead.","pipsd");
 						return;
@@ -2662,24 +2688,49 @@ var Trace = {
 				if (cb) cb();
 			});
 		},
-		SetSetting:function(setting,val){
+		GetSetting:function(setting){
 			var data = Trace.p.Current;
 			var sett = setting.split(".");
 
 			if (sett.length === 1) {
-				data[setting] = val;
+				return data[setting];
 			} else if (sett.length === 2){
-				data[sett[0]][sett[1]] = val;
+				return data[sett[0]][sett[1]];
 			} else if (sett.length === 3) {
-				data[sett[0]][sett[1]][sett[2]] = val;
+				return data[sett[0]][sett[1]][sett[2]];
 			} else if (sett.length === 4) {
-				data[sett[0]][sett[1]][sett[2]][sett[3]] = val;
+				return data[sett[0]][sett[1]][sett[2]][sett[3]];
 			} else if (sett.length === 5) {
-				data[sett[0]][sett[1]][sett[2]][sett[3]][sett[4]] = val;
+				return data[sett[0]][sett[1]][sett[2]][sett[3]][sett[4]];
+			}
+
+			return null;
+		},
+		SetMultiple:function(settings){
+			var keys = Object.keys(settings);
+			for (var i = 0, l = keys.length;i<l;i++){
+				Trace.p.Set(keys[i],settings[keys[i]]);
+			}
+		},
+		Set:function(setting,val){
+			var data = Trace.p.Current;
+			var sett = setting.split(".");
+			var deadSafe = JSON.parse(JSON.stringify(val));
+
+			if (sett.length === 1) {
+				data[setting] = deadSafe;
+			} else if (sett.length === 2){
+				data[sett[0]][sett[1]] = deadSafe;
+			} else if (sett.length === 3) {
+				data[sett[0]][sett[1]][sett[2]] = deadSafe;
+			} else if (sett.length === 4) {
+				data[sett[0]][sett[1]][sett[2]][sett[3]] = deadSafe;
+			} else if (sett.length === 5) {
+				data[sett[0]][sett[1]][sett[2]][sett[3]][sett[4]] = deadSafe;
 			}
 
 			Trace.v.s.set(data,function(){
-				Trace.p.TakeAction(setting,val);
+				Trace.p.TakeAction(setting,deadSafe);
 			});
 		},
 		TakeAction:function(setting,val){

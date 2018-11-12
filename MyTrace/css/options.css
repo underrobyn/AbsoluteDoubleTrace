@@ -320,12 +320,11 @@ a.dark{
 	padding:.5% 1.5%;
 }
 .sr_cresolution {
-	padding:1px 1%;
-	width:31.3%;
+	padding:1% 1%;
 	font-size:1.2em;
 	text-align:center;
 	float:left;
-	background-color:rgba(255,255,255,1);
+	background-color:rgba(255,255,255,.7);
 	transition:background-color .2s ease-in-out;
 	box-shadow:#1a1a1a 1px 1px 0;
 	cursor:pointer;

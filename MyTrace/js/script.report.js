@@ -246,7 +246,7 @@ var TraceTool = {
 		}
 
 		// Check if hostname is affected by the whitelist
-		var wl = chrome.extension.getBackgroundPage().Trace.c.decodedWhitelist;
+		var wl = chrome.extension.getBackgroundPage().Trace.c.GetWhitelist();
 		for (var i = 0, l = wl.keys.length;i<l;i++){
 			if (wl.keys[i].test(TraceTool.whitelistData.currentOpenURL)){
 				if (wl.values[i].SiteBlocked === false){
