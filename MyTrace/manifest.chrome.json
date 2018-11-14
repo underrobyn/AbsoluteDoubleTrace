@@ -6,7 +6,7 @@
   	"author":"AbsoluteDouble",
 	"description":"Browse online without leaving a Trace, because who wants to be tracked?",
 	"minimum_chrome_version":"32",
-	"version":"2.0.9",
+	"version":"2.0.10",
   	"homepage_url":"https://absolutedouble.co.uk/trace/",
   	"options_page":"html/options.html",
 	"options_ui": {
@@ -54,6 +54,7 @@
 		"notifications",
 		"privacy",
 		"storage",
+		"unlimitedStorage",
 	  	"tabs",
 		"webRequest",
 		"webRequestBlocking",
@@ -61,17 +62,17 @@
 	],
 	"background": {
 		"scripts": [
-		  	"js/lib.cookieparse.js",
-			"js/lib.jquery.js",
-		  	"js/script.background.js",
-		  	"js/script.data.js"
+		  	"js/libraries/cookieparse.js",
+			"js/libraries/jquery.js",
+		  	"js/pages/background.js",
+		  	"js/common/data.js"
 		],
 	  	"persistent":true
 	},
   	"content_scripts":[
 	  	{
 			"all_frames":true,
-			"js":["js/script.page.js"],
+			"js":["js/contentscript/page.js"],
 			"matches":["http://*/*","https://*/*"],
 		  	"match_about_blank":false,
 			"run_at":"document_start"
@@ -79,8 +80,8 @@
 	],
   	"web_accessible_resources": [
 		"html/blocked.html",
-	  	"js/script.blocked.js",
-		"js/lib.jquery.js"
+	  	"js/pages/blocked.js",
+		"js/libraries/jquery.js"
   	],
   	"content_security_policy":"default-src 'none'; style-src 'unsafe-inline'; object-src 'self'; script-src 'self'; connect-src https://absolutedouble.co.uk https://raw.githubusercontent.com"
 }
