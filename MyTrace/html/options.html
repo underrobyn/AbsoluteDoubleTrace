@@ -14,7 +14,7 @@
 	<body>
 
 		<!--
-			Trace Version 2.0.10
+			Trace Version 2.0.11
 			By Jake Mcneill
 
 			Website:	https://absolutedouble.co.uk/
@@ -30,7 +30,49 @@
 			<div id="overlay_cont">
 				<span id="overlay_close">&times;</span>
 				<div id="drop_message">
-					<h2>No Content</h2>
+					<h1>Thanks for installing Trace!</h1>
+					<div class="bigtext">
+						By default, the following settings are on:
+						<ul>
+							<li>Web Request Controller</li>
+							<li>Ping Request Protection</li>
+							<li>Crypto Currency Mining Protection</li>
+							<li>Bad TLD Protection</li>
+							<li>Canvas Fingerprint Protection</li>
+							<li>WebRTC Protection</li>
+							<li>Error Reporting</li>
+						</ul>
+						<div id="newuser_protections" class="hidden">
+							<h2 class="regular">Apply extra protections (Optional):</h2>
+							<div class="prot_config">
+								<span>Simple</span>
+								<ul>
+									<li>getClientRects Protection</li>
+									<li>E-Tag Header Protection</li>
+								</ul><br/>
+								<button class="small" id="prot_sim">Apply (Recommended)</button>
+							</div>
+							<div class="prot_config">
+								<span>Advanced</span>
+								<ul>
+									<li>Google Header Protection</li>
+									<li>Audio Fingerprinting Protection</li>
+								</ul><br/>
+								<button class="small" id="prot_adv">Apply (Useful)</button>
+							</div>
+							<div class="prot_config">
+								<span>Expert</span>
+								<ul>
+									<li>URL Cleaner</li>
+									<li>'Referer' Header Protection</li>
+								</ul><br/>
+								<button class="small" id="prot_exp">Apply (Breaks Things)</button>
+							</div>
+						</div>
+						<a href="#" id="newuser_prots" class="dark">Apply Extra Protections</a> |
+						<a href="https://absolutedouble.co.uk/trace/information.html" title="Change log" class="dark">Changelog</a> |
+						<a href="https://absolutedouble.co.uk/trace/faq.html" title="FAQ" class="dark">Frequently Asked Questions</a>
+					</div>
 				</div>
 			</div>
 		</div>
