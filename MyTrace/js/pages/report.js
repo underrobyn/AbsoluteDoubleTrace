@@ -44,7 +44,6 @@ var TraceTool = {
 		TraceTool.getCurrentURL();
 		TraceTool.loadTodaysStats();
 		TraceTool.loadPrefs();
-		TraceTool.createHomePage();
 		TraceTool.Auth.Init();
 
 		if (/Firefox/.test(navigator.userAgent) || /Edge/.test(navigator.userAgent)) {
@@ -75,10 +74,9 @@ var TraceTool = {
 				var sel = $(this).data("tracetool");
 				if (sel === "home"){
 					TraceTool.loadTodaysStats();
-					TraceTool.createHomePage();
 				} else if (sel === "report"){
 					TraceTool.createReportPanel();
-				} else if (sel === "scope"){
+				} else if (sel === "whitelist"){
 					TraceTool.createWhitelistPanel();
 				} else if (sel === "settings"){
 					TraceTool.settingsWindow();
@@ -88,23 +86,23 @@ var TraceTool = {
 			});
 		});
 	},
-	loadPrefs:function(){
-		if (typeof chrome.extension.getBackgroundPage() !== "object") return;
-
-		TraceTool.prefs = chrome.extension.getBackgroundPage().Trace.p.Current;
-		delete TraceTool.prefs.Main_Trace.PremiumCode;
+	loadPrefs:function() {
+		chrome.runtime.getBackgroundPage(function (bg) {
+			TraceTool.prefs = bg.Trace.p.Current;
+			delete TraceTool.prefs.Main_Trace.PremiumCode;
+		});
 	},
 	loadTodaysStats:function(){
-		if (typeof chrome.extension.getBackgroundPage() !== "object") return;
+		chrome.runtime.getBackgroundPage(function (bg) {
+			var stats = {};
 
-		var stats = {};
-		try {
-			stats = chrome.extension.getBackgroundPage().Trace.s.Current;
-		} catch(e){}
-		if (typeof stats !== "object" || stats === undefined) return;
-		if (Object.keys(stats).length === 0) return;
+			stats = bg.Trace.s.Current;
+			if (typeof stats !== "object" || stats === undefined) return;
+			if (Object.keys(stats).length === 0) return;
 
-		TraceTool.currentStatistics = stats[Object.keys(stats).pop()];
+			TraceTool.currentStatistics = stats[Object.keys(stats).pop()];
+			TraceTool.createHomePage();
+		});
 	},
 	getCurrentURL:function(){
 		// This function gets the current URL and stores it in the main object in multiple forms
@@ -238,7 +236,7 @@ var TraceTool = {
 
 		// Start writing the UI
 		$("#current_section").empty().append($("<div/>",{"id":"page_form"}));
-		$("#title").text("Protection Scope");
+		$("#title").text("Whitelist");
 
 		if (TraceTool.whitelistData.currentOpenURL === false || TraceTool.whitelistData.currentOpenURL === null){
 			$("#page_form").empty().append(
@@ -255,7 +253,7 @@ var TraceTool = {
 				if (wl.values[i].SiteBlocked === false){
 					TraceTool.whitelistData.entry = wl.keys[i];
 					$("#current_section").empty().append(
-						$("<br/>"),$("<span/>",{"class":"msg"}).text("This URL matches an item already in the Scope List."),$("<br/>"),$("<br/>"),
+						$("<br/>"),$("<span/>",{"class":"msg"}).text("This URL matches an item already in the Whitelist."),$("<br/>"),$("<br/>"),
 						$("<div/>",{"id":"user_in"}).append(
 							$("<button/>",{"id":"whitelist_rmdomain"}).text("Remove Entry").on("click enter",TraceTool.whitelistRemove)
 						)

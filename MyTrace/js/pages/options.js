@@ -241,7 +241,7 @@ var TraceOpt = {
 		},
 		ShowScope:function(){
 			$("#drop_message").empty().append(
-				$("<h1/>").text("Trace's Settings Scope"),
+				$("<h1/>").text("Whitelist"),
 				$("<span/>").text("This is the area of Trace where you can configure where protections will run."),
 				$("<br/>"),$("<br/>"),
 				$("<span/>").text("Add entries to the list and use the check boxes to select what protections are allowed to run on that page."),
@@ -356,8 +356,8 @@ var TraceOpt = {
 			"You can find links to all the Research and Tools that have helped me make Trace in the 'Info' section.",
 			"A changelog and roadmap for Trace is available <a href='https://absolutedouble.co.uk/trace/information.html' title='Trace RoadMap/Changelog'>here</a>.",
 			"To contact the Trace Developer check the 'Info' section for details.",
-			"You can enable protections for only certain sites by moving a protection to the 'Run on only some pages' list in 'Trace Settings Scope' under Settings and then creating a rule in the Scope section.",
-			"Trace can function as a web filter by adding rules in the 'Scope' section and then choosing to block the site.",
+			"You can enable protections for only certain sites by moving a protection to the 'Run on only some pages' list in 'Where Protections Run' under Settings and then creating a rule in the Whitelist section.",
+			"Trace can function as a web filter by adding rules in the 'Whitelist' section and then choosing to block the site.",
 			"You can backup and restore your Trace settings in 'Trace Options' under the settings section."
 		];
 		$("#user_tip").html(tips[Math.floor(Math.random()*tips.length)]);
@@ -430,13 +430,13 @@ var TraceOpt = {
 						TraceOpt.Stats.MakeData(d,TraceOpt.Stats.MakeGraph);
 					});
 					document.title = "Trace | Statistics";
-				} else if (load === "scope"){
+				} else if (load === "whitelist"){
 					if (TraceOpt.storage === true){
 						if (localStorage.getItem("showScopeTutorial") === null || localStorage["showScopeTutorial"] === "true"){
 							TraceOpt.Tutorial.ShowScope();
 						}
 					}
-					document.title = "Trace | Scope";
+					document.title = "Trace | Whitelist";
 				} else if (load === "home"){
 					TraceOpt.GetMainPage();
 					TraceOpt.GetPremiumStatus();
@@ -968,7 +968,7 @@ var TraceOpt = {
 			$("#drop_message").empty().append(
 				$("<h1/>",{"id":"backuprestore_title"}).text("Backup/Restore Settings"),
 				$("<section/>",{"id":"backuprestore_section"}).append(
-					$("<span/>").text("The backup will save all of your settings, scope entries and statistics, you can choose what to restore. The file will be in JSON format and is editable."),
+					$("<span/>").text("The backup will save all of your settings, whitelist entries and statistics, you can choose what to restore. The file will be in JSON format and is editable."),
 					$("<br/>"),$("<br/>"),
 					$("<button/>",{"style":"font-size:1em"}).text("Download Backup").on("click",TraceOpt.Backup.Create),
 					$("<h2/>").text("Restore a backup")
@@ -2478,7 +2478,7 @@ var TraceOpt = {
 			TraceOpt.Scope.ReloadList();
 		},
 		EmptyList:function(){
-			$("#wl_biglist").html("<h2>&nbsp;Settings Scope contains no entries.</h2>&nbsp;&nbsp;Add new ones here.<br />");
+			$("#wl_biglist").html("<h2>&nbsp;Whitelist contains no entries.</h2>&nbsp;&nbsp;Add new ones here.<br />");
 		},
 		SaveList:function(){
 			TraceOpt.Scope.Title.html("Updating...");
@@ -2488,7 +2488,7 @@ var TraceOpt = {
 
 				// Make it feel like the whitelist is saving (even though it's instant)
 				setTimeout(function(){
-					TraceOpt.Scope.Title.html("Settings Scope");
+					TraceOpt.Scope.Title.html("Whitelist");
 					$("#wlctrl_update").html("Save Changes");
 				},250);
 			});
@@ -2921,7 +2921,7 @@ var TraceOpt = {
 		},
 		HelpDialog:function(){
 			$("#drop_message").empty().append(
-				$("<h1/>").text("Scope List Help"),
+				$("<h1/>").text("Whitelist Help"),
 				$("<h2/>").text("If you don't find what you're looking for here, please email me"),
 				$("<div/>",{"class":"textscrollable xregular"}).append(
 					$("<ul/>").append(
@@ -2933,7 +2933,7 @@ var TraceOpt = {
 						),
 						$("<li/>").append(
 							$("<span/>",{"class":"premhelp_q"}).text("How can I change which list protections are in?"),$("<br />"),
-							$("<span/>",{"class":"premhelp_a"}).text("If you wish to change a protection from 'All Pages' to 'Per Page' and vice versa, then you can do so under 'Settings' and then 'Trace Settings Scope'."),$("<br />")
+							$("<span/>",{"class":"premhelp_a"}).text("If you wish to change a protection from 'All Pages' to 'Per Page' and vice versa, then you can do so under 'Settings' and then 'Where Protections Run'."),$("<br />")
 						)
 					)
 				),
