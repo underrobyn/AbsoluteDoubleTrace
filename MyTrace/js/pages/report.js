@@ -232,8 +232,6 @@ var TraceTool = {
 		});
 	},
 	createWhitelistPanel:function(){
-		if (typeof chrome.extension.getBackgroundPage() !== "object") return;
-
 		// Start writing the UI
 		$("#current_section").empty().append($("<div/>",{"id":"page_form"}));
 		$("#title").text("Whitelist");
@@ -247,21 +245,26 @@ var TraceTool = {
 		}
 
 		// Check if hostname is affected by the whitelist
-		var wl = chrome.extension.getBackgroundPage().Trace.c.GetWhitelist();
-		for (var i = 0, l = wl.keys.length;i<l;i++){
-			if (wl.keys[i].test(TraceTool.whitelistData.currentOpenURL)){
-				if (wl.values[i].SiteBlocked === false){
-					TraceTool.whitelistData.entry = wl.keys[i];
-					$("#current_section").empty().append(
-						$("<br/>"),$("<span/>",{"class":"msg"}).text("This URL matches an item already in the Whitelist."),$("<br/>"),$("<br/>"),
-						$("<div/>",{"id":"user_in"}).append(
-							$("<button/>",{"id":"whitelist_rmdomain"}).text("Remove Entry").on("click enter",TraceTool.whitelistRemove)
-						)
-					);
+		chrome.runtime.getBackgroundPage(function(bg){
+			var wl = bg.Trace.c.GetWhitelist();
+			for (var i = 0, l = wl.keys.length;i<l;i++){
+				if (wl.keys[i].test(TraceTool.whitelistData.currentOpenURL)){
+					if (wl.values[i].SiteBlocked === false){
+						TraceTool.whitelistData.entry = wl.keys[i];
+						$("#current_section").empty().append(
+							$("<br/>"),$("<span/>",{"class":"msg"}).text("This URL matches an item already in the Whitelist."),$("<br/>"),$("<br/>"),
+							$("<div/>",{"id":"user_in"}).append(
+								$("<button/>",{"id":"whitelist_rmdomain"}).text("Remove Entry").on("click enter",TraceTool.whitelistRemove)
+							)
+						);
+					}
 				}
 			}
-		}
+		});
 
+		TraceTool.createWhitelistOpts();
+	},
+	createWhitelistOpts:function(){
 		var url = new URL(TraceTool.whitelistData.currentOpenURL);
 		TraceTool.whitelistData["origin"] = url.origin + "/*";
 		TraceTool.whitelistData["path"] = "*" + url + "*";
@@ -329,7 +332,6 @@ var TraceTool = {
 				})
 			);
 		}
-
 	},
 	// Thanks to https://stackoverflow.com/a/23945027/
 	extractHostname:function(url){
@@ -373,17 +375,21 @@ var TraceTool = {
 			return;
 		}
 
-		chrome.extension.getBackgroundPage().Trace.c.AddItem(url,TraceTool.ProtectionTemplate,function(){
-			$("#current_section .msg").html("Whitelisted domain");
-			$("#user_in").empty().html("<span class='msg'>The domain: <br />" + url + "<br /><br /> Has been added to the list.</span>");
-			TraceTool.Auth.SafePost({action:"ReloadWhitelist"});
+		chrome.runtime.getBackgroundPage(function(bg){
+			bg.Trace.c.AddItem(url,TraceTool.ProtectionTemplate,function(){
+				$("#current_section .msg").html("Whitelisted domain");
+				$("#user_in").empty().html("<span class='msg'>The domain: <br />" + url + "<br /><br /> Has been added to the list.</span>");
+				TraceTool.Auth.SafePost({action:"ReloadWhitelist"});
+			});
 		});
 	},
 	whitelistRemove:function(){
-		chrome.extension.getBackgroundPage().Trace.c.RemoveItem(TraceTool.whitelistData.entry,function(){
-			$("#current_section .msg").html("Action Completed!");
-			$("#user_in").empty().html("<span class='msg'><br />" + TraceTool.whitelistData.entry + "<br /> Has been removed from the list.<br /><br />Reload page to apply action</span>");
-			TraceTool.Auth.SafePost({action:"ReloadWhitelist"});
+		chrome.runtime.getBackgroundPage(function(bg){
+			bg.Trace.c.RemoveItem(TraceTool.whitelistData.entry,function(){
+				$("#current_section .msg").html("Action Completed!");
+				$("#user_in").empty().html("<span class='msg'><br />" + TraceTool.whitelistData.entry + "<br /> Has been removed from the list.<br /><br />Reload page to apply action</span>");
+				TraceTool.Auth.SafePost({action:"ReloadWhitelist"});
+			});
 		});
 	}
 };

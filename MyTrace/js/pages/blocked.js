@@ -220,9 +220,11 @@ var TraceBlock = {
 			return;
 		}
 
-		chrome.extension.getBackgroundPage().Trace.c.AddItem(url,TraceBlock.ProtectionTemplate,function(){
-			TraceBlock.Auth.SafePost({action:"ReloadWhitelist"});
-			window.location.href = TraceBlock.blockedURL;
+		chrome.runtime.getBackgroundPage(function(bg){
+			bg.Trace.c.AddItem(url,TraceBlock.ProtectionTemplate,function(){
+				TraceBlock.Auth.SafePost({action:"ReloadWhitelist"});
+				window.location.href = TraceBlock.blockedURL;
+			});
 		});
 	}
 };

@@ -592,46 +592,44 @@ var TraceOpt = {
 		$(this).text("Working...");
 	},
 	GetPremiumStatus:function(){
-		if (!chrome.extension || typeof chrome.extension.getBackgroundPage !== "function"){
-			return;
-		}
+		chrome.runtime.getBackgroundPage(function(bg){
+			var code = bg.Trace.v.Premium;
 
-		var code = chrome.extension.getBackgroundPage().Trace.v.Premium;
+			if (typeof(code) !== "string" || code === ""){
+				$("#trace_premstatus").show();
+				$("#premium_status, #info_premium_status").empty().append(
+					$("<span/>",{class:"premium_inner"}).text("Support Trace's development! Buy premium to gain access to the Premium blocklist"),
+					$("<br/>"),$("<br/>"),
+					$("<button/>").on("click enter",TraceOpt.EnterPremiumCode).text("Enter Code"),
+					$("<span/>").text(" "),
+					$("<button/>").on("click enter",function(){
+						var win = window.open("https://absolutedouble.co.uk/trace/premium", "_blank");
+						if (win !== null) win.focus();
+					}).text("Get Premium Code"),
+					$("<span/>").text(" "),
+					$("<button/>").on("click enter",function(){
+						var win = window.open("https://absolutedouble.co.uk/trace/", "_blank");
+						if (win !== null) win.focus();
+					}).text("Website")
+				);
+				return;
+			}
 
-		if (typeof(code) !== "string" || code === ""){
-			$("#trace_premstatus").show();
-			$("#premium_status, #info_premium_status").empty().append(
-				$("<span/>",{class:"premium_inner"}).text("Support Trace's development! Buy premium to gain access to the Premium blocklist"),
+			$("#premium_status,#info_premium_status").empty().append(
+				$("<span/>").text("Thank you for supporting Trace!"),
 				$("<br/>"),$("<br/>"),
-				$("<button/>").on("click enter",TraceOpt.EnterPremiumCode).text("Enter Code"),
+				$("<button/>").text("Disable Premium").click(TraceOpt.RemovePremium),
 				$("<span/>").text(" "),
-				$("<button/>").on("click enter",function(){
-					var win = window.open("https://absolutedouble.co.uk/trace/premium", "_blank");
-					if (win !== null) win.focus();
-				}).text("Get Premium Code"),
+				$("<button/>").text(
+					(bg.Trace.p.Current.Pref_WebController.enabled === true ? "Force Blocklist Update" : "Enable Web Request Controller")
+				).click(TraceOpt.UpdateBlocklist),
 				$("<span/>").text(" "),
 				$("<button/>").on("click enter",function(){
 					var win = window.open("https://absolutedouble.co.uk/trace/", "_blank");
 					if (win !== null) win.focus();
 				}).text("Website")
 			);
-			return;
-		}
-
-		$("#premium_status,#info_premium_status").empty().append(
-			$("<span/>").text("Thank you for supporting Trace!"),
-			$("<br/>"),$("<br/>"),
-			$("<button/>").text("Disable Premium").click(TraceOpt.RemovePremium),
-			$("<span/>").text(" "),
-			$("<button/>").text(
-				(chrome.extension.getBackgroundPage().Trace.p.Current.Pref_WebController.enabled === true ? "Force Blocklist Update" : "Enable Web Request Controller")
-			).click(TraceOpt.UpdateBlocklist),
-			$("<span/>").text(" "),
-			$("<button/>").on("click enter",function(){
-				var win = window.open("https://absolutedouble.co.uk/trace/", "_blank");
-				if (win !== null) win.focus();
-			}).text("Website")
-		);
+		});
 	},
 	RemovePremium:function(){
 		if (confirm("Are you sure you wish to remove your premium code from Trace?\nThis will not delete your code from our servers.\n\nYour code:\n" + chrome.extension.getBackgroundPage().Trace.p.Current.Main_Trace.PremiumCode)){
@@ -1097,8 +1095,10 @@ var TraceOpt = {
 			});
 		},
 		ClearRestore:function(){
-			chrome.extension.getBackgroundPage().Trace.p.ClearStorage();
-			TraceOpt.Backup.NormalRestore();
+			chrome.runtime.getBackgroundPage(function(bg){
+				bg.Trace.p.ClearStorage();
+				TraceOpt.Backup.NormalRestore();
+			});
 		}
 	},
 	ExecutionOrder:{
@@ -1566,14 +1566,11 @@ var TraceOpt = {
 			});
 		},
 		GetStatsData:function(cb){
-			if (!chrome.hasOwnProperty("extension") || typeof chrome.extension.getBackgroundPage !== "function"){
-				return;
-			}
-			chrome.extension.getBackgroundPage().Trace.s.Data(function(d){
-				TraceOpt.Stats.GraphData = d;
-				if (cb){
-					cb(d);
-				}
+			chrome.runtime.getBackgroundPage(function(bg){
+				bg.Trace.s.Data(function(d){
+					TraceOpt.Stats.GraphData = d;
+					if (cb) cb(d);
+				});
 			});
 		},
 		GraphColors:function(req){
@@ -1973,13 +1970,15 @@ var TraceOpt = {
 			TraceOpt.AssignCloseOverlay(true);
 		},
 		SaveParameters:function(){
-			chrome.extension.getBackgroundPage().Trace.p.SetMultiple({
-				"Pref_HardwareSpoof.hardware.hardwareConcurrency.enabled": $("#hwspoof_use_fakecpu").is(":checked"),
-				"Pref_HardwareSpoof.hardware.deviceMemory.enabled": $("#hwspoof_use_fakeram").is(":checked"),
-				"Pref_HardwareSpoof.hardware.hardwareConcurrency.value": $("#hwspoof_val_fakecpu").val(),
-				"Pref_HardwareSpoof.hardware.deviceMemory.value": $("#hwspoof_val_fakeram").val()
+			chrome.runtime.getBackgroundPage(function(bg){
+				bg.Trace.p.SetMultiple({
+					"Pref_HardwareSpoof.hardware.hardwareConcurrency.enabled": $("#hwspoof_use_fakecpu").is(":checked"),
+					"Pref_HardwareSpoof.hardware.deviceMemory.enabled": $("#hwspoof_use_fakeram").is(":checked"),
+					"Pref_HardwareSpoof.hardware.hardwareConcurrency.value": $("#hwspoof_val_fakecpu").val(),
+					"Pref_HardwareSpoof.hardware.deviceMemory.value": $("#hwspoof_val_fakeram").val()
+				});
+				TraceOpt.CloseOverlay();
 			});
-			TraceOpt.CloseOverlay();
 		}
 	},
 	UserAgent:{
@@ -2474,9 +2473,11 @@ var TraceOpt = {
 		},
 		ClearWhitelist:function(){
 			if (confirm("Are you sure you wish to clear the entire list?")){
-				chrome.extension.getBackgroundPage().Trace.c.EmptyList();
+				chrome.runtime.getBackgroundPage(function(bg){
+					bg.Trace.c.EmptyList();
+					TraceOpt.Scope.ReloadList();
+				});
 			}
-			TraceOpt.Scope.ReloadList();
 		},
 		EmptyList:function(){
 			$("#wl_biglist").html("<h2>&nbsp;Whitelist contains no entries.</h2>&nbsp;&nbsp;Add new ones here.<br />");
@@ -2484,14 +2485,16 @@ var TraceOpt = {
 		SaveList:function(){
 			TraceOpt.Scope.Title.html("Updating...");
 			$("#wlctrl_update").html("Saving...");
-			chrome.extension.getBackgroundPage().Trace.c.SaveWhitelist(function(){
-				TraceOpt.Scope.ReloadList();
+			chrome.runtime.getBackgroundPage(function(bg){
+				bg.Trace.c.SaveWhitelist(function(){
+					TraceOpt.Scope.ReloadList();
 
-				// Make it feel like the whitelist is saving (even though it's instant)
-				setTimeout(function(){
-					TraceOpt.Scope.Title.html("Whitelist");
-					$("#wlctrl_update").html("Save Changes");
-				},250);
+					// Make it feel like the whitelist is saving (even though it's instant)
+					setTimeout(function(){
+						TraceOpt.Scope.Title.html("Whitelist");
+						$("#wlctrl_update").html("Save Changes");
+					},250);
+				});
 			});
 		},
 		StartSearch:function(){
@@ -2670,9 +2673,11 @@ var TraceOpt = {
 				console.log($(this).data("controls"),"set to",$(this).is(":checked"));
 			});
 
-			chrome.extension.getBackgroundPage().Trace.c.AddItem(domain,scopeData,function(){
-				TraceOpt.Scope.ReloadList();
-				TraceOpt.CloseOverlay();
+			chrome.runtime.getBackgroundPage(function(bg){
+				bg.Trace.c.AddItem(domain,scopeData,function(){
+					TraceOpt.Scope.ReloadList();
+					TraceOpt.CloseOverlay();
+				});
 			});
 		},
 		EditDomain:function(){
@@ -2866,13 +2871,15 @@ var TraceOpt = {
 		},
 		PopulateList:function(cb){
 			$("#wl_biglist").empty();
-			chrome.extension.getBackgroundPage().Trace.c.ReturnWhitelist(function(list){
-				console.log(list);
-				if (Object.keys(list).length === 0){
-					TraceOpt.Scope.EmptyList();
-				} else {
-					cb(list);
-				}
+			chrome.runtime.getBackgroundPage(function(bg){
+				bg.Trace.c.ReturnWhitelist(function(list){
+					console.log(list);
+					if (Object.keys(list).length === 0){
+						TraceOpt.Scope.EmptyList();
+					} else {
+						cb(list);
+					}
+				});
 			});
 		},
 		ListTest:function(){
