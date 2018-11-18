@@ -542,45 +542,46 @@ var TraceOpt = {
 	},
 	GetCurrentSettings:function(){
 		// Get current settings
-		var settingsList = chrome.extension.getBackgroundPage().Trace.p.Current;
+		chrome.runtime.getBackgroundPage(function(bg){
+			var settingsList = bg.Trace.p.Current;
 
-		// Get current settings
-		$(".setting_toggle").each(function(){
-			var status = $(this).data("toggle"), e = false;
+			$(".setting_toggle").each(function(){
+				var status = $(this).data("toggle"), e = false;
 
-			if (status.includes(".")){
-				var a = status.split(".");
-				if (typeof settingsList[a[0]][a[1]] === "undefined") return;
-				e = settingsList[a[0]][a[1]].enabled;
-			} else {
-				if (typeof settingsList[status] === "undefined") return;
-				e = settingsList[status].enabled;
-			}
-			$(this).text((e === true ? "Enabled" : "Disabled"));
-		});
-		$(".isetting_toggle").each(function(){
-			var status = $(this).data("toggle"), enabled = false;
-			if (status.includes(".")){
-				var a = status.split(".");
-				enabled = settingsList[a[0]][a[1]].enabled;
-			} else {
-				enabled = settingsList[status].enabled;
-			}
-			$(this).text((enabled === true ? "Enabled" : "Disabled"));
-		});
-		$(".direct_toggle").each(function(){
-			var status = $(this).data("toggle");
-			TraceOpt.DirectSetting(this,status,false);
-		});
-		$(".trace_toggle").each(function(){
-			var status = $(this).data("toggle"), enabled = false;
-			if (status.includes(".")){
-				var a = status.split(".");
-				enabled = settingsList[a[0]][a[1]].enabled;
-			} else {
-				enabled = settingsList[status].enabled;
-			}
-			$(this).text((enabled === true ? "Enabled" : "Disabled"));
+				if (status.includes(".")){
+					var a = status.split(".");
+					if (typeof settingsList[a[0]][a[1]] === "undefined") return;
+					e = settingsList[a[0]][a[1]].enabled;
+				} else {
+					if (typeof settingsList[status] === "undefined") return;
+					e = settingsList[status].enabled;
+				}
+				$(this).text((e === true ? "Enabled" : "Disabled"));
+			});
+			$(".isetting_toggle").each(function(){
+				var status = $(this).data("toggle"), enabled = false;
+				if (status.includes(".")){
+					var a = status.split(".");
+					enabled = settingsList[a[0]][a[1]].enabled;
+				} else {
+					enabled = settingsList[status].enabled;
+				}
+				$(this).text((enabled === true ? "Enabled" : "Disabled"));
+			});
+			$(".direct_toggle").each(function(){
+				var status = $(this).data("toggle");
+				TraceOpt.DirectSetting(this,status,false);
+			});
+			$(".trace_toggle").each(function(){
+				var status = $(this).data("toggle"), enabled = false;
+				if (status.includes(".")){
+					var a = status.split(".");
+					enabled = settingsList[a[0]][a[1]].enabled;
+				} else {
+					enabled = settingsList[status].enabled;
+				}
+				$(this).text((enabled === true ? "Enabled" : "Disabled"));
+			});
 		});
 	},
 	UpdateBlocklist:function(){
