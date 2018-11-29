@@ -89,8 +89,8 @@ var TraceTool = {
 	loadPrefs:function() {
 		chrome.runtime.getBackgroundPage(function (bg) {
 			TraceTool.prefs = bg.Trace.p.Current;
-			delete TraceTool.prefs.Main_Trace.PremiumCode;
 		});
+		//delete TraceTool.prefs.Main_Trace.PremiumCode;
 	},
 	loadTodaysStats:function(){
 		chrome.runtime.getBackgroundPage(function (bg) {

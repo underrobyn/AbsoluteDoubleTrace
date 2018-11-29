@@ -326,8 +326,8 @@ var TraceOpt = {
 		chrome.runtime.getBackgroundPage(function(bg){
 			TraceOpt.debug = (typeof bg.Trace.p.Current.Main_Trace.DebugApp.enabled !== "undefined" ?
 				(bg.Trace.p.Current.Main_Trace.DebugApp.enabled) : false);
-			TraceOpt.Blocklist.isPremium = (typeof bg.Trace.p.Current.Main_Trace.PremiumCode !== "undefined" ?
-				(bg.Trace.p.Current.Main_Trace.PremiumCode.length === 0 ? false : true) : false);
+			TraceOpt.Blocklist.isPremium = (typeof bg.Trace.v.Premium !== "undefined" ?
+				(bg.Trace.v.Premium.length !== 0) : false);
 		});
 	},
 	BrowserCompatibility:function(){
@@ -638,7 +638,7 @@ var TraceOpt = {
 		});
 	},
 	RemovePremium:function(){
-		if (confirm("Are you sure you wish to remove your premium code from Trace?\nThis will not delete your code from our servers.\n\nYour code:\n" + chrome.extension.getBackgroundPage().Trace.p.Current.Main_Trace.PremiumCode)){
+		if (confirm("Are you sure you wish to remove your premium code from Trace?\nThis will not delete your code from our servers.\n\nYour code:\n" + chrome.extension.getBackgroundPage().Trace.v.Premium)){
 			chrome.extension.getBackgroundPage().Trace.p.Set("Main_Trace.PremiumCode","");
 			chrome.extension.getBackgroundPage().Trace.b.ClearDomainCache();
 
@@ -1104,10 +1104,12 @@ var TraceOpt = {
 			var data = {};
 			data = TraceOpt.Backup.Data.data;
 
-			chrome.extension.getBackgroundPage().Trace.v.s.set(data,function(){
-				chrome.extension.getBackgroundPage().window.location.reload();
-				window.location.href = "#backupRestored";
-				window.location.reload(true);
+			chrome.runtime.getBackgroundPage(function(bg){
+				bg.Trace.v.s.set(data,function(){
+					bg.window.location.reload();
+					window.location.href = "#backupRestored";
+					window.location.reload(true);
+				});
 			});
 		},
 		ClearRestore:function(){
@@ -1137,7 +1139,9 @@ var TraceOpt = {
 			"Pref_WebRTC":"WebRTC Protection"
 		},
 		ReloadInterface:function(){
-			chrome.extension.getBackgroundPage().Trace.f.ReturnExecOrder(TraceOpt.ExecutionOrder.CreateInterface);
+			chrome.runtime.getBackgroundPage(function(bg){
+				bg.Trace.f.ReturnExecOrder(TraceOpt.ExecutionOrder.CreateInterface);
+			});
 		},
 		CreateInterface:function(p){
 			var allpage = $("#settings_protallpage");
@@ -1174,8 +1178,10 @@ var TraceOpt = {
 			}
 		},
 		SwapProtection:function(){
-			console.log($(this).data("pref"));
-			chrome.extension.getBackgroundPage().Trace.f.ChangeExecOrder($(this).data("pref"),TraceOpt.ExecutionOrder.ReloadInterface);
+			var that = $(this).data("pref");
+			chrome.runtime.getBackgroundPage(function(bg){
+				bg.Trace.f.ChangeExecOrder(that,TraceOpt.ExecutionOrder.ReloadInterface);
+			});
 		}
 	},
 	Config:{
@@ -1280,7 +1286,9 @@ var TraceOpt = {
 			if ($(a).is(":checked")){
 				v = true;
 			}
-			chrome.extension.getBackgroundPage().Trace.p.Set(s,v);
+			chrome.runtime.getBackgroundPage(function(bg){
+				bg.Trace.p.Set(s,v);
+			});
 		},
 		GetConf:function(){
 			var el = $("<div/>",{
@@ -1432,7 +1440,9 @@ var TraceOpt = {
 				if (TraceOpt.PIPSpoof.IPSaveTimeout) clearTimeout(TraceOpt.PIPSpoof.IPSaveTimeout);
 
 				TraceOpt.PIPSpoof.IPSaveTimeout = setTimeout(function(){
-					chrome.extension.getBackgroundPage().Trace.p.Set("Pref_IPSpoof.traceIP.user_set",potential);
+					chrome.runtime.getBackgroundPage(function(bg){
+						bg.Trace.p.Set("Pref_IPSpoof.traceIP.user_set",potential);
+					});
 					$("#" + elID).css({
 						"background":"#70ff71",
 						"color":"#fff"
@@ -1458,7 +1468,9 @@ var TraceOpt = {
 				if (TraceOpt.PIPSpoof.ViaSaveTimeout) clearTimeout(TraceOpt.PIPSpoof.ViaSaveTimeout);
 
 				TraceOpt.PIPSpoof.ViaSaveTimeout = setTimeout(function(){
-					chrome.extension.getBackgroundPage().Trace.p.Set("Pref_IPSpoof.traceVia.value",potential);
+					chrome.runtime.getBackgroundPage(function(bg){
+						bg.Trace.p.Set("Pref_IPSpoof.traceVia.value",potential);
+					});
 					$("#" + elID).css({
 						"background":"#70ff71",
 						"color":"#fff"
@@ -1810,61 +1822,63 @@ var TraceOpt = {
 			}
 			var date, returnd;
 
-			chrome.extension.getBackgroundPage().Trace.s.Data(function(d){
-				if (file === "csv" || file === "tsv"){
-					var s = ",";
-					if (file === "tsv") s = "\t";
+			chrome.runtime.getBackgroundPage(function(bg){
+				bg.Trace.s.Data(function(d) {
+					if (file === "csv" || file === "tsv") {
+						var s = ",";
+						if (file === "tsv") s = "\t";
 
-					returnd = 'Date'+s+'Web'+s+'Media'+s+'Code'+s+'Other'+s+'Total';
+						returnd = 'Date' + s + 'Web' + s + 'Media' + s + 'Code' + s + 'Other' + s + 'Total';
 
-					for (var i = 0, l = Object.keys(d).length;i<l;i++){
-						var currentd = Object.keys(d)[i];
-						var obj = d[currentd];
-						returnd += "\n" + currentd +
-							s + obj.webpage +
-							s + obj.media +
-							s + obj.code +
-							s + obj.other +
-							s + (obj.webpage + obj.media + obj.code + obj.other);
+						for (var i = 0, l = Object.keys(d).length; i < l; i++) {
+							var currentd = Object.keys(d)[i];
+							var obj = d[currentd];
+							returnd += "\n" + currentd +
+								s + obj.webpage +
+								s + obj.media +
+								s + obj.code +
+								s + obj.other +
+								s + (obj.webpage + obj.media + obj.code + obj.other);
+						}
+
+						TraceOpt.Stats.CreateDownload(returnd, file);
+
+					} else if (file === "xml") {
+
+						date = TraceOpt.theDate();
+						returnd = '<?xml version="1.0" encoding="UTF-8"?>\n';
+						returnd += "<tracestats downloaded='" + (date[0] + "-" + date[1] + "-" + date[2]).toString() + "'>";
+
+						for (var i = 0, l = Object.keys(d).length; i < l; i++) {
+							var currentd = Object.keys(d)[i];
+							var obj = d[currentd];
+							returnd += "\n\t<stats date='" + currentd + "'>" +
+								'\n\t\t<webpages>' + obj.webpage + '</webpages>' +
+								'\n\t\t<media>' + obj.media + '</media>' +
+								'\n\t\t<code>' + obj.code + '</code>' +
+								'\n\t\t<other>' + obj.other + '</other>' +
+								'\n\t\t<total>' + (obj.webpage + obj.media + obj.code + obj.other) + '</total>' +
+								'\n\t</stats>';
+						}
+
+						returnd += '\n</tracestats>';
+
+						TraceOpt.Stats.CreateDownload(returnd, file);
+
+					} else if (file === "json") {
+
+						date = TraceOpt.theDate();
+						var stats = {
+							"downloaded": (date[0] + "-" + date[1] + "-" + date[2]).toString(),
+							"stats": d
+						};
+
+						TraceOpt.Stats.CreateDownload(JSON.stringify(stats, null, 4), file);
+
+					} else {
+						console.info("Cannot export this file format");
 					}
-
-					TraceOpt.Stats.CreateDownload(returnd,file);
-
-				} else if (file === "xml"){
-
-					date = TraceOpt.theDate();
-					returnd = '<?xml version="1.0" encoding="UTF-8"?>\n';
-					returnd += "<tracestats downloaded='" + (date[0] + "-" + date[1] + "-" + date[2]).toString() + "'>";
-
-					for (var i = 0, l = Object.keys(d).length;i<l;i++){
-						var currentd = Object.keys(d)[i];
-						var obj = d[currentd];
-						returnd += "\n\t<stats date='" + currentd + "'>" +
-							'\n\t\t<webpages>' + obj.webpage + '</webpages>' +
-							'\n\t\t<media>' + obj.media + '</media>' +
-							'\n\t\t<code>' + obj.code + '</code>' +
-							'\n\t\t<other>' + obj.other + '</other>' +
-							'\n\t\t<total>' + (obj.webpage + obj.media + obj.code + obj.other) + '</total>' +
-							'\n\t</stats>';
-					}
-
-					returnd += '\n</tracestats>';
-
-					TraceOpt.Stats.CreateDownload(returnd,file);
-
-				} else if (file === "json") {
-
-					date = TraceOpt.theDate();
-					var stats = {
-						"downloaded":(date[0] + "-" + date[1] + "-" + date[2]).toString(),
-						"stats":d
-					};
-
-					TraceOpt.Stats.CreateDownload(JSON.stringify(stats,null,4),file);
-
-				} else {
-					console.info("Cannot export this file format");
-				}
+				});
 			});
 		},
 		CreateDownload:function(data,filetype){
@@ -2219,8 +2233,8 @@ var TraceOpt = {
 		updatedList:false,
 		OpenDialog:function(){
 			chrome.runtime.getBackgroundPage(function(bg){
-				TraceOpt.Blocklist.isPremium = (typeof bg.Trace.p.Current.Main_Trace.PremiumCode !== "undefined" ?
-					(bg.Trace.p.Current.Main_Trace.PremiumCode.length === 0 ? false : true) : false);
+				TraceOpt.Blocklist.isPremium = (typeof bg.Trace.v.Premium !== "undefined" ?
+					(bg.Trace.v.Premium.length !== 0) : false);
 			});
 
 			$("#overlay_cont").addClass("blc_parent");
@@ -2261,7 +2275,9 @@ var TraceOpt = {
 			function updateLists(){
 				if (TraceOpt.Blocklist.updatedList) {
 					unbindClick();
-					chrome.extension.getBackgroundPage().Trace.b.BlocklistLoader(true);
+					chrome.runtime.getBackgroundPage(function(bg){
+						bg.Trace.b.BlocklistLoader(true);
+					});
 				}
 
 				$("#blc_cServerList").empty();
@@ -2602,7 +2618,7 @@ var TraceOpt = {
 			var dpAllPage = chrome.extension.getBackgroundPage().Trace.p.Current.Main_ExecutionOrder.AllPage || [];
 			var dpPerPage = chrome.extension.getBackgroundPage().Trace.p.Current.Main_ExecutionOrder.PerPage || [];
 			var allPage = $("#s_add_allpage"),
-				perPage = $("#s_add_perpage")
+				perPage = $("#s_add_perpage");
 
 			allPage.empty();
 			for (var i = 0;i<dpAllPage.length;i++){
@@ -2786,17 +2802,21 @@ var TraceOpt = {
 				scopeData["Protections"][$(this).data("controls")] = $(this).is(":checked");
 			});
 
-			chrome.extension.getBackgroundPage().Trace.c.EditItem(removeItem,addItem,scopeData,function(){
-				TraceOpt.Scope.ReloadList();
-			});
+			chrome.runtime.getBackgroundPage(function(bg){
+				bg.Trace.c.EditItem(removeItem,addItem,scopeData,function(){
+					TraceOpt.Scope.ReloadList();
+				});
+			})
 		},
 		RemoveDomain:function(){
 			if(TraceOpt.Scope.CurrentSelect === null){
 				return false;
 			}
 			var item = TraceOpt.Scope.CurrentSelect.data("itmkey");
-			chrome.extension.getBackgroundPage().Trace.c.RemoveItem(item,function(){
-				TraceOpt.Scope.ReloadList();
+			chrome.runtime.getBackgroundPage(function(bg){
+				bg.Trace.c.RemoveItem(item,function(){
+					TraceOpt.Scope.ReloadList();
+				});
 			});
 		},
 		AlterSelect:function(e){
@@ -3074,8 +3094,8 @@ var TraceOpt = {
 	UserInterfaceCustomiser:{
 		OptionsInterface:function(){
 			chrome.runtime.getBackgroundPage(function(bg){
-				TraceOpt.Blocklist.isPremium = (typeof bg.Trace.p.Current.Main_Trace.PremiumCode !== "undefined" ?
-					(bg.Trace.p.Current.Main_Trace.PremiumCode.length === 0 ? false : true) : false);
+				TraceOpt.Blocklist.isPremium = (typeof bg.Trace.v.Premium !== "undefined" ?
+					(bg.Trace.v.Premium.length !== 0) : false);
 			});
 
 			if (!TraceOpt.Blocklist.isPremium){

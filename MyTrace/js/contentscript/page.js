@@ -749,6 +749,7 @@ var TPage = {
 				const GoogleAnalyticsObject = false;\
 				const ga = false;\
 				const _paq = {push:function(data){console.log("Trace protected you against a tracking event! Data->");console.log(data);console.log("=========================================================")}};\
+				const adsbygoogle = {loaded:true,push:function(data){console.log("Trace protected you against a tracking event! Data->");console.log(data);console.log("=========================================================")}};\
 			');
 			script.appendChild(newChild);
 
