@@ -1209,16 +1209,21 @@ var TraceOpt = {
 		},
 		Options:function(setting){
 			TraceOpt.Config.SelectedOption = setting;
-			TraceOpt.Config.CurrentSettings = chrome.extension.getBackgroundPage().Trace.p.GetSetting;
-			TraceOpt.Config.CurrentSel = TraceOpt.Config.CurrentSettings(TraceOpt.Config.SelectedOption);
+			chrome.runtime.getBackgroundPage(function(bg){
+				//Trace.Config.CurrentSettings = bg.Trace.p.GetSetting();
+				TraceOpt.Config.CurrentSel = bg.Trace.p.GetSetting(TraceOpt.Config.SelectedOption);
 
-			var enabled = false;
-			if (TraceOpt.Config.SelectedOption.includes(".")){
-				enabled = TraceOpt.Config.CurrentSettings(TraceOpt.Config.SelectedOption).enabled;
-			} else {
-				enabled = TraceOpt.Config.CurrentSel.enabled;
-			}
+				var enabled = false;
+				if (TraceOpt.Config.SelectedOption.includes(".")){
+					enabled = bg.Trace.p.GetSetting(TraceOpt.Config.SelectedOption).enabled;
+				} else {
+					enabled = TraceOpt.Config.CurrentSel.enabled;
+				}
 
+				TraceOpt.Config.OptionsView(setting,enabled);
+			});
+		},
+		OptionsView:function(setting,enabled){
 			switch(setting){
 				case "Pref_AudioFingerprint":
 					TraceOpt.Config.s.AudioSettings();
@@ -1274,9 +1279,9 @@ var TraceOpt = {
 			}
 
 			if (enabled !== true){
-				 $("#drop_message").prepend(
-				 	$("<h1/>",{"class":"setting_disabled"}).text("This setting isn't currently enabled")
-				 );
+				$("#drop_message").prepend(
+					$("<h1/>",{"class":"setting_disabled"}).text("This setting isn't currently enabled")
+				);
 			}
 		},
 		SaveConf:function(a){
@@ -2134,11 +2139,19 @@ var TraceOpt = {
 		},
 		ToggleModeUI:function(){
 			if (TraceOpt.Config.CurrentSel.randomOpts.enabled === true){
-				chrome.extension.getBackgroundPage().Trace.p.Set("Pref_ScreenRes.randomOpts.enabled",false);
-				chrome.extension.getBackgroundPage().Trace.p.Set("Pref_ScreenRes.commonResolutions.enabled",true);
+				chrome.runtime.getBackgroundPage(function(bg){
+					bg.Trace.p.SetMultiple({
+						"Pref_ScreenRes.randomOpts.enabled":false,
+						"Pref_ScreenRes.commonResolutions.enabled":true
+					});
+				});
 			} else {
-				chrome.extension.getBackgroundPage().Trace.p.Set("Pref_ScreenRes.randomOpts.enabled",true);
-				chrome.extension.getBackgroundPage().Trace.p.Set("Pref_ScreenRes.commonResolutions.enabled",false);
+				chrome.runtime.getBackgroundPage(function(bg){
+					bg.Trace.p.SetMultiple({
+						"Pref_ScreenRes.randomOpts.enabled":true,
+						"Pref_ScreenRes.commonResolutions.enabled":false
+					});
+				});
 			}
 			TraceOpt.ScreenRes.OpenDialog();
 		},
@@ -3015,11 +3028,13 @@ var TraceOpt = {
 			);
 			TraceOpt.AssignCloseOverlay(true);
 
-			if (chrome.extension.getBackgroundPage().Trace.p.Current.Pref_WebController.tld.enabled !== true){
-				$("#drop_message").prepend(
-					$("<h1/>",{"class":"setting_disabled"}).text("This setting isn't currently enabled")
-				);
-			}
+			chrome.runtime.getBackgroundPage(function(bg){
+				if (bg.Trace.p.Current.Pref_WebController.tld.enabled !== true){
+					$("#drop_message").prepend(
+						$("<h1/>",{"class":"setting_disabled"}).text("This setting isn't currently enabled")
+					);
+				}
+			});
 
 			TraceOpt.BadTopLevelBlock.LoadTLDs();
 		},
@@ -3047,23 +3062,18 @@ var TraceOpt = {
 				"zip":false
 			};
 			var enableList = [];
-			if (preset >= 0)
-				enableList = enableList.concat(TraceOpt.BadTopLevelBlock.tldPresets.few);
-
-			if (preset >= 1)
-				enableList = enableList.concat(TraceOpt.BadTopLevelBlock.tldPresets.most);
-
-			if (preset >= 2)
-				enableList = enableList.concat(TraceOpt.BadTopLevelBlock.tldPresets.extended);
-
-			if (preset === 3)
-				enableList = enableList.concat(TraceOpt.BadTopLevelBlock.tldPresets.all);
+			if (preset >= 0) enableList = enableList.concat(TraceOpt.BadTopLevelBlock.tldPresets.few);
+			if (preset >= 1) enableList = enableList.concat(TraceOpt.BadTopLevelBlock.tldPresets.most);
+			if (preset >= 2) enableList = enableList.concat(TraceOpt.BadTopLevelBlock.tldPresets.extended);
+			if (preset === 3) enableList = enableList.concat(TraceOpt.BadTopLevelBlock.tldPresets.all);
 
 			for (var tld in enableList){
 				newList[enableList[tld]] = true;
 			}
 
-			chrome.extension.getBackgroundPage().Trace.p.Set("Pref_WebController.tld.settings",newList);
+			chrome.runtime.getBackgroundPage(function(bg){
+				bg.Trace.p.Set("Pref_WebController.tld.settings",newList);
+			});
 			TraceOpt.BadTopLevelBlock.LoadTLDs();
 		},
 		LoadTLDs:function(){

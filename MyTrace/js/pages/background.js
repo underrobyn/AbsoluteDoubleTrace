@@ -48,6 +48,12 @@ var Trace = {
 		return n;
 	},
 
+	// Thanks to: https://stackoverflow.com/a/4900484/
+	getChromeVersion:function() {
+		var raw = navigator.userAgent.match(/Chrom(e|ium)\/([0-9]+)\./);
+		return raw ? parseInt(raw[2], 10) : false;
+	},
+
 	// Chrome runtime functions
 	a:{
 		AssignRuntime:function(){
@@ -170,7 +176,7 @@ var Trace = {
 		// Blocklist URLs
 		blocklistURL:"https://absolutedouble.co.uk/trace/app/weblist.php",
 		blocklistFallback:"https://raw.githubusercontent.com/jake-cryptic/hmfp_lists/master/fallback.json",
-		blocklistOffline:(chrome.hasOwnProperty("extension") ? chrome.extension.getURL("data/blocklist.json") : browser.extension.getURL("data/blocklist.json")),
+		blocklistOffline:(chrome.hasOwnProperty("extension") ? chrome.runtime.getURL("data/blocklist.json") : browser.extension.getURL("data/blocklist.json")),
 		blocklistBase:"https://absolutedouble.co.uk/trace/app/weblist.php?p=",
 
 		// Notification constant
@@ -1408,15 +1414,28 @@ var Trace = {
 		Cookie:{
 			Start:function(){
 				if (Trace.DEBUG) console.log("[httpd]-> Cookie Header Protection.");
+				if (!chrome.webRequest) return;
+
+				var cookieOpt_extraInfoSpec = ["blocking","requestHeaders"];
+				var setCookieOpt_extraInfoSpec = ["responseHeaders"];
+
+				// In Chrome 72+ Google requires we add extraHeaders to modify Cookie, Set-Cookie and Referer Headers
+				if (/Chrom(e|ium)/.test(navigator.userAgent)) {
+					if (Trace.getChromeVersion() >= 72){
+						cookieOpt_extraInfoSpec.push("extraHeaders");
+						setCookieOpt_extraInfoSpec.push("extraHeaders");
+					}
+				}
+
 				chrome.webRequest.onBeforeSendHeaders.addListener(
 					Trace.h.Cookie.ModifySend,
 					{urls:["http://*/*","https://*/*"]},
-					["blocking","requestHeaders"]
+					cookieOpt_extraInfoSpec
 				);
 				chrome.webRequest.onHeadersReceived.addListener(
 					Trace.h.Cookie.ModifyRecv,
 					{urls:["http://*/*","https://*/*"]},
-					["responseHeaders"]
+					setCookieOpt_extraInfoSpec
 				);
 			},
 			Stop:function(){
@@ -1671,10 +1690,20 @@ var Trace = {
 			Start:function(){
 				if (Trace.DEBUG) console.log("[httpd]-> Started Referer Header Protection.");
 				if (!chrome.webRequest) return;
+
+				var refererOpt_extraInfoSpec = ["blocking","requestHeaders"];
+
+				// In Chrome 72+ Google requires we add extraHeaders to modify Cookie, Set-Cookie and Referer Headers
+				if (/Chrom(e|ium)/.test(navigator.userAgent)) {
+					if (Trace.getChromeVersion() >= 72){
+						refererOpt_extraInfoSpec.push("extraHeaders");
+					}
+				}
+
 				chrome.webRequest.onBeforeSendHeaders.addListener(
 					Trace.h.Referer.Modify,
 					{urls:["<all_urls>"]},
-					["blocking","requestHeaders"]
+					refererOpt_extraInfoSpec
 				);
 			},
 			Stop:function(){
@@ -1696,6 +1725,8 @@ var Trace = {
 					var headerName = details.requestHeaders[i].name.toString().toLowerCase();
 
 					if (headerName !== "referer") continue;
+
+					//console.log("Referer->",details.url,details.requestHeaders[i].value.toString().toLowerCase());
 
 					// Allow only secure origins
 					if (Trace.p.Current.Pref_ReferHeader.httpHeader.onlySecureOrigins.enabled){
@@ -1956,6 +1987,59 @@ var Trace = {
 
 				return r;
 			}
+		}
+	},
+
+	// Functions to account for tabs
+	t:{
+		TabList:{},
+		ActiveTab:{
+			"tab":0,
+			"window":0
+		},
+		Init:function(){
+			console.log("[tabmd]-> Initialising...");
+			Trace.t.AssignEvents();
+			Trace.t.GetAllTabs();
+		},
+		AssignEvents:function(){
+			chrome.tabs.onRemoved.addListener(function(tab) {
+				console.log(tab);
+				if (Trace.t.TabAccounted(tab.tabId)) {
+					delete Trace.t.TabList[tab.tabId];
+					console.log("Removed tab id",tab.tabId);
+				} else {
+					console.log("Failed to remove tab id",tab.tabId);
+				}
+			});
+			chrome.tabs.onActivated.addListener(function(id){
+				Trace.t.ActiveTab.tab = id.tabId;
+				Trace.t.ActiveTab.window = id.windowId;
+				Trace.t.GetTabId(id.tabId);
+			});
+		},
+		TabAccounted:function(id){
+			return (typeof Trace.t.TabList[id] !== "undefined");
+		},
+		GetTabId:function(id){
+			if (!Trace.t.TabAccounted(id)){
+				console.log("Found new tab!",id);
+				chrome.tabs.get(id,function(tab){
+					Trace.t.TabList[id] = {url: tab.url};
+				});
+			}
+		},
+		GetAllTabs:function(){
+			chrome.tabs.query({}, function(tabs) {
+				for (var i = 0;i<tabs.length;i++){
+					if (Trace.t.TabAccounted(tabs[i].id)) {
+						console.log("Skipped tab id", tabs[i].id);
+						continue;
+					}
+					Trace.t.TabList[tabs[i].id] = {url: tabs[i].url};
+					console.log("Found new tab id", tabs[i].id);
+				}
+			});
 		}
 	},
 
@@ -2911,6 +2995,10 @@ Trace.a.AssignRuntime();
 
 // Start Protection
 Trace.f.StartTrace();
+
+//chrome.webRequest.onActionIgnored.addListener(function(a){
+//	console.log(a);
+//});
 
 /*chrome.storage.onChanged.addListener(function(changes, namespace) {
 	for (key in changes) {
