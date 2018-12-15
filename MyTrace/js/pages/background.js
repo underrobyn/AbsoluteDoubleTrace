@@ -1351,7 +1351,7 @@ var Trace = {
 				}
 
 				if (redirectToBlocked){
-					return {redirectUrl:(chrome.extension.getURL("html/blocked.html") + "#u;" + btoa(request.url) + "&" + blockType)};
+					return {redirectUrl:(chrome.runtime.getURL("html/blocked.html") + "#u;" + btoa(request.url) + "&" + blockType)};
 				}
 
 				if (request.type === "image"){

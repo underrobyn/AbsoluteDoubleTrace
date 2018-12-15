@@ -14,7 +14,7 @@
 	<body>
 
 		<!--
-			Trace Version 2.0.18
+			Trace Version 2.0.19
 			By Jake Mcneill
 
 			Website:	https://absolutedouble.co.uk/
@@ -95,6 +95,7 @@
 
 				<!-- Dashboard Section -->
 				<div id="home" class="view">
+					<div class="menutoggle">Menu</div>
 					<div class="sect_header s" id="home_title">Trace Dashboard</div>
 					<div class="sect_cont">
 						<span class="title" id="trace_main_title">Loading Trace Dashboard...</span>
@@ -124,7 +125,8 @@
 
 				<!-- Statistics Section -->
 				<div id="statistics" class="view hidden">
-					<div class="sect_header">Trace | Statistics</div>
+					<div class="menutoggle">Menu</div>
+					<div class="sect_header">Statistics</div>
 					<div class="sect_cont_nopad" id="statistics_blur">
 						<div id="graph_controls">
 							<select id="graph_datacontrol" class="graph_ctrl" title="Select timeframe for statistics">
@@ -150,7 +152,8 @@
 
 				<!-- Settings Section -->
 				<div id="settings" class="view hidden">
-					<div class="sect_header s">Trace | Settings</div>
+					<div class="menutoggle">Menu</div>
+					<div class="sect_header s">Trace Settings</div>
 					<div class="sect_cont_semipad" id="settings_cont">
 						<div id="settings_dynsect">
 							<table id="trace_straceorder">
@@ -163,8 +166,7 @@
 									<tr>
 										<td>
 											<span>
-												Choose whether or not a setting runs automatically on a webpage or whether it must only run on some pages as specified in the Whitelist.<br />
-												Not all protections are currently listed here, more protections will be supported in future updates.
+												Choose whether or not a setting runs automatically on a webpage or whether it must only run on some pages as specified in the Whitelist.
 											</span>
 										</td>
 									</tr>
@@ -554,7 +556,8 @@
 										</td>
 									</tr>
 									<tr id="row_backup">
-										<td class="setting_info" tabindex="0" colspan="3" id="setting_backuprestore">Backup/Restore Settings</td>
+										<td class="setting_info" tabindex="0" id="setting_backuprestore">Backup/Restore</td>
+										<td class="setting_info" tabindex="0"  id="setting_reset">Reset to Default</td>
 									</tr>
 								</tbody>
 							</table>
@@ -564,7 +567,8 @@
 
 				<!-- Requests Section -->
 				<div id="requests" class="view hidden">
-					<div class="sect_header s">Trace | Web Request Settings</div>
+					<div class="menutoggle">Menu</div>
+					<div class="sect_header s">Web Request Settings</div>
 					<div class="sect_cont_semipad">
 						<div class="sect_adv">
 							<div class="sect_adv_header" data-cont="btld_block">&nbsp;Web Request Controller</div>
@@ -609,6 +613,7 @@
 
 				<!-- Whitelist Section -->
 				<div id="whitelist" class="view hidden">
+					<div class="menutoggle">Menu</div>
 					<div class="sect_header s">Whitelist</div>
 					<div class="sect_cont">
 						<div id="wl_biglist"></div>
@@ -634,7 +639,8 @@
 					Main Information Section
 				-->
 				<div id="information" class="view hidden">
-					<div class="sect_header s">Trace | Information</div>
+					<div class="menutoggle">Menu</div>
+					<div class="sect_header s">Trace Information</div>
 					<div class="sect_cont">
 						<div class="sect_adv" id="info_trace_premium">
 							<div class="sect_adv_header">&nbsp;Premium Information</div>

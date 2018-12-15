@@ -35,7 +35,24 @@ html, body {
 	z-index: 100;
 	padding: 2%;
 }
+.menutoggle{
+	display:none;
+	width:20%;
+	float:left;
+	height:10vh;
+	line-height:10vh;
+	font-size:2em;
+	font-weight:800;
+	text-align:center;
+	background-color:rgba(0,0,0,0.5);
+	transition:background-color .2s ease-in-out;
+}
+.menutoggle:hover,.menutoggle:focus{
+	background-color:rgba(0,0,0,0.7);
+	cursor:pointer;
+}
 #nav{
+	display:block;
 	width:15%;
 	float:left;
 	position:fixed;
@@ -494,15 +511,31 @@ button:hover,button:focus{
 .setting_config:hover,.setting_config:focus,
 .isetting_toggle:hover,.isetting_toggle:focus,
 .direct_toggle:hover,.direct_toggle:focus,
-.trace_toggle:hover,.trace_toggle:focus,
-.setting_info:hover,.setting_info:focus{
-	background-color:rgba(0,0,0,0.4);
+.trace_toggle:hover,.trace_toggle:focus{
+	background-color:rgba(0,0,0,0.5);
 	color:#f2f2f2;
 }
+.setting_info:hover,.setting_info:focus{
+	background-color:rgba(0,0,0,0.2);
+	color:#f2f2f2;
+}
+/*.setting_toggle:hover,.setting_toggle:focus,
+.setting_config:hover,.setting_config:focus,
+.isetting_toggle:hover,.isetting_toggle:focus,
+.direct_toggle:hover,.direct_toggle:focus,
+.trace_toggle:hover,.trace_toggle:focus{
+	transition:font-weight .2s ease-in-out;
+	font-weight:700;
+}*/
 .setting_info,.setting_toggle,.isetting_toggle,.direct_toggle,.trace_toggle,.setting_config{
 	user-select:none;
 	cursor:pointer;
 	transition:background .3s ease-in-out,color .3s ease-in-out;
+}
+.setting_info{font-weight:100;}
+.setting_config,.trace_toggle,.direct_toggle,.setting_toggle{}
+#setting_backuprestore, #setting_reset{
+	width:50%;
 }
 .hiddensettinginfo {
 	display:none;
@@ -865,6 +898,37 @@ td{
 		width:35%;
 	}
 }
+
+@media (max-width:770px){
+	.menutoggle{
+		display:block;
+	}
+	.sect_header{
+		float:left;
+		width:80%;
+		font-size:2.7em;
+	}
+	.sect_cont,.sect_cont_nopad,.sect_cont_semipad{
+		float:left;
+		width:100%;
+	}
+	#graph_container{
+		width: 88.8vw;
+	}
+	#main,#nav{
+		width:100%;
+		margin:0;
+	}
+	#nav{
+		display:none;
+		background-color:rgba(0,0,0,0.9);
+		font-size:1.2em;
+		position:absolute;
+		z-index:100;
+		height:100%;
+		float:left;
+	}
+}
 @media (max-width:768px){
 	table{
 		font-size:1em;
@@ -925,7 +989,7 @@ td{
 		font-size:1.5em;
 	}
 	.sect_header{
-		font-size:1.8em;
+		font-size:2.2em;
 	}
 	#wl_ctrl button{
 		width:45%;
@@ -940,6 +1004,9 @@ td{
 @media (max-width:600px){
 	#ux {
 		font-size:0.9em;
+	}
+	#nav{
+		font-size:1.4em;
 	}
 }
 @media (max-height:800px){

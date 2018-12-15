@@ -297,6 +297,15 @@ var TraceOpt = {
 			console.log(a);
 		},false);
 
+		// This is for the mobile navigation bar
+		window.addEventListener("resize",function(a){
+			if (!$(".menutoggle").is(":visible")){
+				if ($(window).width() > 700 && !$("#nav").is(":visible")) {
+					$("#nav").show();
+				}
+			}
+		},false);
+
 		// Get main page text and start update intervals
 		TraceOpt.GetPremiumStatus();
 		TraceOpt.GetMainPage();
@@ -418,6 +427,10 @@ var TraceOpt = {
 		$(".side_el").each(function(){
 			$(this).on("click enter", function(){
 
+				if ($(".menutoggle").is(":visible")){
+					$("#nav").fadeOut(250);
+				}
+
 				$(".view").addClass("hidden");
 
 				var load = $(this).data("load");
@@ -468,17 +481,25 @@ var TraceOpt = {
 
 				var load = $(this).data("load");
 				if (load === "settings"){
-					if (confirm("Reset Trace settings to default? It will also remove your premium code from Trace's storage.")){
-						chrome.runtime.getBackgroundPage(function(bg){
-							bg.Trace.p.SetDefaults(true,function(){
-								window.location.reload();
-							});
-						});
-					}
+					TraceOpt.ResetTraceSettings();
 				}
 
 			});
 		});
+
+		$(".menutoggle").on("click enter",function(){
+			$("#nav").fadeIn(250);
+
+		});
+	},
+	ResetTraceSettings:function(){
+		if (confirm("Reset Trace settings to default? It will also remove your premium code from Trace's storage.")){
+			chrome.runtime.getBackgroundPage(function(bg){
+				bg.Trace.p.SetDefaults(true,function(){
+					window.location.reload();
+				});
+			});
+		}
 	},
 	AssignSettingClickEvents:function(){
 		// Settings category events
@@ -555,7 +576,8 @@ var TraceOpt = {
 			});
 		});
 
-		$("#setting_backuprestore").on("click",TraceOpt.Backup.Interface);
+		$("#setting_backuprestore").on("click enter",TraceOpt.Backup.Interface);
+		$("#setting_reset").on("click enter",TraceOpt.ResetTraceSettings);
 	},
 	GetCurrentSettings:function(){
 		// Get current settings
@@ -649,15 +671,17 @@ var TraceOpt = {
 		});
 	},
 	RemovePremium:function(){
-		if (confirm("Are you sure you wish to remove your premium code from Trace?\nThis will not delete your code from our servers.\n\nYour code:\n" + chrome.extension.getBackgroundPage().Trace.v.Premium)){
-			chrome.extension.getBackgroundPage().Trace.p.Set("Main_Trace.PremiumCode","");
-			chrome.extension.getBackgroundPage().Trace.b.ClearDomainCache();
+		chrome.runtime.getBackgroundPage(function(bg){
+			if (confirm("Are you sure you wish to remove your premium code from Trace?\nThis will not delete your code from our servers.\n\nYour code:\n" + bg.Trace.v.Premium)){
+				bg.Trace.p.Set("Main_Trace.PremiumCode","");
+				bg.Trace.b.ClearDomainCache();
 
-			$(".premium_inner").empty().html("<h1>Please wait...</h1>");
+				$(".premium_inner").empty().html("<h1>Please wait...</h1>");
 
-			setTimeout(TraceOpt.GetMainPage,500);
-			setTimeout(TraceOpt.GetPremiumStatus,1500);
-		}
+				setTimeout(TraceOpt.GetMainPage,500);
+				setTimeout(TraceOpt.GetPremiumStatus,1500);
+			}
+		});
 	},
 	EnterPremiumCode:function(){
 		var dto = new Date();
@@ -812,32 +836,36 @@ var TraceOpt = {
 				pt.text("Checking code...");
 			},
 			success:function(l){
-				if (l === TraceOpt.s) {
-					pt.text("Applying Code...");
-					chrome.extension.getBackgroundPage().Trace.p.Set("Main_Trace.PremiumCode", eden);
-					chrome.extension.getBackgroundPage()._UserCrashReportService({
+				if (l !== TraceOpt.s) {
+					bgNotify(emsg[0], "optd");
+					pt.text(emsg[0]);
+					return;
+				}
+
+				pt.text("Applying Code...");
+				chrome.extension.getBackgroundPage().Trace.p.Set("Main_Trace.PremiumCode", eden);
+				chrome.runtime.getBackgroundPage(function(bg){
+					bg._UserCrashReportService({
 						"PremiumTrace": "AcceptedCode",
 						"CodeUsed": eden
 					}, true);
-					if (TraceOpt.storage === true){
-						localStorage.removeItem("attn");
-						localStorage.removeItem("atme");
-					}
-
-					if (chrome.extension.getBackgroundPage().Trace.p.Current.Pref_WebController.enabled === true){
-						pt.text("Please wait... Initialising Premium :)");
-						chrome.extension.getBackgroundPage().Trace.p.Set("Pref_WebController.installCodes.a00000001",true);
-						chrome.extension.getBackgroundPage().Trace.p.Set("Pref_WebController.installCodes.a00000003",true);
-						chrome.extension.getBackgroundPage().Trace.b.BlocklistLoader(true);
-						setTimeout(TraceOpt.GetMainPage,750);
-						setTimeout(TraceOpt.GetPremiumStatus,3000);
-					} else {
-						pt.text("Premium blocklist will be used when domain blocking is enabled in setttings.");
-					}
-				} else {
-					bgNotify(emsg[0],"optd");
-					pt.text(emsg[0]);
+				});
+				if (TraceOpt.storage === true){
+					localStorage.removeItem("attn");
+					localStorage.removeItem("atme");
 				}
+
+				if (chrome.extension.getBackgroundPage().Trace.p.Current.Pref_WebController.enabled === true){
+					pt.text("Premium blocklist will be used when domain blocking is enabled in setttings.");
+					return;
+				}
+
+				pt.text("Please wait... Initialising Premium :)");
+				chrome.extension.getBackgroundPage().Trace.p.Set("Pref_WebController.installCodes.a00000001",true);
+				chrome.extension.getBackgroundPage().Trace.p.Set("Pref_WebController.installCodes.a00000003",true);
+				chrome.extension.getBackgroundPage().Trace.b.BlocklistLoader(true);
+				setTimeout(TraceOpt.GetMainPage,750);
+				setTimeout(TraceOpt.GetPremiumStatus,3000);
 			},
 			error:function(e){
 				if (e.status === 403 || e.status === 402){
@@ -1435,7 +1463,9 @@ var TraceOpt = {
 			return /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(ip)
 		},
 		UpdateIPText:function(){
-			$("#pipspoof_currentip").html("<strong>Current IP:</strong> " + chrome.extension.getBackgroundPage().Trace.i.CurrentFakeIP || "No IP Set");
+			chrome.runtime.getBackgroundPage(function(bg){
+				$("#pipspoof_currentip").html("<strong>Current IP:</strong> " + bg.Trace.i.CurrentFakeIP || "No IP Set");
+			});
 		},
 		UserCustomIP:function(){
 			var elID = this.id;
@@ -1659,11 +1689,11 @@ var TraceOpt = {
 					TraceOpt.Stats.ShowDisabled(dLen);
 				}
 				return;
-			} else {
-				if (chrome.extension.getBackgroundPage().Trace.p.Current.Main_Trace.ProtectionStats.enabled === false){
-					$("#graph_controls").hide();
-					TraceOpt.Stats.ShowDisabled(dLen);
-				}
+			}
+
+			if (chrome.extension.getBackgroundPage().Trace.p.Current.Main_Trace.ProtectionStats.enabled === false){
+				$("#graph_controls").hide();
+				TraceOpt.Stats.ShowDisabled(dLen);
 			}
 
 			if (dControl === 1){
