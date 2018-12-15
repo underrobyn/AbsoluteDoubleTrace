@@ -16,11 +16,11 @@ var Trace = {
 
 	Notify:function(msg,sect){
 		if (Trace.v.bNotifications === false){
-			if (Trace.DEBUG) console.info("[%s]-> !(%s)",sect,msg);
+			if (Trace.DEBUG) console.info("%c[%s]-> !(%s)",'color:red',sect,msg);
 			return;
 		}
 
-		if (Trace.DEBUG) console.info("[%s]-> Notified: %s",sect,msg);
+		if (Trace.DEBUG) console.info("%c[%s]-> Notified: %s",'color:darkblue',sect,msg);
 
 		var opts = {
 			"type":"basic",
@@ -349,6 +349,9 @@ var Trace = {
 	// Functions
 	f:{
 		StartTrace:function(){
+			// Echo some console information
+			console.log("\nStarting Trace v." + chrome.runtime.getManifest().version + "\nSource code: https://github.com/jake-cryptic/AbsoluteDoubleTrace/\n");
+
 			// Create current object and prepare for loading
 			Trace.p.Current = Trace.p.Defaults;
 			Trace.p.Defaults["tracenewprefs"] = true;
@@ -364,7 +367,13 @@ var Trace = {
 			Trace.v.eReporting = Trace.p.Current.Main_Trace.ErrorReporting.enabled;
 			Trace.v.pSessions = Trace.p.Current.Main_Trace.ProtectionSessions.enabled;
 			Trace.v.Premium = Trace.p.Current.Main_Trace.PremiumCode;
+			Trace.t.TabInfo = Trace.p.Current.Main_Trace.TabStats.enabled;
 			Trace.DEBUG = Trace.p.Current.Main_Trace.DebugApp.enabled;
+
+			// Tell users that they can debug trace if they wish
+			if (Trace.DEBUG === false){
+				console.log("%cYou can see more debug messages by running this code: (function(){Trace.p.Set('Main_Trace.DebugApp.enabled',true);window.location.reload();})();",'color:#fff;background-color:#1a1a1a;font-size:1.2em;padding:5px;');
+			}
 
 			// It's time to begin
 			Trace.Notify("Starting Modules...","initd");
@@ -410,6 +419,9 @@ var Trace = {
 
 			if (Trace.p.Current.Pref_IPSpoof.enabled === true)
 				Trace.h.IPSpoof.Start();
+			
+			// Start keeping tabs on the tabs
+			/*if (Math.random() > .5)*/ Trace.t.Init();
 
 			// Alarm events to change UserAgent
 			Trace.f.StartAlarmEvent();
@@ -1068,7 +1080,7 @@ var Trace = {
 			Trace.c.decodedWhitelist = decoded;
 			Trace.c.wlEnabled = l !== 0;
 
-			console.log("[plstd]-> Decoded pagelist!");
+			if (Trace.DEBUG) console.log("[plstd]-> Decoded pagelist!");
 			if (cb) cb();
 		},
 		SaveWhitelist:function(cb){
@@ -1992,38 +2004,71 @@ var Trace = {
 
 	// Functions to account for tabs
 	t:{
+		TabInfo:true,
 		TabList:{},
 		ActiveTab:{
 			"tab":0,
 			"window":0
 		},
 		Init:function(){
-			console.log("[tabmd]-> Initialising...");
+			if (Trace.t.TabInfo !== true) return;
+
+			Trace.Notify("Loading information about current tabs...","tabmd");
+			if (Trace.DEBUG) console.log("[tabmd]-> Initialising...");
+
 			Trace.t.AssignEvents();
 			Trace.t.GetAllTabs();
 		},
-		AssignEvents:function(){
-			chrome.tabs.onRemoved.addListener(function(tab) {
-				console.log(tab);
-				if (Trace.t.TabAccounted(tab.tabId)) {
-					delete Trace.t.TabList[tab.tabId];
-					console.log("Removed tab id",tab.tabId);
+		Events:{
+			removed:function(id) {
+				if (Trace.t.TabAccounted(id)) {
+					delete Trace.t.TabList[id];
+					if (Trace.DEBUG) console.log("[tabmd]-> Removed tab id",id);
 				} else {
-					console.log("Failed to remove tab id",tab.tabId);
+					if (Trace.DEBUG) console.log("[tabmd]-> Failed to remove tab id",id);
 				}
-			});
-			chrome.tabs.onActivated.addListener(function(id){
+			},
+			created:function(tab){
+				Trace.t.TabList[tab.id] = {url: tab.url};
+				if (Trace.DEBUG) console.log("[tabmd]-> Added tab id",tab.id);
+			},
+			activate:function(id){
 				Trace.t.ActiveTab.tab = id.tabId;
 				Trace.t.ActiveTab.window = id.windowId;
 				Trace.t.GetTabId(id.tabId);
-			});
+			},
+			highlight:function(tab){
+				console.log(tab);
+			},
+			updated:function(d,c,e){
+				// Fired when an attribute changes, e.g. url, or audible
+				console.log("=======================================");
+				console.log(d);
+				console.log(c);
+				console.log(e);
+				console.log("=======================================");
+			}
+		},
+		AssignEvents:function(){
+			chrome.tabs.onRemoved.addListener(Trace.t.Events.removed);
+			chrome.tabs.onCreated.addListener(Trace.t.Events.created);
+			chrome.tabs.onActivated.addListener(Trace.t.Events.activate);
+			chrome.tabs.onHighlighted.addListener(Trace.t.Events.highlight);
+			chrome.tabs.onUpdated.addListener(Trace.t.Events.updated);
+		},
+		RemoveEvents:function(){
+			chrome.tabs.onRemoved.removeListener(Trace.t.Events.removed);
+			chrome.tabs.onCreated.removeListener(Trace.t.Events.created);
+			chrome.tabs.onActivated.removeListener(Trace.t.Events.activate);
+			chrome.tabs.onHighlighted.removeListener(Trace.t.Events.highlight);
+			chrome.tabs.onUpdated.removeListener(Trace.t.Events.updated);
 		},
 		TabAccounted:function(id){
 			return (typeof Trace.t.TabList[id] !== "undefined");
 		},
 		GetTabId:function(id){
 			if (!Trace.t.TabAccounted(id)){
-				console.log("Found new tab!",id);
+				if (Trace.DEBUG) console.log("[tabmd]-> Found new tab!",id);
 				chrome.tabs.get(id,function(tab){
 					Trace.t.TabList[id] = {url: tab.url};
 				});
@@ -2033,13 +2078,17 @@ var Trace = {
 			chrome.tabs.query({}, function(tabs) {
 				for (var i = 0;i<tabs.length;i++){
 					if (Trace.t.TabAccounted(tabs[i].id)) {
-						console.log("Skipped tab id", tabs[i].id);
+						if (Trace.DEBUG) console.log("[tabmd]-> Skipped tab id", tabs[i].id);
 						continue;
 					}
 					Trace.t.TabList[tabs[i].id] = {url: tabs[i].url};
-					console.log("Found new tab id", tabs[i].id);
+					if (Trace.DEBUG) console.log("[tabmd]-> Found new tab id", tabs[i].id);
 				}
 			});
+		},
+		ReturnTabInfo:function(windowId,tabId){
+			if (Trace.DEBUG) console.log("[tabmd]-> Providing information about tab id",tabId);
+			return Trace.t.TabList[tabId];
 		}
 	},
 
@@ -2603,6 +2652,9 @@ var Trace = {
 					"affects":[]
 				},
 				"ProtectionStats":{
+					"enabled":true
+				},
+				"TabStats":{
 					"enabled":true
 				},
 				"BrowserNotifications":{

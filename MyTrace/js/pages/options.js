@@ -179,23 +179,34 @@ var TraceOpt = {
 			});
 		},
 		SelectProtection:function(level){
-			var set = chrome.extension.getBackgroundPage().Trace.p.Set;
 			if (level === 0){
-				_UserCrashReportService({"installProtection":"default"});
-				set("Pref_ETagTrack.enabled",true);
-				set("Pref_ClientRects.enabled",true);
+				chrome.runtime.getBackgroundPage(function(bg){
+					bg._UserCrashReportService({"installProtection":"default"});
+					bg.Trace.p.SetMultiple({
+						"Pref_ETagTrack.enabled":true,
+						"Pref_ClientRects.enabled":true
+					});
+				});
 			}
 
 			if(level === 1){
-				set("Pref_GoogleHeader.enabled",true);
-				set("Pref_AudioFingerprint.enabled",true);
-				_UserCrashReportService({"installProtection":"medium"});
+				chrome.runtime.getBackgroundPage(function(bg){
+					bg._UserCrashReportService({"installProtection":"medium"});
+					bg.Trace.p.SetMultiple({
+						"Pref_GoogleHeader.enabled":true,
+						"Pref_AudioFingerprint.enabled":true
+					});
+				});
 			}
 
 			if (level === 2){
-				set("Pref_WebController.urlCleaner.enabled",true);
-				set("Pref_ReferHeader.enabled",true);
-				_UserCrashReportService({"installProtection":"maximum"});
+				chrome.runtime.getBackgroundPage(function(bg){
+					bg._UserCrashReportService({"installProtection":"maximum"});
+					bg.Trace.p.SetMultiple({
+						"Pref_WebController.urlCleaner.enabled":true,
+						"Pref_ReferHeader.enabled":true
+					});
+				});
 			}
 		}
 	},

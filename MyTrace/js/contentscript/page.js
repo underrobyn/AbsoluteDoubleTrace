@@ -852,6 +852,7 @@ var TPage = {
 
 		TPage.codeInject(function(t){
 			var t = JSON.parse(t);
+
 			function TraceCanvas(r,g,b,a,scriptId){
 				var injectedEl = document.getElementById(scriptId);
 
