@@ -30,7 +30,7 @@ window.onerror = function(o,r,e,c,l) {
 };
 
 // A general fix for browser that use window.browser instead of window.chrome
-if (!window.chrome.hasOwnProperty("extension")) window.chrome = (function (){ return window.msBrowser || window.browser || window.chrome; })();
+if (typeof window.chrome === "undefined" || !window.chrome.hasOwnProperty("extension")) window.chrome = (function (){ return window.msBrowser || window.browser || window.chrome; })();
 
 var _UserCrashReportService = function(d,o){
 	var report = false;

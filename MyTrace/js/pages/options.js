@@ -18,7 +18,7 @@ if (typeof window.JSON !== "object"){
 }
 
 // A general fix for browser that use window.browser instead of window.chrome
-if (!window.chrome.hasOwnProperty("extension")) window.chrome = (function (){ return window.msBrowser || window.browser || window.chrome; })();
+if (typeof window.chrome === "undefined" || !window.chrome.hasOwnProperty("extension")) window.chrome = (function (){ return window.msBrowser || window.browser || window.chrome; })();
 
 if (!chrome.hasOwnProperty("extension") || typeof chrome.extension.getBackgroundPage !== "function"){
 	showErr("Extension failed to connect to background page. Please try reloading the page.");
