@@ -1,6 +1,6 @@
 /*
  * 	Trace popup script
- * 	Copyright AbsoluteDouble 2018
+ * 	Copyright AbsoluteDouble 2018 - 2019
  * 	Written by Jake Mcneill
  * 	https://absolutedouble.co.uk/
  */
@@ -42,11 +42,11 @@ var TraceTool = {
 	init:function(){
 		TraceTool.assignEvents();
 		TraceTool.getCurrentURL();
-		TraceTool.loadTodaysStats();
+		TraceTool.loadThisTab();
 		TraceTool.loadPrefs();
 		TraceTool.Auth.Init();
 
-		if (/Firefox/.test(navigator.userAgent) || /Edge/.test(navigator.userAgent)) {
+		if (/Firefox|Edge/.test(navigator.userAgent)) {
 			$("body").css("font-size", "0.8em");
 		}
 	},
@@ -73,7 +73,7 @@ var TraceTool = {
 			$(this).on("click enter",function(){
 				var sel = $(this).data("tracetool");
 				if (sel === "home"){
-					TraceTool.loadTodaysStats();
+					TraceTool.loadThisTab();
 				} else if (sel === "report"){
 					TraceTool.createReportPanel();
 				} else if (sel === "whitelist"){
@@ -90,18 +90,16 @@ var TraceTool = {
 		chrome.runtime.getBackgroundPage(function (bg) {
 			TraceTool.prefs = bg.Trace.p.Current;
 		});
-		//delete TraceTool.prefs.Main_Trace.PremiumCode;
 	},
-	loadTodaysStats:function(){
-		chrome.runtime.getBackgroundPage(function (bg) {
-			var stats = {};
-
-			stats = bg.Trace.s.Current;
-			if (typeof stats !== "object" || stats === undefined) return;
-			if (Object.keys(stats).length === 0) return;
-
-			TraceTool.currentStatistics = stats[Object.keys(stats).pop()];
-			TraceTool.createHomePage();
+	loadThisTab:function(){
+		chrome.runtime.getBackgroundPage(function(bg){
+			chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+				var currTab = tabs[0];
+				if (currTab) {
+					var data = bg.Trace.t.TabList[currTab.id];
+					TraceTool.createHomePage(data,currTab);
+				}
+			});
 		});
 	},
 	getCurrentURL:function(){
@@ -129,20 +127,22 @@ var TraceTool = {
 			chrome.tabs.create({url:"options.html"});
 		}
 	},
-	createHomePage:function(){
+	createHomePage:function(data,tab){
 		$("#title").text("Trace");
 		if (TraceTool.currentStatistics === undefined){
 			$("#current_section").empty().append(
 				$("<h1/>").text("Trace")
 			);
 		}
+
 		$("#current_section").empty().append(
-			$("<h1/>").text("Today's statistics"),
+			$("<h1/>").text("Blocked in this tab:"),
 			$("<ul/>").append(
-				$("<li/>").text("Code requests blocked: " + TraceTool.currentStatistics.code),
-				$("<li/>").text("Media requests blocked: " + TraceTool.currentStatistics.media),
-				$("<li/>").text("Webpage requests blocked: " + TraceTool.currentStatistics.webpage),
-				$("<li/>").text("Other requests blocked: " + TraceTool.currentStatistics.other)
+				$("<li/>",{"style":"display:none;"}).text("Tab ID: " + tab.id),
+				$("<li/>").text("Code Requests: " + data.data.webRequests.code),
+				$("<li/>").text("Media Requests: " + data.data.webRequests.media),
+				$("<li/>").text("Webpage Requests: " + data.data.webRequests.webpage),
+				$("<li/>").text("Other Requests: " + data.data.webRequests.other)
 			)
 		);
 	},
@@ -370,7 +370,7 @@ var TraceTool = {
 	whitelistURL:function(type){
 		var url = TraceTool.whitelistData[type], result;
 
-		result = confirm("Are you sure you wish to allow access to:\n"+url);
+		result = confirm("Are you sure you wish to add the following item to the whitelist:\n"+url);
 		if (result !== true){
 			return;
 		}

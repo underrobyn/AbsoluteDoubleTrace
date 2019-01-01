@@ -1,6 +1,6 @@
 /*
- * 	Trace page helper script
- * 	Copyright AbsoluteDouble 2018
+ * 	Trace page helper script for before documents load
+ * 	Copyright AbsoluteDouble 2018 - 2019
  * 	Written by Jake Mcneill
  * 	https://absolutedouble.co.uk/
  */
@@ -33,6 +33,14 @@ var TPage = {
 		});
 	},
 
+	sendBackgroundMessage:function(data,cb){
+		chrome.runtime.sendMessage({
+			url:location.href,
+			msg:"protectionUpdate",
+			data:data
+		},cb);
+	},
+
 	/* Function to check if protections are allowed to run */
 	canExec: function(protection){
 		return TPage.protections[protection];
@@ -47,7 +55,6 @@ var TPage = {
 		chrome.storage.local.get(
 			[
 				"Main_Trace",
-				"Pref_TracePage",
 				"Pref_PingBlock",
 				"Pref_PluginHide",
 				"Pref_BatteryApi",
@@ -89,8 +96,9 @@ var TPage = {
 			return;
 		}
 
+		// TPage.protectJsVars();
 		// TPage.protectWebGL();
-		//TPage.protectCommonTracking();
+		// TPage.protectCommonTracking();
 
 		if (TPage.Prefs.ClientRects.enabled === true && TPage.canExec("Pref_ClientRects")){
 			TPage.protectClientRects();
@@ -228,7 +236,6 @@ var TPage = {
 					get:function(){
 						var frame = wind.apply(this);
 						if (this.src && this.src.indexOf('//') !== -1 && location.host !== this.src.split('/')[2]) return frame;
-						try {frame.HTMLCanvasElement;}catch(e){}
 						disableFunction(frame,opts);
 						return frame;
 					}
@@ -237,7 +244,6 @@ var TPage = {
 					get:function(){
 						if (this.src && this.src.indexOf('//') !== -1 && location.host !== this.src.split('/')[2]) return cont.apply(this);
 						var frame = wind.apply(this);
-						try {frame.HTMLCanvasElement} catch(e){}
 						disableFunction(frame,opts);
 						return cont.apply(this);
 					}
@@ -246,6 +252,49 @@ var TPage = {
 		},"'" + JSON.stringify(opts) + "'");
 
 		if (TPage.debug <= 2) console.info("%c[TracePage]->[AF] Disabled Audio Tracking.",TPage.css);
+
+		TPage.sendBackgroundMessage({
+			"method":"protection-enabled",
+			"protection":"AudioFingerprinting"
+		});
+	},
+	protectAudioFingerNew:function(){
+		TPage.codeInject(function(){
+		   var AFPP = {
+			   modifier:1e-7,
+
+			   currChannelData:null,
+
+			   init:function(frame){
+				   AFPP.channelData(frame.AudioBuffer.prototype);
+			   },
+
+			   channelData:function(obj){
+				   var func = obj.getChannelData;
+
+				   Object.defineProperty(obj, "getChannelData", {
+					   "value":function(){
+						   var result = func.apply(this, arguments);
+						   if (AFPP.currChannelData !== result) {
+							   AFPP.currChannelData = result;
+
+							   for (var i = 0; i < result.length; i += 100) {
+								   var index = Math.floor(Math.random() * i);
+								   result[index] = result[index] + Math.random() * AFPP.modifier;
+							   }
+						   }
+
+						   console.log("Protected Audio Fingerprinting");
+
+						   return result;
+					   }
+				   });
+			   }
+		   };
+		   AFPP.init(window);
+		});
+
+		if (TPage.debug <= 2) console.info("%c[TracePage]->[AF] Using smart Audio Fingerprinting Protection",TPage.css);
 	},
 	protectBatteryFunction:function() {
 		TPage.codeInject(function(){
@@ -287,6 +336,7 @@ var TPage = {
 				enumerable:true,
 				configurable:false,
 				value:function(){
+					//window.top.postMessage("Trace:BlockedTracking:SendBeacon", '*'); Secuirty issue, maybe use CustomEvents
 					console.log("%c [TracePage]->Blocked[SB] ","font-size:1em;line-height:2em;color:#1a1a1a;background-color:#ffffff;border:.2em solid #0f0;");
 					return true;
 				}
@@ -407,7 +457,6 @@ var TPage = {
 					get:function(){
 						var frame = wind.apply(this);
 						if (this.src && this.src.indexOf('//') !== -1 && location.host !== this.src.split('/')[2]) return frame;
-						try {frame.HTMLCanvasElement;}catch(e){}
 						disableFunction(frame);
 						return frame;
 					}
@@ -416,7 +465,6 @@ var TPage = {
 					get:function(){
 						if (this.src && this.src.indexOf('//') !== -1 && location.host !== this.src.split('/')[2]) return cont.apply(this);
 						var frame = wind.apply(this);
-						try {frame.HTMLCanvasElement} catch(e){}
 						disableFunction(frame);
 						return cont.apply(this);
 					}
@@ -425,6 +473,54 @@ var TPage = {
 		});
 
 		if (TPage.debug <= 2) console.info("%c[TracePage]->[NP] Disabled Plugin Tracking.",TPage.css);
+	},
+	protectJsVars:function(){
+		TPage.codeInject(function(){
+			function disableFunction(frame){
+				if (frame === null) return;
+				if (frame.traceDefinedOpener === true) return;
+
+				//frame["opener"] = null;
+				var windowOpen = frame.window.open;
+
+				Object.defineProperty(frame.window,"open",{
+					value:function(){
+						var newArgs = arguments;
+						newArgs[1] = "";
+						var result = windowOpen.apply(this,newArgs);
+
+						//console.log(this);
+						//console.log(arguments);
+						return result;
+					}
+				});
+
+				frame.traceDefinedOpener = true;
+			}
+
+			disableFunction(window);
+			var wind = HTMLIFrameElement.prototype.__lookupGetter__('contentWindow'),
+				cont = HTMLIFrameElement.prototype.__lookupGetter__('contentDocument');
+
+			Object.defineProperties(HTMLIFrameElement.prototype,{
+				contentWindow:{
+					get:function(){
+						var frame = wind.apply(this);
+						if (this.src && this.src.indexOf('//') !== -1 && location.host !== this.src.split('/')[2]) return frame;
+						disableFunction(frame);
+						return frame;
+					}
+				},
+				contentDocument:{
+					get:function(){
+						if (this.src && this.src.indexOf('//') !== -1 && location.host !== this.src.split('/')[2]) return cont.apply(this);
+						var frame = wind.apply(this);
+						disableFunction(frame);
+						return cont.apply(this);
+					}
+				}
+			});
+		});
 	},
 	protectNavConnection:function() {
 		var ret = {
@@ -906,6 +1002,10 @@ var TPage = {
 								var width = this.width;
 								var height = this.height;
 								var context = this.getContext("2d");
+
+								// Fix issue spotted on missguided.co.uk
+								if (context === null) return old.apply(this,arguments);
+
 								var iData = context.getImageData(0, 0, width, height);
 								for (var i = 0; i < height; i++) {
 									for (var j = 0; j < width; j++) {

@@ -14,14 +14,14 @@
 	<body>
 
 		<!--
-			Trace Version 2.0.19
+			Trace Version 2.1
 			By Jake Mcneill
 
 			Website:	https://absolutedouble.co.uk/
 			Github:		https://github.com/jake-cryptic/
 			Changelog: 	https://absolutedouble.co.uk/trace/information.html
 
-			Copyright AbsoluteDouble Trace 2018
+			Copyright AbsoluteDouble Trace 2018 - 2019
 		-->
 
 		<script src="../js/common/theme.js"></script>
@@ -199,7 +199,8 @@
 											This feature will, simply put: generate a new canvas ID every minute to make it impossible to properly identify you as you browse the web.<br />
 											Canvas Fingerprinting is a relatively new tracking technology and it has started to be more widely used as time has gone on.<br /><br />
 											To see this in action visit <a href="https://panopticlick.eff.org/" title="EFF Panopticlick">https://panopticlick.eff.org/</a> and check
-											the 'Hash of canvas fingerprint', you should see it change every minute.
+											the 'Hash of canvas fingerprint', you should see it change every minute.<br /><br />
+											<strong><a href="https://www.youtube.com/watch?v=0EgpBQO-QSM" rel="noopener" target="_blank" title="YouTube">Demonstration of Canvas Fingerprinting Protection (YouTube)</a></strong>
 										</td>
 									</tr>
 									<tr id="row_audiofinger">
@@ -243,7 +244,7 @@
 										</td>
 									</tr>
 									<tr id="row_screenres">
-										<td class="setting_info" tabindex="0" data-info="info_screenres">Screen Resolution Tracking</td>
+										<td class="setting_info" tabindex="0" data-info="info_screenres">Screen Resolution Tracking Protection</td>
 										<td class="setting_toggle" tabindex="0" data-toggle="Pref_ScreenRes">Fetching Status...</td>
 										<td class="setting_config" tabindex="0" data-config="Pref_ScreenRes">Configure</td>
 									</tr>
@@ -256,6 +257,16 @@
 											<a href="https://browserleaks.com/javascript" target="_blank">BrowserLeaks.com</a> and for more information, see Trace's 'Info' section.
 										</td>
 									</tr>
+									<!--<tr id="row_webglfinger">
+										<td class="setting_info" tabindex="0" data-info="info_hardwarespoof">WebGL Fingerprinting Protection</td>
+										<td class="setting_toggle" tabindex="0" data-toggle="Pref_WebGLFingerprint">Fetching Status...</td>
+										<td class="setting_config" tabindex="0" data-config="Pref_WebGLFingerprint">Configure</td>
+									</tr>
+									<tr id="info_webglfinger" class="hiddensettinginfo">
+										<td colspan="3">
+											<span>WebGL Fingerprint Spoofing</span><br />When enabled, Trace protects against WebGL fingerprinting - this stops websites being able to see your GPU model.
+										</td>
+									</tr>-->
 									<tr id="row_hardwarespoof">
 										<td class="setting_info" tabindex="0" data-info="info_hardwarespoof">Hardware Fingerprint Protection</td>
 										<td class="setting_toggle" tabindex="0" data-toggle="Pref_HardwareSpoof">Fetching Status...</td>
@@ -265,8 +276,7 @@
 										<td colspan="3">
 											<span>Hardware Spoofing</span><br />
 											There are a number of Javascript variables and APIs that allow websites to know the configuration of your hardware which is more than likely unique, especially when you factor in things such as the GPU.<br /><br />
-											To protect against this, Trace changes the values of 2 navigator properties - hardwareConcurrency (CPU Core count) and deviceMemory (RAM available to browser).<br />When enabled, Trace also protects against WebGL
-											fingerprinting - this stops websites being able to see your GPU model.
+											To protect against this, Trace changes the values of 2 navigator properties - hardwareConcurrency (CPU Core count) and deviceMemory (RAM available to browser).
 										</td>
 									</tr>
 									<tr id="row_batteryapi">
@@ -282,7 +292,7 @@
 										</td>
 									</tr>
 									<tr id="row_networkinfo">
-										<td class="setting_info" tabindex="0" data-info="info_networkinfo">Network Information API</td>
+										<td class="setting_info" tabindex="0" data-info="info_networkinfo">Network Information Spoofer</td>
 										<td class="setting_toggle" tabindex="0" data-toggle="Pref_NetworkInformation" colspan="2">Fetching Status...</td>
 										<!--<td class="setting_config" tabindex="0" data-config="Pref_NetworkInformation">Configure</td>-->
 									</tr>
@@ -398,6 +408,17 @@
 											<br /><strong>Please note: </strong> You should only enable this if you know what you're doing as it can cause problems on many websites.
 										</td>
 									</tr>
+									<tr id="row_nativejavascript">
+										<td class="setting_info" tabindex="0" data-info="info_nativejavascript">window.opener Protection <strong>(Beta)</strong></td>
+										<td class="setting_toggle" tabindex="0" data-toggle="Pref_NativeFunctions.windowOpen" colspan="2">Fetching Status...</td>
+										<!--<td class="setting_config" tabindex="0" data-config="Pref_NativeJavascript">Configure</td>-->
+									</tr>
+									<tr id="info_nativejavascript" class="hiddensettinginfo">
+										<td colspan="3">
+											<span>window.opener Protection</span><br />
+											Adds rel='noopener' to web links to stop ads and trackers communicating with previous windows.
+										</td>
+									</tr>
 									<tr id="row_etagremove">
 										<td class="setting_info" tabindex="0" data-info="info_etagremove">E-Tag Tracking Protection</td>
 										<td class="setting_toggle" tabindex="0" data-toggle="Pref_ETagTrack" colspan="2">Fetching Status...</td>
@@ -500,6 +521,16 @@
 											None of this data is ever uploaded to our servers. It's locally stored in your browser and can be deleted by you at any time from the "Statistics" pane.
 										</td>
 									</tr>
+									<!--<tr id="row_affectiframes">
+										<td class="setting_info" tabindex="0" data-info="info_affectiframes">Protect iFrames</td>
+										<td class="trace_toggle" tabindex="0" data-toggle="Main_Trace.AffectIframes" id="setting_affectiframes">Fetching Status...</td>
+									</tr>
+									<tr id="info_affectiframes" class="hiddensettinginfo">
+										<td colspan="3">
+											<span>Protect iFrames</span><br />
+											Enabling this will apply Trace's protection to iFrames. This setting is recommended as trackers often run code in iFrames to check that fingerprinting protection methods aren't being used.
+										</td>
+									</tr>-->
 									<tr id="row_brownotif">
 										<td class="setting_info" tabindex="0" data-info="info_brownotif">Browser Notifications</td>
 										<td class="trace_toggle" tabindex="0" data-toggle="Main_Trace.BrowserNotifications" id="setting_brownotif">Fetching Status...</td>
@@ -621,9 +652,8 @@
 							<div id="wl_controls">
 								<input type="text" id="wlctrl_search" placeholder="Search..." />
 								<button id="wlctrl_refresh">Refresh List</button>
-								<button id="wlctrl_test">Test URL</button>
 								<button id="wlctrl_clear">Clear List</button>
-								<button id="wlctrl_update">Save Changes</button>
+								<button id="wlctrl_test">Test URL</button>
 								<button id="wlctrl_addent">Add Entry</button>
 							</div>
 							<div id="wl_scontrols" class="faded">
@@ -682,6 +712,7 @@
 						</div>
 						<div class="sect_adv">
 							<div class="sect_adv_cont">
+								<strong>Trace Version: </strong><span id="trace_vernum">Unknown.</span><br />
 								<em>AbsoluteDouble</em> - (<a href="mailto:absolutedouble@gmail.com" title="Contact Email">absolutedouble@gmail.com</a>)<br /><br />
 								<a href="https://absolutedouble.co.uk/trace/information.html" title="Trace Changelog">Trace Changelog</a>
 							</div>

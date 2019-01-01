@@ -1,6 +1,6 @@
 /*
  * 	Trace background script
- * 	Copyright AbsoluteDouble 2018
+ * 	Copyright AbsoluteDouble 2018 - 2019
  * 	Written by Jake Mcneill
  * 	https://absolutedouble.co.uk/
  */
@@ -141,6 +141,7 @@ var Trace = {
 					"runProtection":false,
 					"data":protections
 				});
+
 			} else if (request.msg === "getsetting"){
 
 				if (request.setting) {
@@ -150,6 +151,13 @@ var Trace = {
 				} else {
 					sendResponse(Trace.p.Current);
 				}
+
+			} else if (request.msg === "getLoadedSettings"){
+
+				sendResponse({
+					"pingAttr":Trace.p.Current.Pref_PingBlock.removePingAttr.enabled,
+					"relOpener":Trace.p.Current.Pref_NativeFunctions.windowOpen.enabled
+				});
 
 			} else {
 				console.error("Invalid message recieved");
@@ -213,6 +221,7 @@ var Trace = {
 			},
 			"wb":{
 				"chrome":{
+					"71":"AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 Safari/537.36",
 					"70":"AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.77 Safari/537.36",
 					"69":"AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3493.3 Safari/537.36",
 					"68":"AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.75 Safari/537.36",
@@ -223,6 +232,7 @@ var Trace = {
 					"63":"AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.84 Safari/537.36"
 				},
 				"firefox":{
+					"65":"Gecko/20100101 Firefox/65.0",
 					"62":"Gecko/20100101 Firefox/62.0",
 					"61":"Gecko/20100101 Firefox/61.0",
 					"60":"Gecko/20100101 Firefox/60.0",
@@ -234,6 +244,7 @@ var Trace = {
 					"1.96":"AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.183 Safari/537.36 Vivaldi/1.96.1147.47"
 				},
 				"opera":{
+					"57":"AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.102 Safari/537.36 OPR/57.0.3098.106",
 					"54":"AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.87 Safari/537.36 OPR/54.0.2952.54"
 				},
 				"edge":{
@@ -419,7 +430,7 @@ var Trace = {
 
 			if (Trace.p.Current.Pref_IPSpoof.enabled === true)
 				Trace.h.IPSpoof.Start();
-			
+
 			// Start keeping tabs on the tabs
 			/*if (Math.random() > .5)*/ Trace.t.Init();
 
@@ -1143,6 +1154,32 @@ var Trace = {
 			for (var j = 0, k = protections.length;j<k;i++){
 				allowed[protections[j]] = execOrder.AllPage.indexOf(protections[j]) !== -1;
 			}
+		},
+		CheckWhitelist:function(url,protection){
+			// Check if protection can run on all pages
+			var globalAllow = Trace.p.Current.Main_ExecutionOrder.AllPage.indexOf(protection) !== -1;
+
+			//if (Trace.DEBUG) console.log("[plstd]-> Checking",url,"for",protection,":",(Trace.c.DoCheck(url) !== false ? Trace.c.DoCheck(url).Protections[protection] : globalAllow));
+
+			// If whitelist is empty -> go with the default option
+			if (Trace.c.wlEnabled !== true) return globalAllow;
+
+			// Check if the item is in the whitelist
+			var checkResult = Trace.c.DoCheck(url);
+
+			// If not (or there is an error) -> go with the default option
+			if (!checkResult || !checkResult.Protections) return globalAllow;
+
+			// Return the value of the protection, if the value isn't set return true
+			return !!checkResult.Protections[protection];
+		},
+		DoCheck:function(url){
+			for (var i = 0, l = Trace.c.decodedWhitelist.keys.length;i<l;i++){
+				if (Trace.c.decodedWhitelist.keys[i].test(url)){
+					return Trace.c.decodedWhitelist.values[i];
+				}
+			}
+			return false;
 		}
 	},
 	d:{
@@ -1189,6 +1226,7 @@ var Trace = {
 		PingBlocker:function(d){
 			if (d.type === "ping" && d.tabId < 0){
 				Trace.s.LogStat(d.type);
+				Trace.t.LogRequest(d.tabId,d.type);
 				return {cancel:true};
 			}
 		},
@@ -1279,8 +1317,6 @@ var Trace = {
 
 				var wl = Trace.c.GetWhitelist();
 				for (var i = 0, l = wl.keys.length;i<l;i++){
-					//console.log(wl.keys[i]);
-					//console.log(reqUrl,initUrl);
 					// Check if this page is allowed to be accessed
 					if (wl.keys[i].test(reqUrl)){
 						if (wl.values[i].SiteBlocked === false){
@@ -1289,6 +1325,7 @@ var Trace = {
 							return {cancel:true};
 						}
 					}
+
 					// Check if this item is allowed to make requests
 					if (typeof initUrl !== "undefined"){
 						if (wl.keys[i].test(initUrl)){
@@ -1348,18 +1385,20 @@ var Trace = {
 			if (blockType !== 0){
 				if (Trace.p.Current.Main_Trace.ProtectionStats.enabled === true){
 					Trace.s.LogStat(request.type);
+					Trace.t.LogRequest(request.tabId,request.type);
 				}
 
 				if (redirectToBlocked){
 					return {redirectUrl:(chrome.runtime.getURL("html/blocked.html") + "#u;" + btoa(request.url) + "&" + blockType)};
 				}
 
-				if (request.type === "image"){
-					return {redirectUrl:"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="};
-				} else if (request.type === "sub_frame"){
-					return {redirectUrl:"about:blank"};
-				} else {
-					return {cancel:true};
+				switch(request.type){
+					case "image":
+						return {redirectUrl:"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="};
+					case "sub_frame":
+						return {redirectUrl:"about:blank"};
+					default:
+						return {cancel:true};
 				}
 			}
 
@@ -1402,6 +1441,29 @@ var Trace = {
 			}
 
 			return {cancel:false};
+		}
+	},
+
+	beta:{
+		AssignEvents:function(){
+			chrome.webRequest.onBeforeRequest.addListener(Trace.e.RequestCleaner,{
+				"types":["image"],
+				"urls":["http://*/*","https://*/*"]
+			},["blocking"]);
+		},
+		RequestCleaner:function(request){
+			// Check if URL is valid
+			if (request.tabId === -1 || typeof request.url !== "string" || request.url.substring(0,4) !== "http"){
+				return {cancel:false};
+			}
+
+			var newUrl = request.url;
+			console.log(newUrl);
+
+			newUrl = newUrl.split("?")[0];
+			console.log(newUrl);
+
+			return {redirectUrl:newUrl};
 		}
 	},
 
@@ -1470,6 +1532,8 @@ var Trace = {
 				if (details.frameId < 0) return;
 				if (details.url.substring(0,4).toLowerCase() !== "http") return;
 
+				if (!Trace.c.CheckWhitelist(details.url,"Pref_CookieEater")) return;
+
 				var cookieList = Trace.g.CookieEater.GetList();
 				var method = "fp_method";
 
@@ -1518,6 +1582,8 @@ var Trace = {
 
 				if (details.frameId < 0) return;
 				if (details.url.substring(0,4).toLowerCase() !== "http") return;
+
+				if (!Trace.c.CheckWhitelist(details.url,"Pref_CookieEater")) return;
 
 				var cookieList = Trace.g.CookieEater.GetList();
 				var method = "fp_method";
@@ -1573,8 +1639,11 @@ var Trace = {
 			},
 			Modify:function(details){
 				if (Trace.p.Current.Pref_ETagTrack.enabled !== true) return;
+
 				if (details.frameId < 0) return;
 				if (details.url.substring(0,4).toLowerCase() !== "http") return;
+
+				if (!Trace.c.CheckWhitelist(details.url,"Pref_ETagTrack")) return;
 
 				for (var i=0;i<details.responseHeaders.length;++i){
 					var headerName = details.responseHeaders[i].name.toString().toLowerCase();
@@ -1607,41 +1676,45 @@ var Trace = {
 				}
 			},
 			Modify:function(details){
+				var opts = Trace.p.Current.Pref_GoogleHeader;
+
 				// Check if we have any modifications to make, if not then don't waste resources
 				var ghm = (
-					(Trace.p.Current.Pref_GoogleHeader.rmChromeConnected.enabled === true) ||
-					(Trace.p.Current.Pref_GoogleHeader.rmChromeUMA.enabled === true) ||
-					(Trace.p.Current.Pref_GoogleHeader.rmChromeVariations.enabled === true) ||
-					(Trace.p.Current.Pref_GoogleHeader.rmClientData.enabled === true)
+					(opts.rmChromeConnected.enabled === true) ||
+					(opts.rmChromeUMA.enabled === true) ||
+					(opts.rmChromeVariations.enabled === true) ||
+					(opts.rmClientData.enabled === true)
 				);
-				if (Trace.p.Current.Pref_GoogleHeader.enabled !== true && ghm !== true) {
+				if (opts.enabled !== true && ghm !== true) {
 					return {requestHeaders:details.requestHeaders};
 				}
+
+				if (!Trace.c.CheckWhitelist(details.url,"Pref_GoogleHeader")) return;
 
 				for (var i=0;i<details.requestHeaders.length;++i) {
 					var headerName = details.requestHeaders[i].name.toString().toLowerCase();
 
-					if (Trace.p.Current.Pref_GoogleHeader.rmChromeConnected.enabled === true) {
+					if (opts.rmChromeConnected.enabled === true) {
 						if (headerName === "x-chrome-connected") {
 							console.log("Removed x-c-c");
 							details.requestHeaders.splice(i, 1);
 							continue;
 						}
 					}
-					if (Trace.p.Current.Pref_GoogleHeader.rmChromeUMA.enabled === true) {
+					if (opts.rmChromeUMA.enabled === true) {
 						if (headerName === "x-chrome-uma-enabled") {
 							details.requestHeaders.splice(i, 1);
 							continue;
 						}
 					}
-					if (Trace.p.Current.Pref_GoogleHeader.rmChromeVariations.enabled === true) {
+					if (opts.rmChromeVariations.enabled === true) {
 						if (headerName === "x-chrome-variations") {
 							console.log("Removed x-c-v");
 							details.requestHeaders.splice(i, 1);
 							continue;
 						}
 					}
-					if (Trace.p.Current.Pref_GoogleHeader.rmClientData.enabled === true) {
+					if (opts.rmClientData.enabled === true) {
 						if (headerName === "x-client-data") {
 							details.requestHeaders.splice(i, 1);
 						}
@@ -1673,6 +1746,8 @@ var Trace = {
 				if (Trace.p.Current.Pref_IPSpoof.enabled !== true){
 					return {requestHeaders:details.requestHeaders};
 				}
+
+				if (!Trace.c.CheckWhitelist(details.url,"Pref_IPSpoof")) return;
 
 				// Attempt forge IP
 				if (Trace.p.Current.Pref_IPSpoof.useClientIP.enabled === true){
@@ -1729,6 +1804,8 @@ var Trace = {
 				if (Trace.p.Current.Pref_ReferHeader.enabled !== true){
 					return {requestHeaders:details.requestHeaders};
 				}
+
+				if (!Trace.c.CheckWhitelist(details.url,"Pref_ReferHeader")) return;
 
 				var s = Trace.p.Current.Pref_ReferHeader.httpHeader;
 
@@ -1811,6 +1888,8 @@ var Trace = {
 				if (Trace.p.Current.Pref_UserAgent.enabled 	!== true){
 					return {requestHeaders:details.requestHeaders};
 				}
+
+				if (!Trace.c.CheckWhitelist(details.url,"Pref_UserAgent")) return;
 
 				for (var i=0;i<details.requestHeaders.length;++i){
 					var headerName = details.requestHeaders[i].name.toString().toLowerCase();
@@ -2010,6 +2089,36 @@ var Trace = {
 			"tab":0,
 			"window":0
 		},
+		DataTemplate:{
+			webRequests:{
+				webpage:0,
+				code:0,
+				media:0,
+				other:0
+			},
+			headers:{
+				cookies:0,
+				setcookie:0,
+				referer:0,
+				etag:0,
+				google:0,
+				useragent:0,
+				proxyip:0
+			},
+			javascript:{
+				canvas:false,
+				audio:false,
+				webrtc:false,
+				clientrects:false,
+				plugins:false,
+				hardware:false,
+				battery:false,
+				screenres:false,
+				netinfo:0,
+				sendbeacon:0
+			}
+		},
+
 		Init:function(){
 			if (Trace.t.TabInfo !== true) return;
 
@@ -2017,40 +2126,11 @@ var Trace = {
 			if (Trace.DEBUG) console.log("[tabmd]-> Initialising...");
 
 			Trace.t.AssignEvents();
-			Trace.t.GetAllTabs();
+			Trace.t.List.GetAllTabs();
 		},
-		Events:{
-			removed:function(id) {
-				if (Trace.t.TabAccounted(id)) {
-					delete Trace.t.TabList[id];
-					if (Trace.DEBUG) console.log("[tabmd]-> Removed tab id",id);
-				} else {
-					if (Trace.DEBUG) console.log("[tabmd]-> Failed to remove tab id",id);
-				}
-			},
-			created:function(tab){
-				Trace.t.TabList[tab.id] = {url: tab.url};
-				if (Trace.DEBUG) console.log("[tabmd]-> Added tab id",tab.id);
-			},
-			activate:function(id){
-				Trace.t.ActiveTab.tab = id.tabId;
-				Trace.t.ActiveTab.window = id.windowId;
-				Trace.t.GetTabId(id.tabId);
-			},
-			highlight:function(tab){
-				console.log(tab);
-			},
-			updated:function(d,c,e){
-				// Fired when an attribute changes, e.g. url, or audible
-				console.log("=======================================");
-				console.log(d);
-				console.log(c);
-				console.log(e);
-				console.log("=======================================");
-			}
-		},
+
 		AssignEvents:function(){
-			chrome.tabs.onRemoved.addListener(Trace.t.Events.removed);
+			chrome.tabs.onRemoved.addListener(Trace.t.Events.removed);	// Event not always fired when flag: "Fast tab/window close" is enabled
 			chrome.tabs.onCreated.addListener(Trace.t.Events.created);
 			chrome.tabs.onActivated.addListener(Trace.t.Events.activate);
 			chrome.tabs.onHighlighted.addListener(Trace.t.Events.highlight);
@@ -2063,32 +2143,102 @@ var Trace = {
 			chrome.tabs.onHighlighted.removeListener(Trace.t.Events.highlight);
 			chrome.tabs.onUpdated.removeListener(Trace.t.Events.updated);
 		},
-		TabAccounted:function(id){
-			return (typeof Trace.t.TabList[id] !== "undefined");
+
+		Events:{
+			removed:function(id) {
+				if (Trace.t.List.TabAccounted(id)) {
+					Trace.t.List.Remove(id);
+				} else {
+					if (Trace.DEBUG) console.log("[tabmd]-> Failed to remove tab id",id);
+				}
+			},
+			created:function(tab){
+				Trace.t.List.Add(tab.id,tab.url);
+				if (Trace.DEBUG) console.log("[tabmd]-> Added tab id",tab.id);
+			},
+			activate:function(id){
+				Trace.t.ActiveTab.tab = id.tabId;
+				Trace.t.ActiveTab.window = id.windowId;
+				Trace.t.List.GetTabId(id.tabId);
+			},
+			highlight:function(tab){
+				//for (var i = 0;i<)
+			},
+			updated:function(tabId,state,tab){
+				// Fired when an attribute changes, e.g. url, or audible
+				if (!Trace.t.List.TabAccounted(tabId)){
+					Trace.t.List.Add(tabId,tab.url);
+					return;
+				}
+
+				if (!state || !state.hasOwnProperty("status")) return;
+				if (state.status !== "loading") return;
+
+				if (Trace.DEBUG) console.log("[tabmd]-> Updated data template for",tab.id," as URL changed to",tab.url);
+
+				// Prevent referenced object issue by cloning object instead (same fix in Trace.t.List.Add)
+				var template = JSON.parse(JSON.stringify(Trace.t.DataTemplate));
+
+				// Replace the URL and Data template
+				Trace.t.TabList[tabId].data = template;
+				Trace.t.TabList[tabId].url = tab.url;
+			}
 		},
-		GetTabId:function(id){
-			if (!Trace.t.TabAccounted(id)){
-				if (Trace.DEBUG) console.log("[tabmd]-> Found new tab!",id);
-				chrome.tabs.get(id,function(tab){
-					Trace.t.TabList[id] = {url: tab.url};
+
+		List:{
+			TabAccounted:function(id){
+				return (typeof Trace.t.TabList[id] !== "undefined");
+			},
+			Add:function(id,url){
+				// Prevents issue where all tabs would have the same statistics
+				var template = JSON.parse(JSON.stringify(Trace.t.DataTemplate));
+
+				Trace.t.TabList[id] = {
+					data:template,
+					url:url
+				};
+			},
+			Remove:function(id){
+				delete Trace.t.TabList[id];
+				if (Trace.DEBUG) console.log("[tabmd]-> Removed tab id",id);
+			},
+			GetTabId:function(id,cb){
+				if (!Trace.t.List.TabAccounted(id)){
+					if (Trace.DEBUG) console.log("[tabmd]-> Found new tab!",id);
+					chrome.tabs.get(id,function(tab){
+						Trace.t.List.Add(id,tab.url);
+						if (cb) cb();
+					});
+				} else {
+					if (cb) cb();
+				}
+			},
+			GetAllTabs:function(){
+				chrome.tabs.query({}, function(tabs) {
+					for (var i = 0;i<tabs.length;i++){
+						if (Trace.t.List.TabAccounted(tabs[i].id)) {
+							if (Trace.DEBUG) console.log("[tabmd]-> Skipped tab id", tabs[i].id);
+							continue;
+						}
+
+						Trace.t.List.Add(tabs[i].id,tabs[i].url);
+						if (Trace.DEBUG) console.log("[tabmd]-> Found new tab id", tabs[i].id);
+					}
 				});
 			}
 		},
-		GetAllTabs:function(){
-			chrome.tabs.query({}, function(tabs) {
-				for (var i = 0;i<tabs.length;i++){
-					if (Trace.t.TabAccounted(tabs[i].id)) {
-						if (Trace.DEBUG) console.log("[tabmd]-> Skipped tab id", tabs[i].id);
-						continue;
-					}
-					Trace.t.TabList[tabs[i].id] = {url: tabs[i].url};
-					if (Trace.DEBUG) console.log("[tabmd]-> Found new tab id", tabs[i].id);
-				}
+
+		LogRequest:function(tabId,type){
+			// Check if the tab is in the list, if not add it
+			Trace.t.List.GetTabId(tabId,function(){
+				if (Trace.DEBUG) console.log("[tabmd]-> Logged stat for tab",tabId,Trace.s.TypeNames[type]);
+				Trace.t.TabList[tabId].data.webRequests[Trace.s.TypeNames[type]] = Trace.t.TabList[tabId].data.webRequests[Trace.s.TypeNames[type]] + 1;
 			});
 		},
-		ReturnTabInfo:function(windowId,tabId){
+
+		ReturnTabInfo:function(cb){
 			if (Trace.DEBUG) console.log("[tabmd]-> Providing information about tab id",tabId);
-			return Trace.t.TabList[tabId];
+			cb(Trace.t.TabList[tabId]);
 		}
 	},
 
@@ -2418,14 +2568,17 @@ var Trace = {
 					"enabled":false
 				}
 			},
+			"Pref_WebGLFingerprint":{
+				"enabled":false
+			},
+			"Pref_NativeFunctions":{
+				"enabled":false,
+				"windowOpen":{
+					"enabled":true
+				}
+			},
 			"Pref_HardwareSpoof":{
 				"enabled":true,
-				"webgl":{
-					"enabled":false
-					//"spoofGpu":{
-					//	"enabled":
-					//}
-				},
 				"hardware":{
 					"enabled":true,
 					"hardwareConcurrency":{
@@ -2519,6 +2672,9 @@ var Trace = {
 			},
 			"Pref_PingBlock":{
 				"enabled":true,
+				"removePingAttr":{
+					"enabled":false
+				},
 				"pingRequest":{
 					"enabled":true
 				},
@@ -2579,7 +2735,7 @@ var Trace = {
 						"enabled":true
 					},
 					"AllowFirefox":{
-						"enabled":true
+						"enabled":false
 					},
 					"AllowVivaldi":{
 						"enabled":true
@@ -2588,7 +2744,7 @@ var Trace = {
 						"enabled":true
 					},
 					"AllowEdge":{
-						"enabled":true
+						"enabled":false
 					},
 					"AllowSafari":{
 						"enabled":true
@@ -2984,6 +3140,7 @@ var Trace = {
 					"maxStoreSize":Trace.v.s.QUOTA_BYTES || 0,
 					"backupTime":(new Date).toString(),
 					"version":chrome.runtime.getManifest().version || null,
+					"browser":navigator.userAgent || "Unknown.",
 					"computed":{
 						"verified":null
 					},

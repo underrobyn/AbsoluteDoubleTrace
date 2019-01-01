@@ -13,14 +13,37 @@
 		<!-- Copyright AbsoluteDouble Trace 2018 -->
 		<script src="../js/common/theme.js"></script>
 
-		<h1 id="title">Trace Blocked this URL</h1>
-		<h2 id="reason">loading reason</h2><br />
-		<h2 id="url">loading url</h2><br /><br />
-		<div id="whitelist_opts">
-			<div id="opts_title">Options to unblock this site</div>
+		<div id="page">
+			<div id="block_info">
+				<h1 id="title">Trace Blocked this URL</h1>
+				<h2 id="reason">loading reason</h2><br />
+				<h2 id="url">loading url</h2>
+			</div>
+			<div id="whitelist_opts" class="page_action">
+				<div id="opts_title">Add this site to the whitelist:</div>
+			</div>
+			<div id="help_info" class="page_action">
+				<div id="help_title">Help Section:</div>
+				<ul>
+					<li>
+						<span class="blocked_q">Why am I seeing this page?</span>
+						<span class="blocked_a">Your browser was navigated to a URL that matched Trace's blocked list, the exact reason will be highlighted above.</span>
+					</li>
+					<li>
+						<span class="blocked_q">What will adding this site to the whitelist do?</span>
+						<span class="blocked_a">Your browser was navigated to a URL that matched Trace's blocked list, the exact reason will be highlighted above.</span>
+					</li>
+					<li>
+						<span class="blocked_q">What is the difference between the whitelist options on the left?</span>
+						<span class="blocked_a">They unblock different parts of the site - if you want to unblock all parts of it, unblock the root domain.</span>
+					</li>
+				</ul>
+			</div>
+			<div id="footer">
+				<button id="open_settings">Trace Settings</button>
+				<button id="go_back">Go back to previous page</button>
+			</div>
 		</div>
-		<br />
-		<button id="open_settings">Trace Settings</button>
 
 		<script src="../js/libraries/jquery.js"></script>
 		<script src="../js/pages/blocked.js"></script>

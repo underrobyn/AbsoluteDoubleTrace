@@ -83,6 +83,13 @@ var TraceBlock = {
 				chrome.tabs.create({url:"options.html"});
 			}
 		},false);
+		document.getElementById("go_back").addEventListener("click",function(){
+			try{
+				history.go(-1);
+			} catch(e){
+				window.close();
+			}
+		},false);
 	},
 	getPageDetails:function(){
 		if (window.location.hash.includes("u;")){
@@ -131,10 +138,10 @@ var TraceBlock = {
 
 		var types = {
 			0:"Unknown",
-			1:"Blocked due to Top Level Domain",
-			2:"Blocked because domain matched blocklist",
-			3:"Blocked because hostname matched blocklist",
-			4:"Blocked because URL matched item in blocklist",
+			1:"Blocked because the Top Level Domain (e.g. .com, .au, .org) matched the blocklist",
+			2:"Blocked because the website domain matched the blocklist",
+			3:"Blocked because the website hostname matched the blocklist",
+			4:"Blocked because URL matched the blocklist",
 			5:"Blocked because file matched blacklisted files",
 			"undefined":"No reason set"
 		};
@@ -155,60 +162,61 @@ var TraceBlock = {
 		if (typeof TraceBlock.whitelistData["origin"] === "string"){
 			el.append(
 				$("<label/>",{"for":"url_origin"}).text("Unblock the Origin URL: "),
-				$("<a/>",{"href":window.location.hash}).text("Apply this").on("click enter",function(){TraceBlock.whitelistURL("origin");}),
-				$("<input/>",{
-					"type":"text",
-					"name":"url_origin",
-					"id":"url_origin",
-					"placeholder":"Origin URL",
-					"readonly":true,
-					"value":TraceBlock.whitelistData["origin"]
-				}),
-				$("<br/>")
+				$("<form/>").append(
+					$("<input/>",{
+						"type":"text",
+						"name":"url_origin",
+						"id":"url_origin",
+						"placeholder":"Origin URL",
+						"value":TraceBlock.whitelistData["origin"]
+					}),
+					$("<button/>",{"href":window.location.hash}).text("Apply this").on("click enter",function(){TraceBlock.whitelistURL("origin");}),$("<br />")
+				)
 			);
 		}
 		if (typeof TraceBlock.whitelistData["path"] === "string" && TraceBlock.whitelistData["path"] !== "*/*" && TraceBlock.whitelistData["path"].split("/").length > 4){
 			el.append(
 				$("<label/>",{"for":"url_path"}).text("Unblock the URL path: "),
-				$("<a/>",{"href":window.location.hash}).text("Apply this").on("click enter",function(){TraceBlock.whitelistURL("path");}),
-				$("<input/>",{
-					"type":"text",
-					"name":"url_path",
-					"id":"url_path",
-					"placeholder":"URL pathname",
-					"readonly":true,
-					"value":TraceBlock.whitelistData["path"]
-				}),
-				$("<br/>")
+				$("<form/>").append(
+					$("<input/>",{
+						"type":"text",
+						"name":"url_path",
+						"id":"url_path",
+						"placeholder":"URL pathname",
+						"value":TraceBlock.whitelistData["path"]
+					}),
+					$("<button/>",{"href":window.location.hash}).text("Apply this").on("click enter",function(){TraceBlock.whitelistURL("path");}),$("<br />")
+				)
 			);
 		}
 		if (typeof TraceBlock.whitelistData["host"] === "string" && TraceBlock.whitelistData.host !== TraceBlock.whitelistData.root){
 			el.append(
 				$("<label/>",{"for":"url_host"}).text("Unblock the Host URL: "),
-				$("<a/>",{"href":window.location.hash}).text("Apply this").on("click enter",function(){TraceBlock.whitelistURL("host");}),
-				$("<input/>",{
-					"type":"text",
-					"name":"url_host",
-					"id":"url_host",
-					"placeholder":"Hostname",
-					"readonly":true,
-					"value":TraceBlock.whitelistData["host"]
-				}),
-				$("<br/>")
+				$("<form/>").append(
+					$("<input/>",{
+						"type":"text",
+						"name":"url_host",
+						"id":"url_host",
+						"placeholder":"Hostname",
+						"value":TraceBlock.whitelistData["host"]
+					}),
+					$("<button/>",{"href":window.location.hash}).text("Apply this").on("click enter",function(){TraceBlock.whitelistURL("host");}),$("<br />")
+				)
 			);
 		}
 		if (typeof TraceBlock.whitelistData["root"] === "string"){
 			el.append(
 				$("<label/>",{"for":"url_root"}).text("Unblock the Root Domain: "),
-				$("<a/>",{"href":window.location.hash}).text("Apply this").on("click enter",function(){TraceBlock.whitelistURL("root");}),
-				$("<input/>",{
-					"type":"text",
-					"name":"url_root",
-					"id":"url_root",
-					"placeholder":"Root Domain Name",
-					"readonly":true,
-					"value":TraceBlock.whitelistData["root"]
-				})
+				$("<form/>").append(
+					$("<input/>",{
+						"type":"text",
+						"name":"url_root",
+						"id":"url_root",
+						"placeholder":"Root Domain Name",
+						"value":TraceBlock.whitelistData["root"]
+					}),
+					$("<button/>",{"href":window.location.hash,"class":"apply_act"}).text("Apply this").on("click enter",function(){TraceBlock.whitelistURL("root");})
+				)
 			);
 		}
 	},

@@ -13,9 +13,22 @@ h2 {
 	margin:.25em 0;
 	max-width:80%;
 }
+#page{
+	width:90%;
+	height:80%;
+	padding:2% 5%;
+}
+#block_info {
+	width:100%;
+	background-color:rgba(0,0,0,0.15);
+}
+#footer{
+	padding:1.5% 0;
+	width:100%;
+	float:left;
+}
 #reason {
 	font-weight:100;
-	text-decoration:underline;
 }
 body {
 	height:100vh;
@@ -30,18 +43,22 @@ a{
 	font-size:3.2em;
 	padding:10px 0 0 0;
 	margin:0;
-	font-weight:100;
+	font-weight:700;
 }
-#opts_title {
+#opts_title,#help_title {
 	font-size:1.3em;
+	line-height:1.9em;
 	border-bottom:1px solid #1a1a1a;
 }
-#whitelist_opts{
-	font-size:2em;
-	line-height:1.9em;
-	text-align:left;
-	width:50%;
-	margin:0 25%;
+.page_action {
+	font-size: 2em;
+	text-align: left;
+	width: 50%;
+	float: left;
+}
+.blocked_q,.blocked_a{
+	font-size:0.8em;
+	line-height:1em;
 }
 button {
 	background-color:transparent;
@@ -65,10 +82,25 @@ button {
 button:hover,button:focus{
 	background-color:rgba(0,0,0,0.7);
 }
+form {
+	display:flex;
+	flex-direction:row;
+}
+
+form input {
+	/* Tell the input to use all the available space */
+	flex-grow:2;
+	/* And hide the input's outline, so the form looks like the outline */
+	border:none;
+}
+.apply_act{
+	float:right;
+
+}
 input[type="text"] {
 	display:inline-block;
 	min-width:268px;
-	width:100%;
+	width:98%;
 	height:1.7em;
 	padding:6px 12px;
 	font-size:0.7em !important;

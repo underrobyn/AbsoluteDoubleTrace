@@ -6,7 +6,7 @@
   	"author":"AbsoluteDouble",
 	"description":"Browse online without leaving a Trace, because who wants to be tracked?",
 	"minimum_chrome_version":"32",
-	"version":"2.0.20",
+	"version":"2.1",
   	"homepage_url":"https://absolutedouble.co.uk/trace/",
   	"options_page":"html/options.html",
 	"options_ui": {
@@ -74,6 +74,13 @@
 			"matches":["http://*/*","https://*/*"],
 		  	"match_about_blank":false,
 			"run_at":"document_start"
+		},
+	  	{
+			"all_frames":true,
+			"js":["js/contentscript/loaded.js"],
+			"matches":["http://*/*","https://*/*"],
+		  	"match_about_blank":false,
+			"run_at":"document_end"
 		}
 	],
   	"web_accessible_resources": [

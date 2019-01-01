@@ -133,6 +133,7 @@ var SetCookieParser = function(string){
 	this.cookiename = "";
 	this.cookievalue = "";
 
+	// https://chromium.googlesource.com/chromium/src/+/master/extensions/browser/api/web_request/web_request_api_helpers.cc#166
 	this.reserved = ["max-age","expires","secure","httponly","domain","samesite","path","priority"];
 
 	this.decodeuri = function(s){

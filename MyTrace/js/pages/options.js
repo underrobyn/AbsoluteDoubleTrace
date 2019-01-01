@@ -1,6 +1,6 @@
 /*
  * 	Trace options page script
- * 	Copyright AbsoluteDouble 2018
+ * 	Copyright AbsoluteDouble 2018 - 2019
  * 	Written by Jake Mcneill
  * 	https://absolutedouble.co.uk/
  */
@@ -58,6 +58,9 @@ var TraceOpt = {
 
 		return [date.getFullYear().toString(),month.toString(),day.toString()];
 	},
+	CloseUI:function(){
+		return $("<button/>",{"title":"Close","class":"float_r"}).text("Close").on("click enter",TraceOpt.CloseOverlay);
+	},
 	CloseOverlay:function(){
 		$("#overlay_message").fadeOut(250);
 		$("#ux").removeClass("blurred");
@@ -70,7 +73,7 @@ var TraceOpt = {
 
 		$("#ux").addClass("blurred");
 		$("#overlay_message").fadeIn(300);
-		$("#overlay_close").click(TraceOpt.CloseOverlay);
+		$("#overlay_close").on("click enter",TraceOpt.CloseOverlay);
 		$(window).click(function(e){
 			if ($(e.target)[0].id === "overlay_message"){
 				TraceOpt.CloseOverlay();
@@ -181,7 +184,6 @@ var TraceOpt = {
 		SelectProtection:function(level){
 			if (level === 0){
 				chrome.runtime.getBackgroundPage(function(bg){
-					bg._UserCrashReportService({"installProtection":"default"});
 					bg.Trace.p.SetMultiple({
 						"Pref_ETagTrack.enabled":true,
 						"Pref_ClientRects.enabled":true
@@ -191,7 +193,6 @@ var TraceOpt = {
 
 			if(level === 1){
 				chrome.runtime.getBackgroundPage(function(bg){
-					bg._UserCrashReportService({"installProtection":"medium"});
 					bg.Trace.p.SetMultiple({
 						"Pref_GoogleHeader.enabled":true,
 						"Pref_AudioFingerprint.enabled":true
@@ -201,7 +202,6 @@ var TraceOpt = {
 
 			if (level === 2){
 				chrome.runtime.getBackgroundPage(function(bg){
-					bg._UserCrashReportService({"installProtection":"maximum"});
 					bg.Trace.p.SetMultiple({
 						"Pref_WebController.urlCleaner.enabled":true,
 						"Pref_ReferHeader.enabled":true
@@ -349,15 +349,20 @@ var TraceOpt = {
 			TraceOpt.Blocklist.isPremium = (typeof bg.Trace.v.Premium !== "undefined" ?
 				(bg.Trace.v.Premium.length !== 0) : false);
 		});
+
+		$("#trace_vernum").text(chrome.runtime.getManifest().version || "?");
 	},
 	BrowserCompatibility:function(){
-		if (/Edge/.test(navigator.userAgent)){
+		if (!/Chrome|Firefox/.test(navigator.userAgent)){
 			$("#home .sect_cont").append(
 				$("<div/>",{"class":"sect_adv"}).append(
 					$("<div/>",{"class":"sect_adv_header"}).html("&nbsp;Developer Message"),
-					$("<div/>",{"class":"sect_adv_cont"}).text("This is a beta version of Trace for Edge, feel free to report bugs to absolutedouble@gmail.com")
+					$("<div/>",{"class":"sect_adv_cont"}).text("You are running Trace on an unsupported browser - if you have any bugs please report them to absolutedouble@gmail.com")
 				)
 			);
+		}
+		if (/Firefox/.test(navigator.userAgent)){
+			$("body").css("font-size","0.8em");
 		}
 	},
 	GenerateGreeting:function(){
@@ -624,10 +629,12 @@ var TraceOpt = {
 		});
 	},
 	UpdateBlocklist:function(){
-		if (chrome.extension.getBackgroundPage().Trace.p.Current.Pref_WebController.enabled !== true){
-			chrome.extension.getBackgroundPage().Trace.p.Current.Pref_WebController.enabled = true;
-		}
-		chrome.extension.getBackgroundPage().Trace.b.BlocklistLoader(true);
+		chrome.runtime.getBackgroundPage(function(bg){
+			if (bg.Trace.p.Current.Pref_WebController.enabled !== true){
+				bg.Trace.p.Current.Pref_WebController.enabled = true;
+			}
+			bg.Trace.b.BlocklistLoader(true);
+		});
 		$(this).text("Working...");
 	},
 	GetPremiumStatus:function(){
@@ -680,6 +687,10 @@ var TraceOpt = {
 
 				setTimeout(TraceOpt.GetMainPage,500);
 				setTimeout(TraceOpt.GetPremiumStatus,1500);
+				setTimeout(function(){
+					TraceOpt.Blocklist.isPremium = (typeof bg.Trace.v.Premium !== "undefined" ?
+						(bg.Trace.v.Premium.length !== 0) : false);
+				},1500);
 			}
 		});
 	},
@@ -700,7 +711,6 @@ var TraceOpt = {
 			TraceOpt.Store("atme",ntme);
 		} else {
 			alert("Issue with localStorage!");
-
 		}
 
 		var uTimeOut = function(t){
@@ -709,7 +719,7 @@ var TraceOpt = {
 				$("<h2/>").text("Please wait " + t + " minutes to try again." + (t === "10" ? " Might want to make a cup of tea to pass the time." : "")),
 				$("<span/>").text("The timer resets every time you re-enter this popup, wait " + t + " minutes before trying again."),$("<br />"),$("<br />"),
 				$("<button/>",{"title":"I need help"}).text("Help").click(TraceOpt.PremiumHelp),
-				$("<button/>",{"title":"Close","class":"float_r"}).text("Close").click(TraceOpt.CloseOverlay)
+				TraceOpt.CloseUI()
 			);
 			TraceOpt.AssignCloseOverlay();
 		};
@@ -735,9 +745,9 @@ var TraceOpt = {
 				"class":"text_box boxmod_large"
 			}),
 			$("<br />"),$("<br />"),
-			$("<button/>",{"title":"Activate premium code"}).text("Activate").click(TraceOpt.Scribble),
-			$("<button/>",{"title":"I need help"}).text("Help").click(TraceOpt.PremiumHelp),
-			$("<button/>",{"title":"Close","class":"float_r"}).text("Close").click(TraceOpt.CloseOverlay)
+			$("<button/>",{"title":"Activate premium code"}).text("Activate").on("click enter",TraceOpt.Scribble),
+			$("<button/>",{"title":"I need help"}).text("Help").on("click enter",TraceOpt.PremiumHelp),
+			TraceOpt.CloseUI()
 		);
 		TraceOpt.AssignCloseOverlay(true);
 	},
@@ -785,7 +795,7 @@ var TraceOpt = {
 					)
 				)
 			),
-			$("<button/>",{"title":"Close","class":"float_r"}).text("Close").click(TraceOpt.CloseOverlay)
+			TraceOpt.CloseUI()
 		);
 		TraceOpt.AssignCloseOverlay(true);
 	},
@@ -843,8 +853,8 @@ var TraceOpt = {
 				}
 
 				pt.text("Applying Code...");
-				chrome.extension.getBackgroundPage().Trace.p.Set("Main_Trace.PremiumCode", eden);
 				chrome.runtime.getBackgroundPage(function(bg){
+					bg.Trace.p.Set("Main_Trace.PremiumCode", eden);
 					bg._UserCrashReportService({
 						"PremiumTrace": "AcceptedCode",
 						"CodeUsed": eden
@@ -861,9 +871,15 @@ var TraceOpt = {
 				}
 
 				pt.text("Please wait... Initialising Premium :)");
-				chrome.extension.getBackgroundPage().Trace.p.Set("Pref_WebController.installCodes.a00000001",true);
-				chrome.extension.getBackgroundPage().Trace.p.Set("Pref_WebController.installCodes.a00000003",true);
-				chrome.extension.getBackgroundPage().Trace.b.BlocklistLoader(true);
+				chrome.runtime.getBackgroundPage(function(bg){
+					bg.Trace.p.Set("Pref_WebController.installCodes.a00000001",true);
+					bg.Trace.p.Set("Pref_WebController.installCodes.a00000003",true);
+					bg.Trace.b.BlocklistLoader(true);
+					setTimeout(function(){
+						TraceOpt.Blocklist.isPremium = (typeof bg.Trace.v.Premium !== "undefined" ?
+							(bg.Trace.v.Premium.length !== 0) : false);
+					},1500);
+				});
 				setTimeout(TraceOpt.GetMainPage,750);
 				setTimeout(TraceOpt.GetPremiumStatus,3000);
 			},
@@ -1239,12 +1255,13 @@ var TraceOpt = {
 
 			pingRequest:"Block 'ping' requests in the browser (Recommended)",
 			sendBeacon:"Disable the javascript navigator.sendBeacon function on webpages",
+			removePingAttr:"Remove ping tracking from web links",
 
 			javascript:"Something went wrong if you're seeing this.",
 			wrtcInternal:"Stop WebRTC exposing your local IPv4 address",
-			wrtcPeerConnection:"Disable the RTCPeerConnection javascript object",
-			wrtcDataChannel:"Disable the RTCDataChannel javascript object",
-			wrtcRtpReceiver:"Disable the RTCRtpReceiver javascript object"
+			wrtcPeerConnection:"Disable the RTCPeerConnection javascript object (*)",
+			wrtcDataChannel:"Disable the RTCDataChannel javascript object (*)",
+			wrtcRtpReceiver:"Disable the RTCRtpReceiver javascript object (*)"
 		},
 		Options:function(setting){
 			TraceOpt.Config.SelectedOption = setting;
@@ -1387,7 +1404,7 @@ var TraceOpt = {
 				$("#drop_message").empty().append(
 					$("<h1/>").text("Audio Fingerprint Protection"),
 					cont,
-					$("<button/>",{"title":"Close","class":"float_r"}).text("Close").click(TraceOpt.CloseOverlay),
+					TraceOpt.CloseUI(),
 					$("<br/>"),$("<br/>")
 				);
 				TraceOpt.AssignCloseOverlay(true);
@@ -1397,7 +1414,7 @@ var TraceOpt = {
 				$("#drop_message").empty().append(
 					$("<h1/>").text("Google Header Protection"),
 					cont,
-					$("<button/>",{"title":"Close","class":"float_r"}).text("Close").click(TraceOpt.CloseOverlay),
+					TraceOpt.CloseUI(),
 					$("<br/>"),$("<br/>")
 				);
 				TraceOpt.AssignCloseOverlay(true);
@@ -1405,10 +1422,10 @@ var TraceOpt = {
 			BatteryAPISettings:function(){
 				var cont = TraceOpt.Config.GetConf();
 				$("#drop_message").empty().append(
-					$("<h1/>").text("Battery API program"),
+					$("<h1/>").text("Battery API Protection"),
 					cont,
 					$("<br/>"),
-					$("<button/>",{"title":"Close","class":"float_r"}).text("Close").click(TraceOpt.CloseOverlay),
+					TraceOpt.CloseUI(),
 					$("<br/>"),$("<br/>")
 				);
 				TraceOpt.AssignCloseOverlay(true);
@@ -1419,7 +1436,7 @@ var TraceOpt = {
 					$("<h1/>").text("Network Information API"),
 					cont,
 					$("<br/>"),
-					$("<button/>",{"title":"Close","class":"float_r"}).text("Close").click(TraceOpt.CloseOverlay),
+					TraceOpt.CloseUI(),
 					$("<br/>"),$("<br/>")
 				);
 				TraceOpt.AssignCloseOverlay(true);
@@ -1431,7 +1448,7 @@ var TraceOpt = {
 					cont,
 					$("<br/>"),
 					$("<span/>").text("If you're looking for Hyperlink Auditing protection then you can find it under 'Browser Settings'"),
-					$("<button/>",{"title":"Close","class":"float_r"}).text("Close").click(TraceOpt.CloseOverlay),
+					TraceOpt.CloseUI(),
 					$("<br/>"),$("<br/>")
 				);
 				TraceOpt.AssignCloseOverlay(true);
@@ -1443,7 +1460,8 @@ var TraceOpt = {
 					cont,
 					$("<br/>"),
 					$("<span/>").text("WebRTC is used for applications such as video calling. Disabling javascript objects will most likely break lots of websites that rely on WebRTC."),$("<br/>"),
-					$("<button/>",{"title":"Close","class":"float_r"}).text("Close").click(TraceOpt.CloseOverlay),
+					$("<span/>").text("* Options with an asterisk are optional settings and should only be used if you know what you're doing"),$("<br/>"),
+					TraceOpt.CloseUI(),
 					$("<br/>"),$("<br/>")
 				);
 				TraceOpt.AssignCloseOverlay(true);
@@ -2078,6 +2096,10 @@ var TraceOpt = {
 				"data-parent":TraceOpt.Config.SelectedOption
 			});
 
+			el.append(
+				$("<span/>").text("Warning: Enabling user agents that don't match your system can break sites such as YouTube."),$("<br />"),$("<br />")
+			);
+
 			for (var i in TraceOpt.Config.CurrentSel){
 				if (i === "enabled" || i === "uaCust" || TraceOpt.Config.CurrentSel[i] === undefined) {
 					continue;
@@ -2124,7 +2146,7 @@ var TraceOpt = {
 			$("#drop_message").empty().append(
 				$("<h1/>").text("User Agent Customiser"),
 				$("<div/>",{"id":"ua_specialconfig"}).append(el),
-				$("<button/>",{"title":"Close","class":"float_r"}).text("Close").click(TraceOpt.CloseOverlay)
+				TraceOpt.CloseUI()
 			);
 			TraceOpt.AssignCloseOverlay(true);
 		}
@@ -2553,7 +2575,6 @@ var TraceOpt = {
 			$("#wlctrl_refresh").on("click enter",TraceOpt.Scope.ReloadList);
 			$("#wlctrl_test").on("click enter",TraceOpt.Scope.ListTest);
 			$("#wlctrl_clear").on("click enter",TraceOpt.Scope.ClearWhitelist);
-			$("#wlctrl_update").on("click enter",TraceOpt.Scope.SaveList);
 			$("#wlctrl_addent").on("click enter",TraceOpt.Scope.AddDomain);
 			$("#wlctrl_rement").on("click enter",TraceOpt.Scope.RemoveDomain);
 			$("#wlctrl_editent").on("click enter",TraceOpt.Scope.EditDomain);
@@ -2569,21 +2590,6 @@ var TraceOpt = {
 		},
 		EmptyList:function(){
 			$("#wl_biglist").html("<h2>&nbsp;Whitelist contains no entries.</h2>&nbsp;&nbsp;Add new ones here.<br />");
-		},
-		SaveList:function(){
-			TraceOpt.Scope.Title.html("Updating...");
-			$("#wlctrl_update").html("Saving...");
-			chrome.runtime.getBackgroundPage(function(bg){
-				bg.Trace.c.SaveWhitelist(function(){
-					TraceOpt.Scope.ReloadList();
-
-					// Make it feel like the whitelist is saving (even though it's instant)
-					setTimeout(function(){
-						TraceOpt.Scope.Title.html("Whitelist");
-						$("#wlctrl_update").html("Save Changes");
-					},250);
-				});
-			});
 		},
 		StartSearch:function(){
 			clearTimeout(TraceOpt.searchTimeout);
@@ -2668,7 +2674,6 @@ var TraceOpt = {
 		},
 		AddExecs:function(){
 			var enableStatus = chrome.extension.getBackgroundPage().Trace.c.whitelistDefaults;
-			var disallowed = ["Pref_CookieEater","Pref_ReferHeader","Pref_GoogleHeader","Pref_ETagTrack","Pref_UserAgent","Pref_IPSpoof"];
 			var dpAllPage = chrome.extension.getBackgroundPage().Trace.p.Current.Main_ExecutionOrder.AllPage || [];
 			var dpPerPage = chrome.extension.getBackgroundPage().Trace.p.Current.Main_ExecutionOrder.PerPage || [];
 			var allPage = $("#s_add_allpage"),
@@ -2677,10 +2682,6 @@ var TraceOpt = {
 			allPage.empty();
 			for (var i = 0;i<dpAllPage.length;i++){
 				var style = "", protmsg = "When checked, this setting is allowed to run";
-				if (disallowed.indexOf(dpAllPage[i]) !== -1) {
-					style = "color:red;";
-					protmsg = "This setting currently won't be applied. It will be in a future update."
-				}
 				allPage.append(
 					$("<div/>",{"class":"setting_conf_opt"}).append(
 						$("<label/>",{
@@ -2702,10 +2703,6 @@ var TraceOpt = {
 			perPage.empty();
 			for (var i = 0;i<dpPerPage.length;i++){
 				var style = "", protmsg = "When checked, this setting is allowed to run";
-				if (disallowed.indexOf(dpAllPage[i]) !== -1) {
-					style = "color:red;";
-					protmsg = "This setting currently won't be applied. It will be in a future update."
-				}
 				perPage.append(
 					$("<div/>",{"class":"setting_conf_opt"}).append(
 						$("<label/>",{
@@ -2803,7 +2800,7 @@ var TraceOpt = {
 					)
 				),
 				$("<br/>"),
-				$("<span/>").text("This section is currently experimental"),
+				$("<span/>").text("You can change which section protections appear in under Settings and then 'Where Protections Run'"),
 				$("<div/>",{"id":"s_add_protections"}).append(
 					$("<div/>",{"class":"xlarge settings_title_execorder rborder align_c"}).append("Applied to all pages"),
 					$("<div/>",{"class":"xlarge settings_title_execorder align_c"}).append("Apply only to this entry"),
@@ -2939,7 +2936,8 @@ var TraceOpt = {
 			},300);
 		},
 		AddToUI:function(array,cb){
-			var len = Object.keys(array).length;
+			var keys = Object.keys(array).sort();
+			var len = keys.length;
 			var lst = $("#wl_biglist");
 
 			var parseEntry = function(e){
@@ -2952,10 +2950,10 @@ var TraceOpt = {
 					$("<div/>",{
 						"class":"wl_blist_domain",
 						"tabindex":"0",
-						"data-itmkey":Object.keys(array)[pos],
+						"data-itmkey":keys[pos],
 						"data-pos":pos,
 						"id":"wle_id_" + TraceOpt.makeRandomID(7)
-					}).html(parseEntry(Object.keys(array)[pos])).on("keyup",TraceOpt.Scope.AlterSelect).click(TraceOpt.Scope.SelectDomain)
+					}).html(parseEntry(keys[pos])).on("keyup",TraceOpt.Scope.AlterSelect).click(TraceOpt.Scope.SelectDomain)
 				);
 			}
 
@@ -3015,7 +3013,7 @@ var TraceOpt = {
 					"autocomplete":"false",
 				}).keyup(runTest),
 				$("<div/>",{"id":"sl_testresp","class":"textscrollable"}).append(),
-				$("<button/>",{"title":"Close","class":"float_r"}).text("Close").click(TraceOpt.CloseOverlay)
+				TraceOpt.CloseUI()
 			);
 			TraceOpt.AssignCloseOverlay(false);
 		},
@@ -3037,7 +3035,7 @@ var TraceOpt = {
 						)
 					)
 				),
-				$("<button/>",{"title":"Close"}).text("Close").click(TraceOpt.CloseOverlay)
+				TraceOpt.CloseUI()
 			);
 			TraceOpt.AssignCloseOverlay(true);
 		}
@@ -3196,7 +3194,7 @@ var TraceOpt = {
 						$("<span/>",{"class":"ccheck"})
 					)
 				),
-				$("<button/>",{"title":"Close","class":"float_r"}).text("Close").click(TraceOpt.CloseOverlay),
+				TraceOpt.CloseUI(),
 				$("<br/>"),$("<br/>")
 			);
 			TraceOpt.AssignCloseOverlay(true);
@@ -3523,7 +3521,7 @@ var TraceOpt = {
 					$("<h2/>").text("Click a Cookie Name to toggle whether it is affected by the protection"),
 					$("<div/>",{"id":"adv_tldlist"}),
 					$("<br/>"),$("<br/>"),
-					$("<button/>",{"title":"Close","class":"float_r"}).text("Close").click(TraceOpt.CloseOverlay)
+					TraceOpt.CloseUI()
 				);
 				TraceOpt.AssignCloseOverlay(true);
 

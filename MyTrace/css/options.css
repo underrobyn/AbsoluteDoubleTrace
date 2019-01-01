@@ -1,4 +1,4 @@
-/* Copyright AbsoluteDouble Trace 2018 */
+/* Copyright AbsoluteDouble Trace 2018 - 2019 */
 ::selection {
 	background:#a03158;
 	color:#fff;
@@ -255,7 +255,7 @@ a.dark{
 	margin-bottom:1%;
 }
 .sect_adv_header{
-	font-size:1.45em;
+	font-size:1.4em;
 	height:5vh;
 	line-height:5vh;
 	width:100%;
@@ -263,12 +263,12 @@ a.dark{
 	background-color:rgba(0,0,0,0.8);
 }
 .sect_adv_header:hover{
-	background-color:rgba(0,0,0,0.85);
+	background-color:rgba(0,0,0,0.9);
 }
 .sect_adv_cont{
 	width:98%;
 	padding:.5% 1%;
-	background-color:rgba(255,255,255,0.15);
+	background-color:rgba(0,0,0,0.1);
 }
 .sect_adv_cont span{
 	font-size:1.2em;
@@ -928,6 +928,15 @@ td{
 		height:100%;
 		float:left;
 	}
+	button{
+		line-height:2.25em;
+		height:2.25em;
+	}
+	.larger_button{
+		height:1.75em;
+		line-height:1.75em;
+		font-size:0.95em;
+	}
 }
 @media (max-width:768px){
 	table{
@@ -1007,6 +1016,9 @@ td{
 	}
 	#nav{
 		font-size:1.4em;
+	}
+	.setting_info{
+		font-size:0.95em;
 	}
 }
 @media (max-height:800px){
