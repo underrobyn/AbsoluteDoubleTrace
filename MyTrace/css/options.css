@@ -503,6 +503,9 @@ button:hover,button:focus{
 	transform:rotate(45deg);
 }
 
+#settings_straceorder, #settings_straceadvanced, #settings_sbrowserfeature, #settings_stracesetting{
+	display:none;
+}
 .settings_config_container{
 	font-size:1.3em;
 }

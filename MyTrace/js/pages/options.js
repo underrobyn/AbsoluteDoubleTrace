@@ -27,7 +27,6 @@ if (!chrome.hasOwnProperty("extension") || typeof chrome.extension.getBackground
 window.URL = window.URL || window.webkitURL;
 
 var TraceOpt = {
-	s:"M2ysyaSd58sqt4zVGicIfbMYac8dqhtrk5yyA8tiG31gZ",
 	homeRefresh:null,
 	searchTimeout:null,
 	currentSettingTab:"settings_stracefeature",
@@ -39,10 +38,6 @@ var TraceOpt = {
 			n += t.charAt(Math.floor(Math.random()*t.length));
 		}
 		return n;
-	},
-	FormatNumber:function(x) {
-		if (!x) return "0";
-		return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 	},
 	theDate:function(){
 		var date = new Date();
@@ -277,10 +272,8 @@ var TraceOpt = {
 		}
 
 		// Assign click events to nav bar
-		TraceOpt.AssignNavigationClickEvents();
-
-		TraceOpt.GenerateGreeting();
-		TraceOpt.BrowserCompatibility();
+		TraceOpt.AssignNavEvents();
+		TraceOpt.Interface.Browsers();
 
 		// Start Auth Channel and check integrity
 		TraceOpt.Auth.Init();
@@ -291,21 +284,12 @@ var TraceOpt = {
 			console.log(a);
 		},false);
 
-		// This is for the mobile navigation bar
-		window.addEventListener("resize",function(a){
-			if (!$(".menutoggle").is(":visible")){
-				if ($(window).width() > 700 && !$("#nav").is(":visible")) {
-					$("#nav").show();
-				}
-			}
-		},false);
-
 		// Get main page text and start update intervals
-		TraceOpt.GetPremiumStatus();
-		TraceOpt.GetMainPage();
+		TraceOpt.Premium.GetStatus();
+		TraceOpt.Interface.GetMainPage();
 		TraceOpt.homeRefresh = setInterval(function(){
-			TraceOpt.GetMainPage();
-			TraceOpt.GetPremiumStatus();
+			TraceOpt.Interface.GetMainPage();
+			TraceOpt.Premium.GetStatus();
 			TraceOpt.Stats.GetStatsData(function(d){
 				TraceOpt.Stats.MakeData(d,TraceOpt.Stats.MakeGraph);
 			});
@@ -317,25 +301,22 @@ var TraceOpt = {
 
 		// Assign click events to settings table
 		TraceOpt.AssignSettingClickEvents();
-		$("#settings_straceorder, #settings_straceadvanced, #settings_sbrowserfeature, #settings_stracesetting").hide();
-
-		// Get statistics loaded and ready
-		if (!(/Edge/.test(navigator.userAgent))) {
-			TraceOpt.Stats.StructureGraph();
-			TraceOpt.Stats.GetStatsData(function (d) {
-				TraceOpt.Stats.MakeData(d, TraceOpt.Stats.MakeGraph);
-			});
-		}
-
-		// Assign click events to stats page
-		TraceOpt.Stats.AssignGraphOptions();
 
 		// Assign click events to advanced settings
 		TraceOpt.Scope.Init();
 		TraceOpt.BadTopLevelBlock.AssignEvents();
 		TraceOpt.URLCleaner.AssignEvents();
 
-		TraceOpt.GenerateTip();
+		TraceOpt.Interface.GenerateHome();
+
+		// Get statistics loaded and ready
+		TraceOpt.Stats.StructureGraph();
+		TraceOpt.Stats.GetStatsData(function (d) {
+			TraceOpt.Stats.MakeData(d, TraceOpt.Stats.MakeGraph);
+		});
+
+		// Assign click events to stats page
+		TraceOpt.Stats.AssignGraphOptions();
 
 		chrome.runtime.getBackgroundPage(function(bg){
 			TraceOpt.debug = (typeof bg.Trace.p.Current.Main_Trace.DebugApp.enabled !== "undefined" ?
@@ -346,150 +327,163 @@ var TraceOpt = {
 
 		$("#trace_vernum").text(chrome.runtime.getManifest().version || "?");
 	},
-	BrowserCompatibility:function(){
-		if (!/Chrome|Firefox/.test(navigator.userAgent)){
-			$("#home .sect_cont").append(
-				$("<div/>",{"class":"sect_adv"}).append(
-					$("<div/>",{"class":"sect_adv_header"}).html("&nbsp;Developer Message"),
-					$("<div/>",{"class":"sect_adv_cont"}).text("You are running Trace on an unsupported browser - if you have any bugs please report them to absolutedouble@gmail.com")
-				)
-			);
-		}
-		if (/Firefox/.test(navigator.userAgent)){
-			$("body").css("font-size","0.8em");
-		}
-	},
-	GenerateGreeting:function(){
-		var greetings = [
-			"Welcome to the Trace Dashboard!",
-			"Trace Dashboard"
-		];
-		$("#trace_main_title").text(greetings[Math.floor(Math.random()*greetings.length)]);
-	},
-	GenerateTip:function(){
-		var tips = [
-			"In the 'Settings' section you can click any setting name to open a menu that tells you what it does.",
-			"The Web Request Controller lives in the 'Requests' section of Trace and can be used to block lots of tracking domains!",
-			"Bad TLD Protection is a very effective way to block unknown tracking domains, enable it in the 'Requests' section.",
-			"You can download all of your statistics data to csv, tsv, xml or json format to use externally.",
-			"You can reset Trace's settings to default in 'Settings' then 'Trace Options'",
-			"Click the Trace icon in the top corner of your browser window to report a site to Trace's developer.",
-			"You can find links to all the Research and Tools that have helped me make Trace in the 'Info' section.",
-			"A changelog and roadmap for Trace is available <a href='https://absolutedouble.co.uk/trace/information.html' title='Trace RoadMap/Changelog'>here</a>.",
-			"To contact the Trace Developer check the 'Info' section for details.",
-			"You can enable protections for only certain sites by moving a protection to the 'Run on only some pages' list in 'Where Protections Run' under Settings and then creating a rule in the Whitelist section.",
-			"Trace can function as a web filter by adding rules in the 'Whitelist' section and then choosing to block the site.",
-			"You can backup and restore your Trace settings in 'Trace Options' under the settings section."
-		];
-		$("#user_tip").html(tips[Math.floor(Math.random()*tips.length)]);
-	},
-	GetMainPage:function(){
-		chrome.runtime.getBackgroundPage(function(bg){
-			bg.Trace.s.MainText(function(i,t,d){
-				var text = "<br />Trace has been protecting you since <span>" + i + "</span>";
-				if (TraceOpt.FormatNumber(t["total"]).toString() !== "0"){
-					text += ",<br />Since then, there have been a total of <span>" + TraceOpt.FormatNumber(t["total"]) + "</span>" +
-						" requests blocked. That includes, <span>" + TraceOpt.FormatNumber(t["webpage"]) + "</span> page load" + (t["webpage"] === 1 ? "" : "s") + ", " +
-						"<span>" + TraceOpt.FormatNumber(t["media"]) + "</span> media request" + (t["media"] === 1 ? "" : "s") + " (tracking pixels, page ads), also, Trace blocked " +
-						"<span>" + TraceOpt.FormatNumber(t["code"]) + "</span> code request" + (t["code"] === 1 ? "" : "s") + " (3rd party scripts, ping requests), and finally " +
-						"<span>" + TraceOpt.FormatNumber(t["other"]) + "</span> miscellaneous requests to tracking servers.";
-				}
+	Interface:{
+		Browsers:function(){
+			if (!/Chrome|Firefox/.test(navigator.userAgent)){
+				$("#home .sect_cont").append(
+					$("<div/>",{"class":"sect_adv"}).append(
+						$("<div/>",{"class":"sect_adv_header"}).html("&nbsp;Developer Message"),
+						$("<div/>",{"class":"sect_adv_cont"}).text("You are running Trace on an unsupported browser - if you have any bugs please report them to absolutedouble@gmail.com")
+					)
+				);
+			}
+			if (/Firefox/.test(navigator.userAgent)){
+				$("body").css("font-size","0.8em");
+			}
+		},
+		GenerateHome:function(){
+			var greetings = [
+				"Welcome to the Trace Dashboard!",
+				"Trace Dashboard"
+			];
+			$("#trace_main_title").text(greetings[Math.floor(Math.random()*greetings.length)]);
 
-				if (d.length === 4){
-					var totalBlocked = d[2][0] + d[2][1] + d[2][2] + d[2][3] + d[2][4];
-					if (TraceOpt.FormatNumber(d[1]) === "0"){
-						if (TraceOpt.FormatNumber(d[2]) !== "0"){
-							text += "<br /><br />Trace is currently blocking <span>" + TraceOpt.FormatNumber(totalBlocked) + "</span> records.";
-						}
-					} else {
-						if (TraceOpt.FormatNumber(d[2]) !== "0"){
-							text += "<br /><br />Trace is currently blocking <span>" + TraceOpt.FormatNumber(totalBlocked) + "</span> records from the " + (d[3] === true ? "cached " : "uncached ") + d[0] + " blocklist. <br />";
-							try{
-								text += "The list contains: ";
-								text += (d[2][0] !== 0 ? TraceOpt.FormatNumber(d[2][0]) + " domains, " : "");
-								text += (d[2][1] !== 0 ? TraceOpt.FormatNumber(d[2][1]) + " hostnames, " : "");
-								text += (d[2][2] !== 0 ? TraceOpt.FormatNumber(d[2][2]) + " TLDs, " : "");
-								text += (d[2][3] !== 0 ? TraceOpt.FormatNumber(d[2][3]) + " URLs and " : "");
-								text += (d[2][4] !== 0 ? TraceOpt.FormatNumber(d[2][4]) + " tracking scripts." : "");
-							} catch(e){}
-							text += "<br />WebController List Version: " + d[1] + ".";
+			var tips = [
+				"In the 'Settings' section you can click any setting name to open a menu that tells you what it does.",
+				"The Web Request Controller lives in the 'Requests' section of Trace and can be used to block lots of tracking domains!",
+				"Bad TLD Protection is a very effective way to block unknown tracking domains, enable it in the 'Requests' section.",
+				"You can download all of your statistics data to csv, tsv, xml or json format to use externally.",
+				"You can reset Trace's settings to default in 'Settings' then 'Trace Options'",
+				"Click the Trace icon in the top corner of your browser window to report a site to Trace's developer.",
+				"You can find links to all the Research and Tools that have helped me make Trace in the 'Info' section.",
+				"A changelog and roadmap for Trace is available <a href='https://absolutedouble.co.uk/trace/information.html' title='Trace RoadMap/Changelog'>here</a>.",
+				"To contact the Trace Developer check the 'Info' section for details.",
+				"You can enable protections for only certain sites by moving a protection to the 'Run on only some pages' list in 'Where Protections Run' under Settings and then creating a rule in the Whitelist section.",
+				"Trace can function as a web filter by adding rules in the 'Whitelist' section and then choosing to block the site.",
+				"You can backup and restore your Trace settings in 'Trace Options' under the settings section."
+			];
+			$("#user_tip").html(tips[Math.floor(Math.random()*tips.length)]);
+		},
+		GetMainPage:function(){
+			var neatNumber = function(x) {
+				if (!x) return "0";
+				return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+			};
+
+			chrome.runtime.getBackgroundPage(function(bg){
+				bg.Trace.s.MainText(function(i,t,d){
+					var text = "<br />Trace has been protecting you since <span>" + i + "</span>";
+					if (neatNumber(t["total"]).toString() !== "0"){
+						text += ",<br />Since then, there have been a total of <span>" + neatNumber(t["total"]) + "</span>" +
+							" requests blocked. That includes, <span>" + neatNumber(t["webpage"]) + "</span> page load" + (t["webpage"] === 1 ? "" : "s") + ", " +
+							"<span>" + neatNumber(t["media"]) + "</span> media request" + (t["media"] === 1 ? "" : "s") + " (tracking pixels, page ads), also, Trace blocked " +
+							"<span>" + neatNumber(t["code"]) + "</span> code request" + (t["code"] === 1 ? "" : "s") + " (3rd party scripts, ping requests), and finally " +
+							"<span>" + neatNumber(t["other"]) + "</span> miscellaneous requests to tracking servers.";
+					}
+
+					if (d.length === 4){
+						var totalBlocked = d[2][0] + d[2][1] + d[2][2] + d[2][3] + d[2][4];
+						if (neatNumber(d[1]) === "0"){
+							if (neatNumber(d[2]) !== "0"){
+								text += "<br /><br />Trace is currently blocking <span>" + neatNumber(totalBlocked) + "</span> records.";
+							}
 						} else {
-							text += "<br /><br />Domain blocking is enabled.";
+							if (neatNumber(d[2]) !== "0"){
+								text += "<br /><br />Trace is currently blocking <span>" + neatNumber(totalBlocked) + "</span> records from the " + (d[3] === true ? "cached " : "uncached ") + d[0] + " blocklist. <br />";
+								try{
+									text += "The list contains: ";
+									text += (d[2][0] !== 0 ? neatNumber(d[2][0]) + " domains, " : "");
+									text += (d[2][1] !== 0 ? neatNumber(d[2][1]) + " hostnames, " : "");
+									text += (d[2][2] !== 0 ? neatNumber(d[2][2]) + " TLDs, " : "");
+									text += (d[2][3] !== 0 ? neatNumber(d[2][3]) + " URLs and " : "");
+									text += (d[2][4] !== 0 ? neatNumber(d[2][4]) + " tracking scripts." : "");
+								} catch(e){}
+								text += "<br />WebController List Version: " + d[1] + ".";
+							} else {
+								text += "<br /><br />Domain blocking is enabled.";
+							}
 						}
 					}
-				}
-				$("#trace_info").html(text);
+					$("#trace_info").html(text);
+				});
 			});
-		});
+		}
 	},
-	AssignNavigationClickEvents:function(){
+
+	AssignNavEvents:function(){
+		// This is for the mobile navigation bar
+		window.addEventListener("resize",function(a){
+			if (!$(".menutoggle").is(":visible")){
+				if ($(window).width() > 700 && !$("#nav").is(":visible")) {
+					$("#nav").show();
+				}
+			}
+		},false);
+
 		$(".side_el").each(function(){
-			$(this).on("click enter", function(){
-
-				if ($(".menutoggle").is(":visible")){
-					$("#nav").fadeOut(250);
-				}
-
-				$(".view").addClass("hidden");
-
-				var load = $(this).data("load");
-				$("#" + load).removeClass("hidden");
-
-				if (load === "requests"){
-					if (TraceOpt.storage === true){
-						if (localStorage.getItem("showRequestTutorial") === null || localStorage["showRequestTutorial"] === "true"){
-							TraceOpt.Tutorial.ShowRequest();
-						}
-					}
-					document.title = "Trace | Web Request Settings";
-				} else if (load === "settings"){
-					if (TraceOpt.storage === true){
-						if (localStorage.getItem("showSettingsTutorial") === null || localStorage["showSettingsTutorial"] === "true"){
-							TraceOpt.Tutorial.ShowSettings();
-						}
-					}
-					document.title = "Trace | Settings";
-				} else if (load === "statistics"){
-					TraceOpt.Stats.GetStatsData(function(d){
-						TraceOpt.Stats.MakeData(d,TraceOpt.Stats.MakeGraph);
-					});
-					document.title = "Trace | Statistics";
-				} else if (load === "whitelist"){
-					if (TraceOpt.storage === true){
-						if (localStorage.getItem("showScopeTutorial") === null || localStorage["showScopeTutorial"] === "true"){
-							TraceOpt.Tutorial.ShowScope();
-						}
-					}
-					document.title = "Trace | Whitelist";
-				} else if (load === "home"){
-					TraceOpt.GetMainPage();
-					TraceOpt.GetPremiumStatus();
-					document.title = "Trace";
-				} else if (load === "information"){
-					document.title = "Trace | Information";
-					TraceOpt.GetPremiumStatus();
-				}
-
-			}).on("keypress",function(e) {
-
-				if(e.which === 13) {
-					$(this).trigger('enter');
-				}
-
-			}).longclick(750,function(e){
-
-				var load = $(this).data("load");
-				if (load === "settings"){
-					TraceOpt.ResetTraceSettings();
-				}
-
+			$(this).on("click enter", TraceOpt.LoadPage).on("keypress",function(e) {
+				if(e.which === 13) TraceOpt.LoadPage();
 			});
 		});
 
 		$(".menutoggle").on("click enter",function(){
 			$("#nav").fadeIn(250);
-
 		});
+	},
+	LoadPage:function(){
+		if ($(".menutoggle").is(":visible")){
+			$("#nav").fadeOut(250);
+		}
+
+		$(".view").addClass("hidden");
+
+		var load = $(this).data("load");
+		$("#" + load).removeClass("hidden");
+
+		switch(load){
+			case "home":
+				TraceOpt.Interface.GetMainPage();
+				TraceOpt.Premium.GetStatus();
+				document.title = "Trace";
+				break;
+			case "statistics":
+				TraceOpt.Stats.GetStatsData(function(d){
+					TraceOpt.Stats.MakeData(d,TraceOpt.Stats.MakeGraph);
+				});
+				document.title = "Trace | Statistics";
+				break;
+			case "settings":
+				if (TraceOpt.storage === true){
+					if (localStorage.getItem("showSettingsTutorial") === null || localStorage["showSettingsTutorial"] === "true"){
+						TraceOpt.Tutorial.ShowSettings();
+					}
+				}
+				document.title = "Trace | Settings";
+				break;
+			case "requests":
+				if (TraceOpt.storage === true){
+					if (localStorage.getItem("showRequestTutorial") === null || localStorage["showRequestTutorial"] === "true"){
+						TraceOpt.Tutorial.ShowRequest();
+					}
+				}
+				document.title = "Trace | Web Request Settings";
+				break;
+			case "whitelist":
+				if (TraceOpt.storage === true){
+					if (localStorage.getItem("showScopeTutorial") === null || localStorage["showScopeTutorial"] === "true"){
+						TraceOpt.Tutorial.ShowScope();
+					}
+				}
+				document.title = "Trace | Whitelist";
+				break;
+			case "information":
+				document.title = "Trace | Information";
+				TraceOpt.Premium.GetStatus();
+				break;
+			default:
+				console.error("Unknown page.",load);
+				break;
+		}
 	},
 	ResetTraceSettings:function(){
 		if (confirm("Reset Trace settings to default? It will also remove your premium code from Trace's storage.")){
@@ -631,269 +625,271 @@ var TraceOpt = {
 		});
 		$(this).text("Working...");
 	},
-	GetPremiumStatus:function(){
-		chrome.runtime.getBackgroundPage(function(bg){
-			var code = bg.Trace.v.Premium;
+	Premium:{
+		eMessages:[
+			"Sorry, that premium code didn't work. If you are having issues, please don't hesitate to contact me.",
+			"Sorry, your premium code isn't active yet. Please wait a few hours then try again.",
+			"Sorry, your premium code has been revoked. If you believe this is an error, please contact me.",
+			"ERROR:Code_Paused - Please send me an email"
+		],
+		GetStatus:function(){
+			chrome.runtime.getBackgroundPage(function(bg){
+				var code = bg.Trace.v.Premium;
 
-			if (typeof(code) !== "string" || code === ""){
-				$("#trace_premstatus").show();
-				$("#premium_status, #info_premium_status").empty().append(
-					$("<span/>",{class:"premium_inner"}).text("Support Trace's development! Buy premium to gain access to the Premium blocklist"),
+				if (typeof(code) !== "string" || code === ""){
+					$("#trace_premstatus").show();
+					$("#premium_status, #info_premium_status").empty().append(
+						$("<span/>",{class:"premium_inner"}).text("Support Trace's development! Buy premium to gain access to the Premium blocklist"),
+						$("<br/>"),$("<br/>"),
+						$("<button/>").on("click enter",TraceOpt.Premium.EnterCode).text("Enter Code"),
+						$("<span/>").text(" "),
+						$("<button/>").on("click enter",function(){
+							var win = window.open("https://absolutedouble.co.uk/trace/premium", "_blank");
+							if (win !== null) win.focus();
+						}).text("Get Premium Code"),
+						$("<span/>").text(" "),
+						$("<button/>").on("click enter",function(){
+							var win = window.open("https://absolutedouble.co.uk/trace/", "_blank");
+							if (win !== null) win.focus();
+						}).text("Website")
+					);
+					return;
+				}
+
+				$("#premium_status,#info_premium_status").empty().append(
+					$("<span/>").text("Thank you for supporting Trace!"),
 					$("<br/>"),$("<br/>"),
-					$("<button/>").on("click enter",TraceOpt.EnterPremiumCode).text("Enter Code"),
+					$("<button/>").text("Disable Premium").click(TraceOpt.Premium.RemoveCode),
 					$("<span/>").text(" "),
-					$("<button/>").on("click enter",function(){
-						var win = window.open("https://absolutedouble.co.uk/trace/premium", "_blank");
-						if (win !== null) win.focus();
-					}).text("Get Premium Code"),
+					$("<button/>").text(
+						(bg.Trace.p.Current.Pref_WebController.enabled === true ? "Force Blocklist Update" : "Enable Web Request Controller")
+					).click(TraceOpt.UpdateBlocklist),
 					$("<span/>").text(" "),
 					$("<button/>").on("click enter",function(){
 						var win = window.open("https://absolutedouble.co.uk/trace/", "_blank");
 						if (win !== null) win.focus();
 					}).text("Website")
 				);
-				return;
-			}
+			});
+		},
+		RemoveCode:function(){
+			chrome.runtime.getBackgroundPage(function(bg){
+				if (!confirm("Are you sure you wish to remove your premium code from Trace?\nThis will not delete your code from our servers.\n\nYour code:\n" + bg.Trace.v.Premium)) return;
 
-			$("#premium_status,#info_premium_status").empty().append(
-				$("<span/>").text("Thank you for supporting Trace!"),
-				$("<br/>"),$("<br/>"),
-				$("<button/>").text("Disable Premium").click(TraceOpt.RemovePremium),
-				$("<span/>").text(" "),
-				$("<button/>").text(
-					(bg.Trace.p.Current.Pref_WebController.enabled === true ? "Force Blocklist Update" : "Enable Web Request Controller")
-				).click(TraceOpt.UpdateBlocklist),
-				$("<span/>").text(" "),
-				$("<button/>").on("click enter",function(){
-					var win = window.open("https://absolutedouble.co.uk/trace/", "_blank");
-					if (win !== null) win.focus();
-				}).text("Website")
-			);
-		});
-	},
-	RemovePremium:function(){
-		chrome.runtime.getBackgroundPage(function(bg){
-			if (confirm("Are you sure you wish to remove your premium code from Trace?\nThis will not delete your code from our servers.\n\nYour code:\n" + bg.Trace.v.Premium)){
 				bg.Trace.p.Set("Main_Trace.PremiumCode","");
 				bg.Trace.b.ClearDomainCache();
 
 				$(".premium_inner").empty().html("<h1>Please wait...</h1>");
 
 				setTimeout(TraceOpt.GetMainPage,500);
-				setTimeout(TraceOpt.GetPremiumStatus,1500);
+				setTimeout(TraceOpt.Premium.GetStatus,1500);
 				setTimeout(function(){
 					TraceOpt.Blocklist.isPremium = (typeof bg.Trace.v.Premium !== "undefined" ?
 						(bg.Trace.v.Premium.length !== 0) : false);
 				},1500);
+			});
+		},
+		EnterCode:function(){
+			var dto = new Date();
+			var attn = 0, atme = 0;
+			var ntme = Math.round(dto.getTime()/1000);
+
+			if (TraceOpt.storage === true){
+				if (typeof localStorage.getItem("attn") === "string" && typeof localStorage.getItem("atme") === "string"){
+					attn = parseInt(localStorage.getItem("attn"));
+					atme = parseInt(localStorage.getItem("atme"));
+
+					attn++;
+				}
+
+				TraceOpt.Store("attn",attn);
+				TraceOpt.Store("atme",ntme);
+			} else {
+				alert("Issue with localStorage!");
 			}
-		});
-	},
-	EnterPremiumCode:function(){
-		var dto = new Date();
-		var attn = 0, atme = 0;
-		var ntme = Math.round(dto.getTime()/1000);
 
-		if (TraceOpt.storage === true){
-			if (typeof localStorage.getItem("attn") === "string" && typeof localStorage.getItem("atme") === "string"){
-				attn = parseInt(localStorage.getItem("attn"));
-				atme = parseInt(localStorage.getItem("atme"));
+			var uTimeOut = function(t){
+				$("#drop_message").empty().append(
+					$("<h1/>").text("Trace Premium"),
+					$("<h2/>").text("Please wait " + t + " minutes to try again." + (t === "10" ? " Might want to make a cup of tea to pass the time." : "")),
+					$("<span/>").text("The timer resets every time you re-enter this popup, wait " + t + " minutes before trying again."),$("<br />"),$("<br />"),
+					$("<button/>",{"title":"I need help"}).text("Help").click(TraceOpt.Premium.HelpDialog),
+					TraceOpt.CloseUI()
+				);
+				TraceOpt.AssignCloseOverlay();
+			};
 
-				attn++;
+			if (attn > 12){
+				if (ntme-atme < 600){
+					uTimeOut("10",attn);
+					return;
+				}
+			} else if (attn > 4){
+				if (ntme-atme < 180){
+					uTimeOut("5",attn);
+					return;
+				}
 			}
 
-			TraceOpt.Store("attn",attn);
-			TraceOpt.Store("atme",ntme);
-		} else {
-			alert("Issue with localStorage!");
-		}
-
-		var uTimeOut = function(t){
 			$("#drop_message").empty().append(
 				$("<h1/>").text("Trace Premium"),
-				$("<h2/>").text("Please wait " + t + " minutes to try again." + (t === "10" ? " Might want to make a cup of tea to pass the time." : "")),
-				$("<span/>").text("The timer resets every time you re-enter this popup, wait " + t + " minutes before trying again."),$("<br />"),$("<br />"),
-				$("<button/>",{"title":"I need help"}).text("Help").click(TraceOpt.PremiumHelp),
+				$("<h2/>").text("Thanks for supporting Trace!"),
+				$("<input/>",{
+					"placeholder":"Premium Code",
+					"id":"premium_code_box",
+					"class":"text_box boxmod_large"
+				}),
+				$("<br />"),$("<br />"),
+				$("<button/>",{"title":"Activate premium code"}).text("Activate").on("click enter",TraceOpt.Premium.Go),
+				$("<button/>",{"title":"I need help"}).text("Help").on("click enter",TraceOpt.Premium.HelpDialog),
 				TraceOpt.CloseUI()
 			);
-			TraceOpt.AssignCloseOverlay();
-		};
-
-		if (attn > 12){
-			if (ntme-atme < 600){
-				uTimeOut("10",attn);
-				return;
-			}
-		} else if (attn > 4){
-			if (ntme-atme < 180){
-				uTimeOut("5",attn);
-				return;
-			}
-		}
-
-		$("#drop_message").empty().append(
-			$("<h1/>").text("Trace Premium"),
-			$("<h2/>").text("Thanks for supporting Trace!"),
-			$("<input/>",{
-				"placeholder":"Premium Code",
-				"id":"premium_code_box",
-				"class":"text_box boxmod_large"
-			}),
-			$("<br />"),$("<br />"),
-			$("<button/>",{"title":"Activate premium code"}).text("Activate").on("click enter",TraceOpt.Scribble),
-			$("<button/>",{"title":"I need help"}).text("Help").on("click enter",TraceOpt.PremiumHelp),
-			TraceOpt.CloseUI()
-		);
-		TraceOpt.AssignCloseOverlay(true);
-	},
-	PremiumHelp:function(){
-		$("#drop_message").empty().append(
-			$("<h1/>").text("Trace Premium Help"),
-			$("<h2/>").text("If you don't find what you're looking for here, please email me"),
-			$("<div/>",{"class":"textscrollable"}).append(
-				$("<ul/>").append(
-					$("<li/>").append(
-						$("<span/>",{"class":"premhelp_q"}).text("I have a code but it doesn't work"),$("<br />"),
-						$("<span/>",{"class":"premhelp_a"}).text("Please allow 24-hours for the code to activate, I review all the codes manually so it can take a few hours.")
-					),
-					$("<li/>").append(
-						$("<span/>",{"class":"premhelp_q"}).text("I've paid for premium but don't have a code"),$("<br />"),
-						$("<span/>",{"class":"premhelp_a"}).text("You should've filled out a form at the end of the process, if you didn't, please email me and I will sort it out for you as soon as possible.")
-					),
-					$("<li/>").append(
-						$("<span/>",{"class":"premhelp_q"}).text("My code has been activated, but it isn't working"),$("<br />"),
-						$("<span/>",{"class":"premhelp_a"}).text("Check it again. Codes are case sensitive, make sure there are no spaces in the code, if you still have issues, please email me and I'll sort it for you.")
-					),
-					$("<li/>").append(
-						$("<span/>",{"class":"premhelp_q"}).text("It's been more than 24 hours and my code still isn't activated"),$("<br />"),
-						$("<span/>",{"class":"premhelp_a"}).text("Send me and email and I will activate your code immediately, I'm very sorry for the delay.")
-					),
-					$("<li/>").append(
-						$("<span/>",{"class":"premhelp_q"}).text("I've lost my code"),$("<br />"),
-						$("<span/>",{"class":"premhelp_a"}).text("That's okay, I lose things all the time too, just send me an email and I'll send you it.")
-					),
-					$("<li/>").append(
-						$("<span/>",{"class":"premhelp_q"}).text("Trace is telling me to wait before I enter my code"),$("<br />"),
-						$("<span/>",{"class":"premhelp_a"}).text("Wait 10 minutes and try again then, I had to add in limits because somebody tried entering about 500 codes which just wasted server bandwidth. Sorry about that.")
-					),
-					$("<li/>").append(
-						$("<span/>",{"class":"premhelp_q"}).text("I would like a new code"),$("<br />"),
-						$("<span/>",{"class":"premhelp_a"}).text("That's okay, I can regenerate codes easily, just send me an email, I'll deactivate the current code and give you a new one.")
-					),
-					$("<li/>").append(
-						$("<span/>",{"class":"premhelp_q"}).text("How many times can I use my code?"),$("<br />"),
-						$("<span/>",{"class":"premhelp_a"}).text("You can use it on as many installations as you want, please do not share your code online though, if I see that a code is shared online I will email you a new one and deactivate the old one.")
-					),
-					$("<li/>").append(
-						$("<span/>",{"class":"premhelp_q"}).text("Is Trace Premium a one time purchase?"),$("<br />"),
-						$("<span/>",{"class":"premhelp_a"}).text("It is, if I do ever decide to make it a subscription then all current premium codes will continue to work as they do at the moment.")
+			TraceOpt.AssignCloseOverlay(true);
+		},
+		HelpDialog:function(){
+			$("#drop_message").empty().append(
+				$("<h1/>").text("Trace Premium Help"),
+				$("<h2/>").text("If you don't find what you're looking for here, please email me"),
+				$("<div/>",{"class":"textscrollable"}).append(
+					$("<ul/>").append(
+						$("<li/>").append(
+							$("<span/>",{"class":"premhelp_q"}).text("I have a code but it doesn't work"),$("<br />"),
+							$("<span/>",{"class":"premhelp_a"}).text("Please allow 24-hours for the code to activate, I review all the codes manually so it can take a few hours.")
+						),
+						$("<li/>").append(
+							$("<span/>",{"class":"premhelp_q"}).text("I've paid for premium but don't have a code"),$("<br />"),
+							$("<span/>",{"class":"premhelp_a"}).text("You should've filled out a form at the end of the process, if you didn't, please email me and I will sort it out for you as soon as possible.")
+						),
+						$("<li/>").append(
+							$("<span/>",{"class":"premhelp_q"}).text("My code has been activated, but it isn't working"),$("<br />"),
+							$("<span/>",{"class":"premhelp_a"}).text("Check it again. Codes are case sensitive, make sure there are no spaces in the code, if you still have issues, please email me and I'll sort it for you.")
+						),
+						$("<li/>").append(
+							$("<span/>",{"class":"premhelp_q"}).text("It's been more than 24 hours and my code still isn't activated"),$("<br />"),
+							$("<span/>",{"class":"premhelp_a"}).text("Send me and email and I will activate your code immediately, I'm very sorry for the delay.")
+						),
+						$("<li/>").append(
+							$("<span/>",{"class":"premhelp_q"}).text("I've lost my code"),$("<br />"),
+							$("<span/>",{"class":"premhelp_a"}).text("That's okay, I lose things all the time too, just send me an email and I'll send you it.")
+						),
+						$("<li/>").append(
+							$("<span/>",{"class":"premhelp_q"}).text("Trace is telling me to wait before I enter my code"),$("<br />"),
+							$("<span/>",{"class":"premhelp_a"}).text("Wait 10 minutes and try again then, I had to add in limits because somebody tried entering about 500 codes which just wasted server bandwidth. Sorry about that.")
+						),
+						$("<li/>").append(
+							$("<span/>",{"class":"premhelp_q"}).text("I would like a new code"),$("<br />"),
+							$("<span/>",{"class":"premhelp_a"}).text("That's okay, I can regenerate codes easily, just send me an email, I'll deactivate the current code and give you a new one.")
+						),
+						$("<li/>").append(
+							$("<span/>",{"class":"premhelp_q"}).text("How many times can I use my code?"),$("<br />"),
+							$("<span/>",{"class":"premhelp_a"}).text("You can use it on as many installations as you want, please do not share your code online though, if I see that a code is shared online I will email you a new one and deactivate the old one.")
+						),
+						$("<li/>").append(
+							$("<span/>",{"class":"premhelp_q"}).text("Is Trace Premium a one time purchase?"),$("<br />"),
+							$("<span/>",{"class":"premhelp_a"}).text("It is, if I do ever decide to make it a subscription then all current premium codes will continue to work as they do at the moment.")
+						)
 					)
-				)
-			),
-			TraceOpt.CloseUI()
-		);
-		TraceOpt.AssignCloseOverlay(true);
-	},
-	Scribble:function(){
-		if ($("#premium_code_box") === null){
-			return;
-		}
+				),
+				TraceOpt.CloseUI()
+			);
+			TraceOpt.AssignCloseOverlay(true);
+		},
+		Go:function(){
+			if ($("#premium_code_box") === null) return;
 
-		TraceOpt.CloseOverlay();
+			TraceOpt.CloseOverlay();
 
-		var pt = $("#premium_inner");
-		var eden = $("#premium_code_box").val();
-		var emsg = [
-			"Sorry, that premium code didn't work. If you are having issues, please don't hesitate to contact me.",
-			"Sorry, your premium code isn't active yet. Please wait a few hours then try again.",
-			"Sorry, your premium code has been revoked. If you believe this is an error, please contact me.",
-			"ERROR:Code_Paused - Please send me an email"
-		];
+			var pt = $("#premium_inner");
+			var eden = $("#premium_code_box").val();
+			var lost = "M2ysyaSd58sqt4zVGicIfbMYac8dqhtrk5yyA8tiG31gZ";
 
-		if (eden.length < 5){
-			pt.text("Invalid code.");
-		}
-
-		chrome.runtime.getBackgroundPage(function(bg){
-			bg._UserCrashReportService({"PremiumTrace":"TryCode","CodeAttempt":eden},true);
-		});
-
-		var u = "https://absolutedouble.co.uk/trace/app/weblist.php?p=";
-		u += btoa(eden);
-		u += "&s=" + btoa(TraceOpt.s);
-		u += "&d=" + btoa((Math.round((new Date()).getTime()/1000))*2);
-		u += "&j=M";
-		u += "&a=premium_x";
-		u += "&c=" + TraceOpt.makeRandomID(5);
-
-		function bgNotify(msg,sect){
 			chrome.runtime.getBackgroundPage(function(bg){
-				bg.Trace.Notify(msg,sect);
+				bg._UserCrashReportService({"PremiumTrace":"TryCode","CodeAttempt":eden},true);
+			});
+
+			if (eden.length < 5){
+				pt.text("Invalid code.");
+				return;
+			}
+
+			var u = "https://absolutedouble.co.uk/trace/app/weblist.php?p=";
+			u += btoa(eden);
+			u += "&s=" + btoa(lost);
+			u += "&d=" + btoa((Math.round((new Date()).getTime()/1000))*2);
+			u += "&j=M&a=premium_x";
+			u += "&c=" + TraceOpt.makeRandomID(5);
+
+			function bgNotify(msg,sect){
+				chrome.runtime.getBackgroundPage(function(bg){
+					bg.Trace.Notify(msg,sect);
+				});
+			}
+
+			$.ajax({
+				url:u,
+				cache:false,
+				method:"GET",
+				timeout:27000,
+				beforeSend:function(){
+					pt.text("Checking code...");
+				},
+				success:function(l){
+					if (l !== lost) {
+						bgNotify(TraceOpt.Premium.eMessages[0], "optd");
+						pt.text(TraceOpt.Premium.eMessages[0]);
+						return;
+					}
+
+					pt.text("Applying Code...");
+					chrome.runtime.getBackgroundPage(function(bg){
+						bg.Trace.p.Set("Main_Trace.PremiumCode", eden);
+						bg._UserCrashReportService({
+							"PremiumTrace": "AcceptedCode",
+							"CodeUsed": eden
+						}, true);
+					});
+					if (TraceOpt.storage === true){
+						localStorage.removeItem("attn");
+						localStorage.removeItem("atme");
+					}
+
+					if (chrome.extension.getBackgroundPage().Trace.p.Current.Pref_WebController.enabled === true){
+						pt.text("Premium blocklist will be used when domain blocking is enabled in setttings.");
+						return;
+					}
+
+					pt.text("Please wait... Initialising Premium :)");
+					chrome.runtime.getBackgroundPage(function(bg){
+						bg.Trace.p.Set("Pref_WebController.installCodes.a00000001",true);
+						bg.Trace.p.Set("Pref_WebController.installCodes.a00000003",true);
+						bg.Trace.b.BlocklistLoader(true);
+						setTimeout(function(){
+							TraceOpt.Blocklist.isPremium = (typeof bg.Trace.v.Premium !== "undefined" ?
+								(bg.Trace.v.Premium.length !== 0) : false);
+						},1500);
+					});
+					setTimeout(TraceOpt.GetMainPage,750);
+					setTimeout(TraceOpt.Premium.GetStatus,3000);
+				},
+				error:function(e){
+					if (e.status === 403 || e.status === 402){
+						// Choose a status message to show
+						var a = TraceOpt.Premium.eMessages[0];
+						if (e.responseText === "CodeRevokedError") a = TraceOpt.Premium.eMessages[2];
+						if (e.responseText === "CodeInactiveError") a = TraceOpt.Premium.eMessages[1];
+						if (e.responseText === "CodePauseError") a = TraceOpt.Premium.eMessages[3];
+
+						bgNotify(a,"optd");
+						pt.text(a);
+						return;
+					}
+					bgNotify("Server communication error!","optd");
+					pt.text("Error contacting server: " + e.status);
+				}
 			});
 		}
-
-		$.ajax({
-			url:u,
-			cache:false,
-			method:"GET",
-			timeout:27000,
-			beforeSend:function(){
-				pt.text("Checking code...");
-			},
-			success:function(l){
-				if (l !== TraceOpt.s) {
-					bgNotify(emsg[0], "optd");
-					pt.text(emsg[0]);
-					return;
-				}
-
-				pt.text("Applying Code...");
-				chrome.runtime.getBackgroundPage(function(bg){
-					bg.Trace.p.Set("Main_Trace.PremiumCode", eden);
-					bg._UserCrashReportService({
-						"PremiumTrace": "AcceptedCode",
-						"CodeUsed": eden
-					}, true);
-				});
-				if (TraceOpt.storage === true){
-					localStorage.removeItem("attn");
-					localStorage.removeItem("atme");
-				}
-
-				if (chrome.extension.getBackgroundPage().Trace.p.Current.Pref_WebController.enabled === true){
-					pt.text("Premium blocklist will be used when domain blocking is enabled in setttings.");
-					return;
-				}
-
-				pt.text("Please wait... Initialising Premium :)");
-				chrome.runtime.getBackgroundPage(function(bg){
-					bg.Trace.p.Set("Pref_WebController.installCodes.a00000001",true);
-					bg.Trace.p.Set("Pref_WebController.installCodes.a00000003",true);
-					bg.Trace.b.BlocklistLoader(true);
-					setTimeout(function(){
-						TraceOpt.Blocklist.isPremium = (typeof bg.Trace.v.Premium !== "undefined" ?
-							(bg.Trace.v.Premium.length !== 0) : false);
-					},1500);
-				});
-				setTimeout(TraceOpt.GetMainPage,750);
-				setTimeout(TraceOpt.GetPremiumStatus,3000);
-			},
-			error:function(e){
-				if (e.status === 403 || e.status === 402){
-					// Choose a status message to show
-					var a = emsg[0];
-					if (e.responseText === "CodeRevokedError") a = emsg[2];
-					if (e.responseText === "CodeInactiveError") a = emsg[1];
-					if (e.responseText === "CodePauseError") a = emsg[3];
-
-					bgNotify(a,"optd");
-					pt.text(a);
-					return;
-				}
-				bgNotify("Server communication error!","optd");
-				pt.text("Error contacting server: " + e.status);
-			}
-		});
 	},
+
 	DirectSetting:function(obj,name,change){
 		// This very large function handles the privacy settings directly in the browser (Privacy API)
 		if (!chrome.privacy) {
@@ -1024,6 +1020,7 @@ var TraceOpt = {
 				break;
 		}
 	},
+
 	Backup:{
 		Data:{},
 		Interface:function(){
@@ -2957,7 +2954,6 @@ var TraceOpt = {
 			$("#wl_biglist").empty();
 			chrome.runtime.getBackgroundPage(function(bg){
 				bg.Trace.c.ReturnWhitelist(function(list){
-					console.log(list);
 					if (Object.keys(list).length === 0){
 						TraceOpt.Scope.EmptyList();
 					} else {
