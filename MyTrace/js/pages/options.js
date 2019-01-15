@@ -34,11 +34,6 @@ var TraceOpt = {
 	storage:(typeof Storage !== "undefined" && typeof localStorage !== "undefined" && localStorage !== null),
 	debug:false,
 
-	// Thanks to: https://stackoverflow.com/a/4900484/
-	getChromeVersion:function() {
-		var raw = navigator.userAgent.match(/Chrom(e|ium)\/([0-9]+)\./);
-		return raw ? parseInt(raw[2], 10) : false;
-	},
 	makeRandomID:function(r){
 		for(var n="",t="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789",a=0;r > a;a++){
 			n += t.charAt(Math.floor(Math.random()*t.length));
@@ -91,7 +86,6 @@ var TraceOpt = {
 				_UserCrashReportService(e);
 			}
 		}
-
 	},
 
 	Auth:{
@@ -378,7 +372,7 @@ var TraceOpt = {
 			"The Web Request Controller lives in the 'Requests' section of Trace and can be used to block lots of tracking domains!",
 			"Bad TLD Protection is a very effective way to block unknown tracking domains, enable it in the 'Requests' section.",
 			"You can download all of your statistics data to csv, tsv, xml or json format to use externally.",
-			"Hold down on the 'Settings' menu toggle to reset Trace's settings to default.",
+			"You can reset Trace's settings to default in 'Settings' then 'Trace Options'",
 			"Click the Trace icon in the top corner of your browser window to report a site to Trace's developer.",
 			"You can find links to all the Research and Tools that have helped me make Trace in the 'Info' section.",
 			"A changelog and roadmap for Trace is available <a href='https://absolutedouble.co.uk/trace/information.html' title='Trace RoadMap/Changelog'>here</a>.",
@@ -3213,13 +3207,7 @@ var TraceOpt = {
 		AssignEvents: function () {
 			$("#adv_urlcleaner_settings").on("click enter",TraceOpt.URLCleaner.SelectProtectionUI);
 		},
-		CurrentName: function (type) {
-			return chrome.extension.getBackgroundPage().Trace.p.Current.Pref_WebController.urlCleaner.queryString[type].method;
-		},
 		SelectProtectionUI: function() {
-			var frameSetting = TraceOpt.URLCleaner.CurrentName("main_frame");
-			var resourceSetting = TraceOpt.URLCleaner.CurrentName("resources");
-
 			$("#drop_message").empty().append(
 				$("<h1/>").text("URL Cleaning Settings"),
 				$("<h3/>").text("Select URL parameters and what happens with them below."),
@@ -3267,14 +3255,19 @@ var TraceOpt = {
 			TraceOpt.AssignCloseOverlay(true);
 			TraceOpt.URLCleaner.LoadParams();
 
-			$("#afr_urlc_pmethod option[value='" + frameSetting + "']").prop("selected", true);
-			//$("#ars_urlc_pmethod option[value='" + resourceSetting + "']").prop("selected", true);
+			chrome.runtime.getBackgroundPage(function(bg){
+				function getName(type){
+					return bg.Trace.p.Current.Pref_WebController.urlCleaner.queryString[type].method;
+				}
+				$("#afr_urlc_pmethod option[value='" + getName("main_frame") + "']").prop("selected", true);
+				//$("#ars_urlc_pmethod option[value='" + getName("resources") + "']").prop("selected", true);
 
-			if (chrome.extension.getBackgroundPage().Trace.p.Current.Pref_WebController.urlCleaner.enabled !== true) {
-				$("#drop_message").prepend(
-					$("<h1/>",{"class":"setting_disabled"}).text("This setting isn't currently enabled")
-				);
-			}
+				if (bg.Trace.p.Current.Pref_WebController.urlCleaner.enabled !== true) {
+					$("#drop_message").prepend(
+						$("<h1/>",{"class":"setting_disabled"}).text("This setting isn't currently enabled")
+					);
+				}
+			});
 		},
 		SelectPreset:function(){
 			var preset = $(this).data("selects");
@@ -3503,13 +3496,15 @@ var TraceOpt = {
 			var sc_ena = $("#ce_sett_setcookieheadmod").is(":checked");
 			var sc_fpm = $("#ce_sett_fpsetcookiehead").val();
 			var sc_tpm = $("#ce_sett_tpsetcookiehead").val();
-			chrome.extension.getBackgroundPage().Trace.p.SetMultiple({
-				"Pref_CookieEater.settings.cookie.enabled":rc_ena,
-				"Pref_CookieEater.settings.setcookie.enabled":sc_ena,
-				"Pref_CookieEater.settings.cookie.fp_method":rc_fpm,
-				"Pref_CookieEater.settings.setcookie.fp_method":sc_fpm,
-				"Pref_CookieEater.settings.cookie.tp_method":rc_tpm,
-				"Pref_CookieEater.settings.setcookie.tp_method":sc_tpm
+			chrome.runtime.getBackgroundPage(function(bg){
+				bg.Trace.p.SetMultiple({
+					"Pref_CookieEater.settings.cookie.enabled":rc_ena,
+					"Pref_CookieEater.settings.setcookie.enabled":sc_ena,
+					"Pref_CookieEater.settings.cookie.fp_method":rc_fpm,
+					"Pref_CookieEater.settings.setcookie.fp_method":sc_fpm,
+					"Pref_CookieEater.settings.cookie.tp_method":rc_tpm,
+					"Pref_CookieEater.settings.setcookie.tp_method":sc_tpm
+				});
 			});
 
 			TraceOpt.CloseOverlay();
@@ -3677,14 +3672,16 @@ var TraceOpt = {
 			var rf_atp = $("#referhead_atp").is(":checked");
 			var rf_atpu = $("#referhead_atpu").is(":checked");
 			var rf_oso = $("#referhead_oso").is(":checked");
-			chrome.extension.getBackgroundPage().Trace.p.SetMultiple({
-				"Pref_ReferHeader.httpHeader.allowSameHost.enabled":rf_ash,
-				"Pref_ReferHeader.httpHeader.allowSameDomain.enabled":rf_asd,
-				"Pref_ReferHeader.httpHeader.allowThirdParty.enabled":rf_atp,
-				"Pref_ReferHeader.httpHeader.allowSameHost.fullUrl":rf_ashu,
-				"Pref_ReferHeader.httpHeader.allowSameDomain.fullUrl":rf_asdu,
-				"Pref_ReferHeader.httpHeader.allowThirdParty.fullUrl":rf_atpu,
-				"Pref_ReferHeader.httpHeader.onlySecureOrigins.enabled":rf_oso
+			chrome.runtime.getBackgroundPage(function(bg){
+				bg.Trace.p.SetMultiple({
+					"Pref_ReferHeader.httpHeader.allowSameHost.enabled":rf_ash,
+					"Pref_ReferHeader.httpHeader.allowSameDomain.enabled":rf_asd,
+					"Pref_ReferHeader.httpHeader.allowThirdParty.enabled":rf_atp,
+					"Pref_ReferHeader.httpHeader.allowSameHost.fullUrl":rf_ashu,
+					"Pref_ReferHeader.httpHeader.allowSameDomain.fullUrl":rf_asdu,
+					"Pref_ReferHeader.httpHeader.allowThirdParty.fullUrl":rf_atpu,
+					"Pref_ReferHeader.httpHeader.onlySecureOrigins.enabled":rf_oso
+				});
 			});
 
 			TraceOpt.CloseOverlay();

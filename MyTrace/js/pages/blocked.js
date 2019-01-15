@@ -36,6 +36,7 @@ var TraceBlock = {
 			Pref_AudioFingerprint:true,
 			Pref_BatteryApi:false,
 			Pref_CanvasFingerprint: true,
+			Pref_ClientRects:true,
 			Pref_CookieEater:false,
 			Pref_ETagTrack:false,
 			Pref_GoogleHeader:false,
@@ -56,6 +57,10 @@ var TraceBlock = {
 		TraceBlock.getPageDetails();
 		TraceBlock.setBasicContent();
 		TraceBlock.setWhitelistOptions();
+
+		if (/Firefox/.test(navigator.userAgent)){
+			$("body").css("font-size","0.8em");
+		}
 	},
 	Auth:{
 		Channel:null,

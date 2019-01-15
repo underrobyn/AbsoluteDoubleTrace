@@ -161,6 +161,7 @@ var Trace = {
 
 			} else {
 				console.error("Invalid message recieved");
+				console.warn(request);
 			}
 		}
 	},
@@ -1494,12 +1495,8 @@ var Trace = {
 				var setCookieOpt_extraInfoSpec = ["responseHeaders"];
 
 				// In Chrome 72+ Google requires we add extraHeaders to modify Cookie, Set-Cookie and Referer Headers
-				if (/Chrom(e|ium)/.test(navigator.userAgent)) {
-					if (Trace.getChromeVersion() >= 72){
-						cookieOpt_extraInfoSpec.push("extraHeaders");
-						setCookieOpt_extraInfoSpec.push("extraHeaders");
-					}
-				}
+				if (chrome.webRequest.OnBeforeSendHeadersOptions.hasOwnProperty('EXTRA_HEADERS')) cookieOpt_extraInfoSpec.push("extraHeaders");
+				if (chrome.webRequest.OnHeadersReceivedOptions.hasOwnProperty('EXTRA_HEADERS')) setCookieOpt_extraInfoSpec.push("extraHeaders");
 
 				chrome.webRequest.onBeforeSendHeaders.addListener(
 					Trace.h.Cookie.ModifySend,
@@ -1781,11 +1778,7 @@ var Trace = {
 				var refererOpt_extraInfoSpec = ["blocking","requestHeaders"];
 
 				// In Chrome 72+ Google requires we add extraHeaders to modify Cookie, Set-Cookie and Referer Headers
-				if (/Chrom(e|ium)/.test(navigator.userAgent)) {
-					if (Trace.getChromeVersion() >= 72){
-						refererOpt_extraInfoSpec.push("extraHeaders");
-					}
-				}
+				if (chrome.webRequest.OnBeforeSendHeadersOptions.hasOwnProperty('EXTRA_HEADERS')) refererOpt_extraInfoSpec.push("extraHeaders");
 
 				chrome.webRequest.onBeforeSendHeaders.addListener(
 					Trace.h.Referer.Modify,
@@ -2877,6 +2870,7 @@ var Trace = {
 					"Pref_WebController",
 					"Pref_CanvasFingerprint",
 					"Pref_AudioFingerprint",
+					"Pref_WebGLFingerprint",
 					"Pref_HardwareSpoof",
 					"Pref_CookieEater",
 					"Pref_ReferHeader",
@@ -2884,6 +2878,7 @@ var Trace = {
 					"Pref_ETagTrack",
 					"Pref_PingBlock",
 					"Pref_NetworkInformation",
+					"Pref_NativeFunctions",
 					"Pref_ScreenRes",
 					"Pref_BatteryApi",
 					"Pref_ClientRects",
