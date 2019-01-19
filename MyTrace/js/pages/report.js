@@ -29,6 +29,7 @@ var TraceTool = {
 			Pref_ETagTrack:false,
 			Pref_GoogleHeader:false,
 			Pref_IPSpoof:false,
+			Pref_NativeFunctions:false,
 			Pref_NetworkInformation:false,
 			Pref_HardwareSpoof:false,
 			Pref_PingBlock:false,
@@ -36,7 +37,8 @@ var TraceTool = {
 			Pref_ReferHeader:false,
 			Pref_ScreenRes:false,
 			Pref_UserAgent:false,
-			Pref_WebRTC:false
+			Pref_WebRTC:false,
+			Pref_WebGLFingerprint:false
 		}
 	},
 

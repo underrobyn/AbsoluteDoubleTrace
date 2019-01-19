@@ -1,6 +1,6 @@
 /*
  * 	Trace error reporter script
- * 	Copyright AbsoluteDouble 2018
+ * 	Copyright AbsoluteDouble 2018 - 2019
  * 	Written by Jake Mcneill
  * 	https://absolutedouble.co.uk/
  */
@@ -102,5 +102,4 @@ var _UserCrashReportService = function(d,o){
 		}
 
 	});
-	
 };

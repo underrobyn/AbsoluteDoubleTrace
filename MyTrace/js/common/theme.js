@@ -1,6 +1,6 @@
 /*
  * 	Trace theme engine script
- * 	Copyright AbsoluteDouble 2018
+ * 	Copyright AbsoluteDouble 2018 - 2019
  * 	Written by Jake Mcneill
  * 	https://absolutedouble.co.uk/
  */

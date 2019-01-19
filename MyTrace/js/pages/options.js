@@ -663,7 +663,7 @@ var TraceOpt = {
 					$("<span/>").text(" "),
 					$("<button/>").text(
 						(bg.Trace.p.Current.Pref_WebController.enabled === true ? "Force Blocklist Update" : "Enable Web Request Controller")
-					).click(TraceOpt.UpdateBlocklist),
+					).on("click enter",TraceOpt.UpdateBlocklist),
 					$("<span/>").text(" "),
 					$("<button/>").on("click enter",function(){
 						var win = window.open("https://absolutedouble.co.uk/trace/", "_blank");
@@ -676,13 +676,17 @@ var TraceOpt = {
 			chrome.runtime.getBackgroundPage(function(bg){
 				if (!confirm("Are you sure you wish to remove your premium code from Trace?\nThis will not delete your code from our servers.\n\nYour code:\n" + bg.Trace.v.Premium)) return;
 
+				// Update settings
 				bg.Trace.p.Set("Main_Trace.PremiumCode","");
+				TraceOpt.Blocklist.InstallList("a00000001",false);
+				TraceOpt.Blocklist.InstallList("a00000003",false);
+
 				bg.Trace.b.ClearDomainCache();
 
 				$(".premium_inner").empty().html("<h1>Please wait...</h1>");
 
-				setTimeout(TraceOpt.GetMainPage,500);
-				setTimeout(TraceOpt.Premium.GetStatus,1500);
+				TraceOpt.Interface.GetMainPage();
+				TraceOpt.Premium.GetStatus();
 				setTimeout(function(){
 					TraceOpt.Blocklist.isPremium = (typeof bg.Trace.v.Premium !== "undefined" ?
 						(bg.Trace.v.Premium.length !== 0) : false);
@@ -738,6 +742,8 @@ var TraceOpt = {
 					"placeholder":"Premium Code",
 					"id":"premium_code_box",
 					"class":"text_box boxmod_large"
+				}).on("keypress",function(e){
+					if (e.keyCode === 13) TraceOpt.Premium.Go();
 				}),
 				$("<br />"),$("<br />"),
 				$("<button/>",{"title":"Activate premium code"}).text("Activate").on("click enter",TraceOpt.Premium.Go),
@@ -841,6 +847,7 @@ var TraceOpt = {
 					}
 
 					pt.text("Applying Code...");
+
 					chrome.runtime.getBackgroundPage(function(bg){
 						bg.Trace.p.Set("Main_Trace.PremiumCode", eden);
 						bg._UserCrashReportService({
@@ -848,28 +855,34 @@ var TraceOpt = {
 							"CodeUsed": eden
 						}, true);
 					});
+
+					// Enable premium blocklists
+					TraceOpt.Blocklist.InstallList("a00000001",true);
+					TraceOpt.Blocklist.InstallList("a00000003",true);
+
 					if (TraceOpt.storage === true){
 						localStorage.removeItem("attn");
 						localStorage.removeItem("atme");
 					}
+
+					pt.text("Please wait... Initialising Premium :)");
 
 					if (chrome.extension.getBackgroundPage().Trace.p.Current.Pref_WebController.enabled === true){
 						pt.text("Premium blocklist will be used when domain blocking is enabled in setttings.");
 						return;
 					}
 
-					pt.text("Please wait... Initialising Premium :)");
 					chrome.runtime.getBackgroundPage(function(bg){
-						bg.Trace.p.Set("Pref_WebController.installCodes.a00000001",true);
-						bg.Trace.p.Set("Pref_WebController.installCodes.a00000003",true);
 						bg.Trace.b.BlocklistLoader(true);
+
 						setTimeout(function(){
 							TraceOpt.Blocklist.isPremium = (typeof bg.Trace.v.Premium !== "undefined" ?
 								(bg.Trace.v.Premium.length !== 0) : false);
 						},1500);
+
+						TraceOpt.Interface.GetMainPage();
+						TraceOpt.Premium.GetStatus();
 					});
-					setTimeout(TraceOpt.GetMainPage,750);
-					setTimeout(TraceOpt.Premium.GetStatus,3000);
 				},
 				error:function(e){
 					if (e.status === 403 || e.status === 402){
@@ -1176,6 +1189,7 @@ var TraceOpt = {
 			"Pref_ETagTrack":"E-Tag Tracking Protection",
 			"Pref_GoogleHeader":"Google Header Removal",
 			"Pref_IPSpoof":"Proxy IP Header Spoofing",
+			"Pref_NativeFunctions":"JS functions",
 			"Pref_NetworkInformation":"Network Information API",
 			"Pref_PingBlock":"Ping Protection",
 			"Pref_PluginHide":"JS Plugin Hide",
@@ -2507,30 +2521,34 @@ var TraceOpt = {
 			});
 		},
 		InstallList:function(installCode,enabled){
+			console.log("Updating blocklist:",installCode,enabled);
+
 			if (typeof installCode !== "string"){
 				return;
 			}
 
-			var currentCodes = chrome.extension.getBackgroundPage().Trace.p.Current.Pref_WebController.installCodes;
-			if (typeof currentCodes !== "object") {
-				currentCodes = {
-					"a00000002":true,
-					"a00000005":true
-				};
-			}
-
-			if (!enabled){
-				if (currentCodes[installCode] !== false){
-					currentCodes[installCode] = false;
+			chrome.runtime.getBackgroundPage(function(bg){
+				var currentCodes = bg.Trace.p.Current.Pref_WebController.installCodes;
+				if (typeof currentCodes !== "object") {
+					currentCodes = {
+						"a00000002":true,
+						"a00000005":true
+					};
 				}
-			} else {
-				currentCodes[installCode] = true;
-			}
 
-			TraceOpt.Blocklist.updatedList = true;
-			$("#blc_updAlert").show();
+				if (!enabled){
+					if (currentCodes[installCode] !== false){
+						currentCodes[installCode] = false;
+					}
+				} else {
+					currentCodes[installCode] = true;
+				}
 
-			chrome.extension.getBackgroundPage().Trace.p.Set("Pref_WebController.installCodes",currentCodes);
+				TraceOpt.Blocklist.updatedList = true;
+				$("#blc_updAlert").show();
+
+				bg.Trace.p.Set("Pref_WebController.installCodes",currentCodes);
+			});
 		}
 	},
 	Scope:{
@@ -2543,17 +2561,21 @@ var TraceOpt = {
 				Pref_AudioFingerprint:true,
 				Pref_BatteryApi:true,
 				Pref_CanvasFingerprint: true,
+				Pref_ClientRects:true,
 				Pref_CookieEater:true,
 				Pref_ETagTrack:true,
 				Pref_GoogleHeader:true,
 				Pref_IPSpoof:true,
+				Pref_NativeFunctions:true,
 				Pref_NetworkInformation:true,
+				Pref_HardwareSpoof:true,
 				Pref_PingBlock:true,
 				Pref_PluginHide:true,
 				Pref_ReferHeader:true,
 				Pref_ScreenRes:true,
 				Pref_UserAgent:true,
-				Pref_WebRTC:true
+				Pref_WebRTC:true,
+				Pref_WebGLFingerprint:true
 			}
 		},
 		Title:$("#scope .sect_header"),

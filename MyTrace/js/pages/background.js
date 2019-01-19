@@ -407,8 +407,10 @@ var Trace = {
 			// Ping blocks
 			Trace.b.ToggleBlockPings();
 
+			// Load whitelist into Trace
+			Trace.c.GetStoredWhitelist();
+
 			if (Trace.p.Current.Pref_WebController.enabled === true){
-				Trace.c.GetStoredWhitelist();
 				Trace.d.AssignChecker();
 				Trace.b.BlocklistLoader(false);
 			}
@@ -996,6 +998,7 @@ var Trace = {
 			"Pref_ETagTrack":true,
 			"Pref_GoogleHeader":true,
 			"Pref_IPSpoof":true,
+			"Pref_NativeFunctions":true,
 			"Pref_NetworkInformation":true,
 			"Pref_HardwareSpoof":true,
 			"Pref_PingBlock":true,
@@ -1003,7 +1006,8 @@ var Trace = {
 			"Pref_ReferHeader":true,
 			"Pref_ScreenRes":true,
 			"Pref_UserAgent":true,
-			"Pref_WebRTC":true
+			"Pref_WebRTC":true,
+			"Pref_WebGLFingerprint":true
 		},
 		storedWhitelist:{},
 		decodedWhitelist:{
@@ -2535,7 +2539,9 @@ var Trace = {
 					}
 				},
 				"installCodes":{
+					"a00000001":false,
 					"a00000002":true,
+					"a00000003":false,
 					"a00000005":true
 				}
 			},
@@ -2824,6 +2830,7 @@ var Trace = {
 					"Pref_GoogleHeader",
 					"Pref_ETagTrack",
 					"Pref_PingBlock",
+					"Pref_NativeFunctions",
 					"Pref_NetworkInformation",
 					"Pref_ClientRects",
 					"Pref_HardwareSpoof",
@@ -2834,7 +2841,8 @@ var Trace = {
 					"Pref_ReferHeader",
 					"Pref_UserAgent",
 					"Pref_BatteryApi",
-					"Pref_IPSpoof"
+					"Pref_IPSpoof"//,
+					//"Pref_WebGLFingerprint"
 				],
 				"PerPage":[]
 			}
