@@ -1433,6 +1433,11 @@ var Trace = {
 						modifiedUrl = true;
 					}
 
+					// Stop redirect loops
+					if (newUrl === request.url){
+						modifiedUrl = false;
+					}
+
 					// Re-add fragment
 					//if (fragment.length === 2){
 					//	newUrl = newUrl + "#" + fragment[1];
@@ -1440,7 +1445,7 @@ var Trace = {
 				}
 
 				// If modifications were made then we redirect the user to the modified version
-				if (modifiedUrl){
+				if (modifiedUrl !== false){
 					return {redirectUrl:newUrl};
 				}
 			}
