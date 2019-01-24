@@ -35,11 +35,6 @@ var Trace = {
 		}
 	},
 
-	// Choose a random number between two values
-	Rand:function(l,m){
-		return Math.floor(Math.random()*(m-l)+l);
-	},
-
 	// Generate a random string of r length
 	makeRandomID:function(r){
 		for(var n="",t="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789",a=0;r > a;a++){
@@ -105,7 +100,7 @@ var Trace = {
 			}
 		},
 		ContentTalk:function(request, sender, sendResponse){
-			//if (Trace.DEBUG) console.log("[TracePage] " + sender.tab ? "from a content script:" + sender.tab.url : "from the extension");
+			if (Trace.DEBUG) console.log("[TracePage] " + sender.tab ? "from a content script:" + sender.tab.url : "from the extension");
 			if (request.msg === "uaReq"){
 				sendResponse({
 					userAgentString:Trace.n.useragent,
@@ -153,6 +148,13 @@ var Trace = {
 				}
 
 			} else if (request.msg === "getLoadedSettings"){
+
+				sendResponse({
+					"pingAttr":Trace.p.Current.Pref_PingBlock.removePingAttr.enabled,
+					"relOpener":Trace.p.Current.Pref_NativeFunctions.windowOpen.enabled
+				});
+
+			} else if (request.msg === "protectionUpdate"){
 
 				sendResponse({
 					"pingAttr":Trace.p.Current.Pref_PingBlock.removePingAttr.enabled,
@@ -264,6 +266,7 @@ var Trace = {
 	// Misc
 	n:{
 		appSecret:"Cza7kImqFYZPrbGq76PY8I9fynasuWyEoDtY4L9U0zgIACb2t9vpn2sO4eHcS0Co",		// Is this pointless? Yes. Do I care? No.
+		listCompat:"210",
 		callbacks:[],
 		useragent:"Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:57.0) Gecko/20100101 Firefox/57.0",
 		oscpu:"Windows NT 6.1; Win64; x64; rv:57.0",
@@ -676,7 +679,7 @@ var Trace = {
 				var url = Trace.v.blocklistURL;
 				url += "?r=" + (typeof(Trace.v.Premium) !== "string" || Trace.v.Premium === "" ? "rv" : "pv");
 				url += "&a=cache";
-				url += "&v=180";
+				url += "&v=" + Trace.n.listCompat;
 				url += "&c=" + btoa(installCodes);
 
 				$.ajax({
@@ -732,7 +735,7 @@ var Trace = {
 					url = Trace.v.blocklistURL;
 					url += "?d=" + btoa((Math.round((new Date()).getTime()/1000))*2);
 					url += "&a=download";
-					url += "&v=180";
+					url += "&v=" + Trace.n.listCompat;
 					url += "&c=" + btoa(installCodes);
 					url += "&l=true";
 				} else {
@@ -744,7 +747,7 @@ var Trace = {
 				url += "&s=" + btoa(Trace.n.appSecret);
 				url += "&a=download";
 				url += "&d=" + btoa((Math.round((new Date()).getTime()/1000))*2);
-				url += "&v=180";
+				url += "&v=" + Trace.n.listCompat;
 				url += "&c=" + btoa(installCodes);
 				url += "&f=" + "json";
 				url += "&l=true";
@@ -1927,11 +1930,16 @@ var Trace = {
 				Trace.i.StopIPRefresh();
 				return;
 			}
+
+			var Rand = function(l,m){
+				return Math.floor(Math.random()*(m-l)+l);
+			};
+
 			var digits = [
-				Trace.Rand(Trace.i.IPRange[0][0],Trace.i.IPRange[0][1]),
-				Trace.Rand(Trace.i.IPRange[1][0],Trace.i.IPRange[1][1]),
-				Trace.Rand(Trace.i.IPRange[2][0],Trace.i.IPRange[2][1]),
-				Trace.Rand(Trace.i.IPRange[3][0],Trace.i.IPRange[3][1])
+				Rand(Trace.i.IPRange[0][0],Trace.i.IPRange[0][1]),
+				Rand(Trace.i.IPRange[1][0],Trace.i.IPRange[1][1]),
+				Rand(Trace.i.IPRange[2][0],Trace.i.IPRange[2][1]),
+				Rand(Trace.i.IPRange[3][0],Trace.i.IPRange[3][1])
 			];
 
 			Trace.i.CurrentFakeIP = digits[0] + "." + digits[1] + "." + digits[2] + "." + digits[3];
@@ -2358,22 +2366,24 @@ var Trace = {
 		Data:function(cb){
 			cb(Trace.s.Current);
 		},
-		DeleteAll:function(cb){
-			Trace.s.Current = {};
-			Trace.s.SaveStats(cb);
-		},
 		DeleteAmount:function(amount,cb) {
-			var newstats = {};
-			var keys = Object.keys(Trace.s.Current);
-			if (amount >= keys.length){
-				cb();
-				return;
+			console.log("[statd]-> Deleting",amount);
+			if (amount === "all"){
+				Trace.s.Current = {};
+			} else {
+				var newstats = {};
+				var keys = Object.keys(Trace.s.Current);
+				if (amount >= keys.length){
+					cb();
+					return;
+				}
+
+				for (var i = keys.length-amount;i < keys.length;i++){
+					newstats[keys[i]] = Trace.s.Current[keys[i]];
+				}
+				Trace.s.Current = newstats;
 			}
 
-			for (var i = keys.length-amount;i < keys.length;i++){
-				newstats[keys[i]] = Trace.s.Current[keys[i]];
-			}
-			Trace.s.Current = newstats;
 			Trace.s.SaveStats(cb);
 		},
 		MainText:function(cb){
@@ -2416,6 +2426,7 @@ var Trace = {
 						"cf":false,
 						"christmas":false,
 						"click":true,
+						"club":true,
 						"country":true,
 						"cricket":false,
 						"date":false,

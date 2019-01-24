@@ -256,6 +256,8 @@ var TPage = {
 		TPage.sendBackgroundMessage({
 			"method":"protection-enabled",
 			"protection":"AudioFingerprinting"
+		},function(){
+			//console.log("Success");
 		});
 	},
 	protectAudioFingerNew:function(){

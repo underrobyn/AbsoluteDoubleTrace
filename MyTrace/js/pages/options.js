@@ -2002,17 +2002,13 @@ var TraceOpt = {
 				});
 			};
 
-			if (a === "7"){
-				chrome.extension.getBackgroundPage().Trace.s.DeleteAll(cb);
-			} else {
-				if (a === "0") chrome.extension.getBackgroundPage().Trace.s.DeleteAmount(1,cb);
-				if (a === "1") chrome.extension.getBackgroundPage().Trace.s.DeleteAmount(2,cb);
-				if (a === "2") chrome.extension.getBackgroundPage().Trace.s.DeleteAmount(3,cb);
-				if (a === "3") chrome.extension.getBackgroundPage().Trace.s.DeleteAmount(4,cb);
-				if (a === "4") chrome.extension.getBackgroundPage().Trace.s.DeleteAmount(5,cb);
-				if (a === "5") chrome.extension.getBackgroundPage().Trace.s.DeleteAmount(6,cb);
-				if (a === "6") chrome.extension.getBackgroundPage().Trace.s.DeleteAmount(7,cb);
-			}
+			chrome.runtime.getBackgroundPage(function(bg){
+				if (a === "7"){
+					bg.Trace.s.DeleteAmount("all",cb);
+				} else {
+					bg.Trace.s.DeleteAmount(parseInt(a)+1,cb);
+				}
+			});
 		}
 	},
 	HardwareSpoof:{
@@ -2249,7 +2245,9 @@ var TraceOpt = {
 			for (var res in common){
 				TraceOpt.Config.CurrentSel.commonResolutions.resolutions.push([parseInt(common[res][0]),parseInt(common[res][1])]);
 			}
-			chrome.extension.getBackgroundPage().Trace.p.Set("Pref_ScreenRes.commonResolutions.resolutions",TraceOpt.Config.CurrentSel.commonResolutions.resolutions);
+			chrome.runtime.getBackgroundPage(function(bg){
+				bg.Trace.p.Set("Pref_ScreenRes.commonResolutions.resolutions",TraceOpt.Config.CurrentSel.commonResolutions.resolutions);
+			});
 			TraceOpt.ScreenRes.UpdateResolutions();
 		},
 		UpdateResolutions:function(){
@@ -2273,7 +2271,9 @@ var TraceOpt = {
 		RemoveResolution:function(){
 			var id = $(this).data("listid");
 			TraceOpt.Config.CurrentSel.commonResolutions.resolutions.splice(id,1);
-			chrome.extension.getBackgroundPage().Trace.p.Set("Pref_ScreenRes.commonResolutions.resolutions",TraceOpt.Config.CurrentSel.commonResolutions.resolutions);
+			chrome.runtime.getBackgroundPage(function(bg){
+				bg.Trace.p.Set("Pref_ScreenRes.commonResolutions.resolutions",TraceOpt.Config.CurrentSel.commonResolutions.resolutions);
+			});
 			TraceOpt.ScreenRes.UpdateResolutions();
 		},
 		AddNewResolution:function(){
@@ -2292,7 +2292,9 @@ var TraceOpt = {
 			}
 
 			TraceOpt.Config.CurrentSel.commonResolutions.resolutions.push([parseInt(res[0]),parseInt(res[1])]);
-			chrome.extension.getBackgroundPage().Trace.p.Set("Pref_ScreenRes.commonResolutions.resolutions",TraceOpt.Config.CurrentSel.commonResolutions.resolutions);
+			chrome.runtime.getBackgroundPage(function(bg){
+				bg.Trace.p.Set("Pref_ScreenRes.commonResolutions.resolutions",TraceOpt.Config.CurrentSel.commonResolutions.resolutions);
+			});
 			TraceOpt.ScreenRes.UpdateResolutions();
 		},
 		UpdateOffset:function(){
@@ -2475,7 +2477,7 @@ var TraceOpt = {
 			};
 
 			$.ajax({
-				url:"https://absolutedouble.co.uk/trace/app/weblist.php?v=180&a=list",
+				url:"https://absolutedouble.co.uk/trace/app/weblist.php?v=210&a=list",
 				dataType:"text",
 				cache:false,
 				method:"GET",
@@ -2683,12 +2685,12 @@ var TraceOpt = {
 				$("<br/>"),$("<br/>")
 			);
 			TraceOpt.AssignCloseOverlay(true);
-			TraceOpt.Scope.AddExecs();
+			chrome.runtime.getBackgroundPage(TraceOpt.Scope.AddExecs);
 		},
-		AddExecs:function(){
-			var enableStatus = chrome.extension.getBackgroundPage().Trace.c.whitelistDefaults;
-			var dpAllPage = chrome.extension.getBackgroundPage().Trace.p.Current.Main_ExecutionOrder.AllPage || [];
-			var dpPerPage = chrome.extension.getBackgroundPage().Trace.p.Current.Main_ExecutionOrder.PerPage || [];
+		AddExecs:function(bg){
+			var enableStatus = bg.Trace.c.whitelistDefaults;
+			var dpAllPage = bg.Trace.p.Current.Main_ExecutionOrder.AllPage || [];
+			var dpPerPage = bg.Trace.p.Current.Main_ExecutionOrder.PerPage || [];
 			var allPage = $("#s_add_allpage"),
 				perPage = $("#s_add_perpage");
 
@@ -2826,11 +2828,11 @@ var TraceOpt = {
 				$("<br/>"),$("<br/>")
 			);
 			TraceOpt.AssignCloseOverlay(true);
-			TraceOpt.Scope.AddExecs();
-			TraceOpt.Scope.UpdateExecs();
+			chrome.runtime.getBackgroundPage(TraceOpt.Scope.AddExecs);
+			chrome.runtime.getBackgroundPage(TraceOpt.Scope.UpdateExecs);
 		},
-		UpdateExecs:function(){
-			var currData = chrome.extension.getBackgroundPage().Trace.c.storedWhitelist[TraceOpt.Scope.CurrentSelect.data("itmkey")];
+		UpdateExecs:function(bg){
+			var currData = bg.Trace.c.storedWhitelist[TraceOpt.Scope.CurrentSelect.data("itmkey")];
 
 			if (typeof currData.Protections === "undefined"){
 				console.error(currData);
@@ -2988,44 +2990,53 @@ var TraceOpt = {
 			function runTest(){
 				// Get decoded wl and string we are testing
 				var val = $(this).val();
-				var currWl = chrome.extension.getBackgroundPage().Trace.c.GetWhitelist();
 				var cont = $("#sl_testresp");
 				var matches = 0;
 
 				cont.empty();
 
-				// Get result if there is one
-				for (var i = 0, l = currWl.keys.length;i<l;i++){
-					if (currWl.keys[i].test(val)){
-						cont.append(
-							$("<div/>").append(
-								$("<h1/>").text(currWl.keys[i]),
-								$("<span/>").text(currWl.values[i].SiteBlocked === true ? "This site is blocked." : "This site is not blocked."),$("<br/>"),
-								$("<span/>").text(currWl.values[i].InitRequests === true ? "This site can make requests to blocked sites." : "This site can't make requests to blocked sites.")
-							)
+				function doTheWhitelistParse(bg){
+					var currWl = bg.Trace.c.GetWhitelist();
+					var storWl = Object.keys(bg.Trace.c.storedWhitelist);
+
+					// Get result if there is one
+					for (var i = 0, l = currWl.keys.length;i<l;i++){
+						if (!currWl.keys[i].test(val)) continue;
+
+						var currItm = $("<div/>").append($("<h1/>").text(storWl[i]));
+
+						// Blocked status
+						currItm.append(
+							$("<span/>").text(currWl.values[i].SiteBlocked === true ? "This site is blocked." : "This site is not blocked."),$("<br/>"),
+							$("<span/>").text(currWl.values[i].InitRequests === true ? "This site can make requests to blocked sites." : "This site can't make requests to blocked sites.")
 						);
+
+						// Update main data
+						cont.append(currItm);
 						matches++;
+					}
+
+					if (matches === 0){
+						cont.append($("<h1/>").text("Couldn't find any entries that would match this URL"));
 					}
 				}
 
-				if (matches === 0){
-					cont.append(
-						$("<h1/>").text("Couldn't find any entries that would match this URL")
-					)
-				}
+				chrome.runtime.getBackgroundPage(doTheWhitelistParse);
 			}
 
 			$("#drop_message").empty().append(
 				$("<h1/>").text("Test List"),
 				$("<h2/>").text("Use this to see what protections apply to a specified URL"),
-				$("<input/>",{
-					"type":"text",
-					"placeholder":"URL to test (e.g. https://www.bad-tracking-server.co.au/eviltrack.aspx)",
-					"class":"textbox",
-					"autocomplete":"false",
-				}).keyup(runTest),
-				$("<div/>",{"id":"sl_testresp","class":"textscrollable"}).append(),
-				TraceOpt.CloseUI()
+				$("<div/>").append(
+					$("<input/>",{
+						"type":"text",
+						"placeholder":"URL to test (e.g. https://www.bad-tracking-server.co.au/eviltrack.aspx)",
+						"class":"textbox",
+						"autocomplete":"false",
+					}).keyup(runTest),
+					$("<div/>",{"id":"sl_testresp","class":"textscrollable"})
+				),
+				TraceOpt.CloseUI(),$("<br />")
 			);
 			TraceOpt.AssignCloseOverlay(false);
 		},
@@ -3056,7 +3067,7 @@ var TraceOpt = {
 		tldPresets:{
 			all:["accountant", "date", "diet", "loan", "mom", "online", "om", "racing", "ren", "stream", "study", "top", "xin", "yokohama"],
 			extended:["asia", "cc", "cf", "christmas", "cricket", "party", "pro", "review", "systems", "trade", "vip", "zip"],
-			most:["ads", "link", "kim", "top", "science", "space", "webcam", "men", "win", "work"],
+			most:["ads", "club", "link", "kim", "top", "science", "space", "webcam", "men", "win", "work"],
 			few:["bid","click","country","download","faith","gdn","gq"]
 		},
 		AssignEvents:function(){
@@ -3094,7 +3105,7 @@ var TraceOpt = {
 			var newList = {
 				"accountant":false, "ads":false, "asia":false,
 				"bid":false,
-				"cc":false, "cf":false, "christmas":false, "click":false, "country":false, "cricket":false,
+				"cc":false, "cf":false, "christmas":false, "click":false, "club":false, "country":false, "cricket":false,
 				"date":false, "diet":false, "download":false,
 				"faith":false,
 				"gdn":false, "gq":false,
@@ -3180,9 +3191,12 @@ var TraceOpt = {
 					$("<option>",{"value":"tracelight"}).text("Trace Light"),
 					$("<option>",{"value":"tracegreyscale"}).text("Trace Greyscale")
 				).on("change",function (){
-					_UserCrashReportService({"UserChoseTheme":$(this).val()});
-					chrome.extension.getBackgroundPage().Trace.p.Set("Main_Interface.Theme.name",$(this).val());
-					reloadTheme();
+					var thatVal = $(this).val();
+					_UserCrashReportService({"UserChoseTheme":thatVal});
+					chrome.runtime.getBackgroundPage(function(bg){
+						bg.Trace.p.Set("Main_Interface.Theme.name",thatVal);
+						reloadTheme();
+					});
 				}),
 				$("<h2/>").text("Navigation bar position"),
 				$("<select/>",{"id":"custui_navbarpos"}).append(
@@ -3190,9 +3204,11 @@ var TraceOpt = {
 					$("<option>",{"value":"nav_left"}).text("Left"),
 					$("<option>",{"value":"nav_right"}).text("Right")
 				).on("change",function () {
-					chrome.extension.getBackgroundPage().Trace.p.Set("Main_Interface.Theme.navPlacement",$(this).val());
-					_UserCrashReportService({"UserChoseNavPos":$(this).val()});
-					reloadTheme();
+					var thatVal = $(this).val();
+					chrome.runtime.getBackgroundPage(function(bg){
+						bg.Trace.p.Set("Main_Interface.Theme.navPlacement",thatVal);
+						reloadTheme();
+					});
 				}),
 				$("<div/>",{"class":"setting_conf_opt xregular"}).append(
 					$("<label/>",{
@@ -3200,8 +3216,11 @@ var TraceOpt = {
 						"class":"checkbox_cont"
 					}).text("Enable time-based alterations").append(
 						$("<input/>",opts).on("click enter",function(){
-							chrome.extension.getBackgroundPage().Trace.p.Set("Main_Interface.Theme.timeAlterations",$(this).is(":checked"));
-							reloadTheme();
+							var thatVal = $(this).is(":checked");
+							chrome.runtime.getBackgroundPage(function(bg){
+								bg.Trace.p.Set("Main_Interface.Theme.timeAlterations",thatVal);
+								reloadTheme();
+							});
 						}),
 						$("<span/>",{"class":"ccheck"})
 					)
@@ -3316,7 +3335,9 @@ var TraceOpt = {
 				newList[enableList[param]] = true;
 			}
 
-			chrome.extension.getBackgroundPage().Trace.p.Set("Pref_WebController.urlCleaner.queryString.params",newList);
+			chrome.runtime.getBackgroundPage(function(bg){
+				bg.Trace.p.Set("Pref_WebController.urlCleaner.queryString.params",newList);
+			});
 			TraceOpt.URLCleaner.LoadParams();
 		},
 		LoadParams:function(){
@@ -3345,14 +3366,19 @@ var TraceOpt = {
 		},
 		SaveParams:function(){
 			var newVal = ($(this).data("current") == true ? false : true);
-			chrome.extension.getBackgroundPage().Trace.p.Set("Pref_WebController.urlCleaner.queryString.params."+$(this).data("tldid"),newVal);
+			var theTld = $(this).data("tldid");
+			chrome.runtime.getBackgroundPage(function(bg){
+				bg.Trace.p.Set("Pref_WebController.urlCleaner.queryString.params."+theTld,newVal);
+			});
 			TraceOpt.URLCleaner.LoadParams();
 		},
 		SaveSelection:function (){
 			var frameMethod = $("#afr_urlc_pmethod").val();
 			//var resMethod = $("#ars_urlc_pmethod").val();
-			chrome.extension.getBackgroundPage().Trace.p.Set("Pref_WebController.urlCleaner.queryString.main_frame.method", frameMethod);
-			//chrome.extension.getBackgroundPage().Trace.p.Set("Pref_WebController.urlCleaner.queryString.resources.method", resMethod);
+			chrome.runtime.getBackgroundPage(function(bg){
+				bg.Trace.p.Set("Pref_WebController.urlCleaner.queryString.main_frame.method", frameMethod);
+				// bg.Trace.p.Set("Pref_WebController.urlCleaner.queryString.resources.method", resMethod);
+			});
 		}
 	},
 	CanvasRGBA:{
