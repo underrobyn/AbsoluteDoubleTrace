@@ -82,6 +82,28 @@ var TraceOpt = {
 			}
 		}
 	},
+	MakeDownload:function(name,data){
+		// File information
+		var a = document.createElement("a"),
+			file = new Blob([data], {type: "text/json"});
+		var url = URL.createObjectURL(file);
+
+		// Generate file date
+		var d = TraceOpt.theDate();
+		var filedate = (d[0] + "-" + d[1] + "-" + d[2]).toString();
+
+		// Download file
+		a.href = url;
+		a.download = name + "-" + filedate + ".json";
+		document.body.appendChild(a);
+		a.click();
+
+		// Remove link
+		setTimeout(function() {
+			document.body.removeChild(a);
+			window.URL.revokeObjectURL(url);
+		},0);
+	},
 
 	Auth:{
 		Channel:null,
@@ -836,6 +858,7 @@ var TraceOpt = {
 				cache:false,
 				method:"GET",
 				timeout:27000,
+				dataType:"text",
 				beforeSend:function(){
 					pt.text("Checking code...");
 				},
@@ -1055,32 +1078,9 @@ var TraceOpt = {
 			TraceOpt.AssignCloseOverlay(true);
 		},
 		Create:function(){
-			function makeDownload(data){
-				// File information
-				var a = document.createElement("a"),
-					file = new Blob([data], {type: "text/json"});
-				var url = URL.createObjectURL(file);
-
-				// Generate file date
-				var d = TraceOpt.theDate();
-				var filedate = (d[0] + "-" + d[1] + "-" + d[2]).toString();
-
-				// Download file
-				a.href = url;
-				a.download = "TraceSettings-" + filedate + ".json";
-				document.body.appendChild(a);
-				a.click();
-
-				// Remove link
-				setTimeout(function() {
-					document.body.removeChild(a);
-					window.URL.revokeObjectURL(url);
-				},0);
-			}
-
 			chrome.runtime.getBackgroundPage(function(bg){
 				bg.Trace.p.CreateBackup(function(raw){
-					makeDownload(JSON.stringify(raw,null,4));
+					TraceOpt.MakeDownload("TraceSettings",JSON.stringify(raw,null,4));
 				});
 			});
 		},
@@ -2593,6 +2593,7 @@ var TraceOpt = {
 			$("#wlctrl_addent").on("click enter",TraceOpt.Scope.AddDomain);
 			$("#wlctrl_rement").on("click enter",TraceOpt.Scope.RemoveDomain);
 			$("#wlctrl_editent").on("click enter",TraceOpt.Scope.EditDomain);
+			$("#wlctrl_import").on("click enter",TraceOpt.Scope.Export.UI);
 			$("#wlctrl_help").on("click enter",TraceOpt.Scope.HelpDialog);
 		},
 		ClearWhitelist:function(){
@@ -3061,6 +3062,52 @@ var TraceOpt = {
 				TraceOpt.CloseUI()
 			);
 			TraceOpt.AssignCloseOverlay(true);
+		},
+		Export:{
+			Data:{},
+			UI:function(){
+				$("#drop_message").empty().append(
+					$("<h1/>",{"id":"backuprestore_title"}).text("Import/Export Whitelist"),
+					$("<section/>",{"id":"backuprestore_section"}).append(
+						$("<span/>").text("Export your whitelist"),
+						$("<br/>"),$("<br/>"),
+						$("<button/>",{"style":"font-size:1em"}).text("Export Whitelist").on("click",TraceOpt.Scope.Export.Download),
+						$("<h2/>").text("Import a whitelist")
+					),
+					$("<input/>",{
+						"type":"file",
+						"accept":".json",
+						"style":"font-size:1.1em"
+					}).on("change",TraceOpt.Scope.Export.Upload),
+					$("<p/>",{"id":"restore_info"})
+				);
+				TraceOpt.AssignCloseOverlay(true);
+			},
+			Download:function(){
+				chrome.runtime.getBackgroundPage(function(bg){
+					bg.Trace.c.WhitelistExport(function(raw){
+						TraceOpt.MakeDownload("TraceWhitelistExport",JSON.stringify(raw,null,4));
+					});
+				});
+			},
+			Upload:function(evt){
+				if (!this.files.length) return;
+
+				var reader = new FileReader();
+				reader.onload = function(){
+					var data = reader.result;
+					try{
+						TraceOpt.Scope.Export.Data = JSON.parse(data);
+					} catch(e){
+						TraceOpt.Scope.Export.Data = {};
+					}
+					TraceOpt.Scope.Export.UploadUI();
+				};
+				reader.readAsText(this.files[0]);
+			},
+			UploadUI:function(){
+
+			}
 		}
 	},
 	BadTopLevelBlock:{

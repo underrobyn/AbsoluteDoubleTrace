@@ -16,6 +16,7 @@ var TraceTool = {
 	},
 	currentStatistics:{"code":0,"media":0,"webpage":0,"other":0},
 	prefs:{},
+	reloadInt:null,
 
 	ProtectionTemplate:{
 		SiteBlocked:false,
@@ -42,10 +43,24 @@ var TraceTool = {
 		}
 	},
 
+	Home:{
+		"rTypes":["code","media","webpage","other"],
+		"rNames":["Code Requests","Media Requests", "Webpage Requests", "Misc"],
+		"hTypes":["etag","google","proxyip","referer","cookies","setcookie","useragent"],
+		"hNames":["E-Tags blocked", "Google Headers blocked", "Requests with IP Spoofed", "Referer Headers blocked","Cookie Headers modified","Set-Cookies modified","User-Agent Headers spoofed"],
+		"hPrefs":["Pref_ETagTrack","Pref_GoogleHeader","Pref_IPSpoof","Pref_ReferHeader","Pref_CookieEater","Pref_CookieEater","Pref_UserAgent"]
+	},
+
 	init:function(){
+		TraceTool.reloadInt = setInterval(function(){TraceTool.loadThisTab("update");},1000);
+
+		chrome.runtime.getBackgroundPage(function(bg){
+			TraceTool.DEBUG = bg.Trace.DEBUG;
+		});
+
 		TraceTool.assignEvents();
 		TraceTool.getCurrentURL();
-		TraceTool.loadThisTab();
+		TraceTool.loadThisTab("create");
 		TraceTool.loadPrefs();
 		TraceTool.Auth.Init();
 
@@ -75,8 +90,14 @@ var TraceTool = {
 		$(".section_toggle").each(function(){
 			$(this).on("click enter",function(){
 				var sel = $(this).data("tracetool");
+
+				if (sel !== "home") $("#current_section").addClass("padded_sect");
+				if (sel !== "home" && TraceTool.reloadInt) clearInterval(TraceTool.reloadInt);
+
 				if (sel === "home"){
-					TraceTool.loadThisTab();
+					$("#current_section").removeClass("padded_sect");
+					TraceTool.loadThisTab("create");
+					TraceTool.reloadInt = setInterval(function(){TraceTool.loadThisTab("update");},1000);
 				} else if (sel === "report"){
 					TraceTool.createReportPanel();
 				} else if (sel === "whitelist"){
@@ -94,13 +115,19 @@ var TraceTool = {
 			TraceTool.prefs = bg.Trace.p.Current;
 		});
 	},
-	loadThisTab:function(){
+	loadThisTab:function(type){
 		chrome.runtime.getBackgroundPage(function(bg){
 			chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
 				var currTab = tabs[0];
 				if (currTab) {
 					var data = bg.Trace.t.TabList[currTab.id];
-					TraceTool.createHomePage(data,currTab);
+
+					var call = TraceTool.updateHomePage;
+					if (type === "create") call = TraceTool.createHomeStructure;
+
+					call(data,currTab,bg.Trace.p.Current);
+
+					console.log("Loaded tab info!");
 				}
 			});
 		});
@@ -131,7 +158,7 @@ var TraceTool = {
 		}
 		window.close();
 	},
-	createHomePage:function(data,tab){
+	createHomeStructure:function(data,tab,prefs){
 		$("#title").text("Trace");
 		if (TraceTool.currentStatistics === undefined){
 			$("#current_section").empty().append(
@@ -139,18 +166,76 @@ var TraceTool = {
 			);
 		}
 
-		$("#current_section").empty().append(
-			$("<div/>").append(
-				$("<h1/>").text("Blocked in this tab:"),
-				$("<ul/>").append(
-					$("<li/>",{"style":"display:none;"}).text("Tab ID: " + tab.id),
-					$("<li/>").text("Code Requests: " + data.data.webRequests.code),
-					$("<li/>").text("Media Requests: " + data.data.webRequests.media),
-					$("<li/>").text("Webpage Requests: " + data.data.webRequests.webpage),
-					$("<li/>").text("Other Requests: " + data.data.webRequests.other)
-				)
-			)
-		);
+		// Create main element
+		var el = $("<div/>",{"class":"home_section"});
+		el.append($("<h1/>").text("Blocked in this tab:"));
+
+		if (TraceTool.DEBUG === true) el.append($("<h2/>").text("TabID: "+tab.id));
+
+		// Web requests section
+		var	rTotal = 0, rEl = $("<div/>",{"class":"home_sect_d","id":"home_data_requests"});
+
+		for (var i = 0;i<TraceTool.Home.rTypes.length;i++){
+			rEl.append(
+				$("<div/>",{"class":"home_sect_r","id":"home_upd_r"+TraceTool.Home.rTypes[i]}).text(TraceTool.Home.rNames[i] + ": " + data.data.webRequests[TraceTool.Home.rTypes[i]])
+			);
+			rTotal += data.data.webRequests[TraceTool.Home.rTypes[i]];
+		}
+		el.append($("<div/>",{"class":"home_sect_t","id":"home_requests_title","data-opens":"#home_data_requests"}).text("Web Requests (" + rTotal + " blocked)"),rEl);
+
+		// HTTP Header section
+		/*var hTotal = 0, hEl = $("<div/>",{"class":"home_sect_d","id":"home_data_headers"}), hTot = 0;
+		for (var i = 0;i<TraceTool.Home.hTypes.length;i++){
+			var cList = "home_sect_r";
+			if (prefs[TraceTool.Home.hPrefs[i]].enabled !== true){
+				cList += " home_sect_fade";
+			} else {
+				hTot++;
+			}
+
+			hEl.append(
+				$("<div/>",{"class":cList,"id":"home_upd_h"+TraceTool.Home.hTypes[i]}).text(TraceTool.Home.hNames[i] + ": " + data.data.headers[TraceTool.Home.hTypes[i]].toString())
+			);
+			hTotal += data.data.headers[TraceTool.Home.hTypes[i]];
+		}
+		el.append($("<div/>",{"class":"home_sect_t","id":"home_headers_title","data-opens":"#home_data_headers"}).text(
+			(hTot === 0 ? "No Header Protections Enabled" : "Headers (" + hTotal + " modified)")
+		),hEl);*/
+
+		// Update HTML
+		$("#current_section").empty().append(el);
+
+		$(".home_sect_t").on("click enter",function(){
+			$($(this).data("opens")).toggle();
+		});
+
+		// Requests shown by default
+		$("#home_data_requests").show();
+	},
+	updateHomePage:function(data,tab,prefs){
+		// Web requests section
+		var	rTotal = 0;
+		for (var i = 0;i<TraceTool.Home.rTypes.length;i++){
+			$("#home_upd_r"+TraceTool.Home.rTypes[i]).text(TraceTool.Home.rNames[i] + ": " + data.data.webRequests[TraceTool.Home.rTypes[i]]);
+			rTotal += data.data.webRequests[TraceTool.Home.rTypes[i]];
+		}
+		$("#home_requests_title").text("Web Requests (" + rTotal + " blocked)");
+		/*
+		// HTTP Header section
+		var hTotal = 0, hTot = 0;
+		for (var i = 0;i<TraceTool.Home.hTypes.length;i++){
+			var cList = "home_sect_r";
+			if (prefs[TraceTool.Home.hPrefs[i]].enabled !== true){
+				cList += " home_sect_fade";
+			} else {
+				hTot++;
+			}
+			$("#home_upd_h"+TraceTool.Home.hTypes[i]).text(TraceTool.Home.hNames[i] + ": " + data.data.headers[TraceTool.Home.hTypes[i]]).attr("class",cList);
+			hTotal += data.data.headers[TraceTool.Home.hTypes[i]];
+		}
+
+		$("#home_headers_title").text((hTot === 0 ? "No Header Protections Enabled" : "Headers (" + hTotal + " modified)"));
+		*/
 	},
 	createReportPanel:function(){
 		$("#title").text("Report Website");

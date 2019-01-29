@@ -316,9 +316,7 @@ var Trace = {
 				return -1;
 			}
 
-			var min = 0;
-			var max = list.length - 1;
-			var guess;
+			var min = 0, max = list.length - 1, guess;
 
 			var bitwise = (max <= 2147483647);
 			if (bitwise) {
@@ -1118,6 +1116,18 @@ var Trace = {
 				if (cb) cb();
 			});
 		},
+		WhitelistExport:function(cb){
+			var exportObj = {
+				"fileCompat":1,
+				"maxStoreSize":Trace.v.s.QUOTA_BYTES || 0,
+				"exportTime":(new Date).toString(),
+				"traceVersion":chrome.runtime.getManifest().version || null,
+				"traceBrowser":navigator.userAgent || "Unknown.",
+				"data":Trace.c.storedWhitelist
+			};
+
+			cb(exportObj);
+		},
 		ReturnWhitelist:function(callback){
 			callback(Trace.c.storedWhitelist);
 		},
@@ -1291,10 +1301,10 @@ var Trace = {
 
 				if (Trace.p.Current.Pref_WebController.urlCleaner.queryString[type].method === "randomise"){
 					parsed.searchParams.set(key,Trace.makeRandomID(10));
-					if (Trace.DEBUG) console.log("%c -Rand Param: "+key,"color:#f00;font-size:1.2em");
+					if (Trace.DEBUG) console.log("-Rand Param: "+key);
 				} else {
 					parsed.searchParams.delete(key);
-					if (Trace.DEBUG) console.log("%c -Remv Param: "+key,"color:#f00;font-size:1.2em");
+					if (Trace.DEBUG) console.log("-Remv Param: "+key);
 				}
 			}
 
@@ -1304,14 +1314,6 @@ var Trace = {
 			// Check if URL is valid
 			if (request.tabId === -1 || typeof request.url !== "string" || request.url.substring(0,4) !== "http"){
 				return {cancel:false};
-			}
-
-			// Check if we need to show a 'blocked' page
-			var redirectToBlocked = false;
-			if (Trace.p.Current.Pref_WebController.showBlocked.enabled === true){
-				if (request.type === "main_frame"){
-					redirectToBlocked = true;
-				}
 			}
 
 			// Split URL into its component parts
@@ -1364,7 +1366,7 @@ var Trace = {
 			}
 
 			// Check for Host block
-			if (Trace.d.validate.host && blockType === 0){
+			if (Trace.d.validate.host === true && blockType === 0){
 				if (Trace.n.arraySearch(Trace.d.blocked.host,host) !== -1) {
 					blockType = 3;
 				}
@@ -1372,7 +1374,7 @@ var Trace = {
 
 			// Check for URL block
 			var cleanURL = request.url.replace(/#[^#]*$/,"").replace(/\?[^\?]*$/,"");
-			if (Trace.d.validate.url && blockType === 0){
+			if (Trace.d.validate.url === true && blockType === 0){
 				var url = cleanURL.split("://")[1];
 				if (Trace.n.arraySearch(Trace.d.blocked.url,url) !== -1){
 					blockType = 4;
@@ -1380,12 +1382,20 @@ var Trace = {
 			}
 
 			// Check for file block
-			if (Trace.d.validate.file && blockType === 0){
+			if (Trace.d.validate.file === true && blockType === 0){
 				var file = cleanURL.split("/").pop();
 				if (file.length !== 0){
 					if (Trace.n.arraySearch(Trace.d.blocked.file,file) !== -1){
 						blockType = 5;
 					}
+				}
+			}
+
+			// Check if we need to show a 'blocked' page
+			var redirectToBlocked = false;
+			if (Trace.p.Current.Pref_WebController.showBlocked.enabled === true){
+				if (request.type === "main_frame"){
+					redirectToBlocked = true;
 				}
 			}
 
@@ -1557,14 +1567,17 @@ var Trace = {
 					if (headerName !== "cookie") continue;
 
 					var cp = new CookieParser(details.requestHeaders[i].value);
+					var os = details.requestHeaders[i].value;
 
 					if (settings[method] === "removeall"){
 						details.requestHeaders.splice(i,1);
+						Trace.t.LogHeaders(details.tabId,"cookies");
 					} else if (settings[method] === "randomiseall"){
 						cp.updateAllCookies(function(){
 							return Trace.makeRandomID(15);
 						});
 						details.requestHeaders[i].value = cp.getString();
+						Trace.t.LogHeaders(details.tabId,"cookies");
 					} else if (settings[method] === "remove"){
 						cp.removeCookies(cookieList);
 						details.requestHeaders[i].value = cp.getString();
@@ -1612,17 +1625,21 @@ var Trace = {
 
 					if (settings[method] === "removeall"){
 						details.responseHeaders.splice(i,1);
+						Trace.t.LogHeaders(details.tabId,"setcookie");
 					} else if (settings[method] === "randomiseall"){
 						p.updateCookie(Trace.makeRandomID(15));
 						details.responseHeaders[i].value = p.setcookie;
+						Trace.t.LogHeaders(details.tabId,"setcookie");
 					} else if (settings[method] === "remove"){
 						if (cookieList.indexOf(p.cookiename) !== -1){
 							details.responseHeaders.splice(i,1);
+							Trace.t.LogHeaders(details.tabId,"setcookie");
 						}
 					} else if (settings[method] === "randomise"){
 						if (cookieList.indexOf(p.cookiename) !== -1){
 							p.updateCookie(Trace.makeRandomID(15));
 							details.responseHeaders[i].value = p.setcookie;
+							Trace.t.LogHeaders(details.tabId,"setcookie");
 						}
 					}
 				}
@@ -1661,6 +1678,8 @@ var Trace = {
 					if (headerName !== "etag") continue;
 
 					details.responseHeaders.splice(i,1);
+					Trace.t.LogHeaders(details.tabId,"etag");
+
 					break;
 				}
 
@@ -1707,12 +1726,14 @@ var Trace = {
 						if (headerName === "x-chrome-connected") {
 							console.log("Removed x-c-c");
 							details.requestHeaders.splice(i, 1);
+							Trace.t.LogHeaders(details.tabId,"google");
 							continue;
 						}
 					}
 					if (opts.rmChromeUMA.enabled === true) {
 						if (headerName === "x-chrome-uma-enabled") {
 							details.requestHeaders.splice(i, 1);
+							Trace.t.LogHeaders(details.tabId,"google");
 							continue;
 						}
 					}
@@ -1720,12 +1741,14 @@ var Trace = {
 						if (headerName === "x-chrome-variations") {
 							console.log("Removed x-c-v");
 							details.requestHeaders.splice(i, 1);
+							Trace.t.LogHeaders(details.tabId,"google");
 							continue;
 						}
 					}
 					if (opts.rmClientData.enabled === true) {
 						if (headerName === "x-client-data") {
 							details.requestHeaders.splice(i, 1);
+							Trace.t.LogHeaders(details.tabId,"google");
 						}
 					}
 				}
@@ -1778,6 +1801,8 @@ var Trace = {
 					});
 				}
 
+				Trace.t.LogHeaders(details.tabId,"proxyip");
+
 				// Return new headers to be sent
 				return {requestHeaders:details.requestHeaders};
 			}
@@ -1821,6 +1846,7 @@ var Trace = {
 					if (headerName !== "referer") continue;
 
 					//console.log("Referer->",details.url,details.requestHeaders[i].value.toString().toLowerCase());
+					Trace.t.LogHeaders(details.tabId,"referer");
 
 					// Allow only secure origins
 					if (Trace.p.Current.Pref_ReferHeader.httpHeader.onlySecureOrigins.enabled){
@@ -1905,6 +1931,7 @@ var Trace = {
 					// Change header then break
 					if (details.requestHeaders[i].value !== Trace.n.useragent){
 						details.requestHeaders[i].value = Trace.n.useragent;
+						Trace.t.LogHeaders(details.tabId,"useragent");
 					}
 					break;
 				}
@@ -2213,6 +2240,7 @@ var Trace = {
 				if (Trace.DEBUG) console.log("[tabmd]-> Removed tab id",id);
 			},
 			GetTabId:function(id,cb){
+				if (id < 0) return;
 				if (!Trace.t.List.TabAccounted(id)){
 					if (Trace.DEBUG) console.log("[tabmd]-> Found new tab!",id);
 					chrome.tabs.get(id,function(tab){
@@ -2236,6 +2264,14 @@ var Trace = {
 					}
 				});
 			}
+		},
+
+		LogHeaders:function(tabId,header){
+			// Check if the tab is in the list, if not add it
+			Trace.t.List.GetTabId(tabId,function(){
+				if (Trace.DEBUG) console.log("[tabmd]-> Logged stat for tab",tabId,header);
+				Trace.t.TabList[tabId].data.headers[header] = Trace.t.TabList[tabId].data.headers[header] + 1;
+			});
 		},
 
 		LogRequest:function(tabId,type){

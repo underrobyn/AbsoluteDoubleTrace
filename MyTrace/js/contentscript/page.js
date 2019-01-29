@@ -110,6 +110,7 @@ var TPage = {
 
 		if (TPage.Prefs.BlockAudioFinger.enabled === true && TPage.canExec("Pref_AudioFingerprint")){
 			TPage.protectAudioFinger();
+			//TPage.protectAudioFingerNew();
 		}
 
 		if (TPage.Prefs.BlockWebRTC.enabled === true && TPage.canExec("Pref_WebRTC")){
@@ -262,38 +263,61 @@ var TPage = {
 	},
 	protectAudioFingerNew:function(){
 		TPage.codeInject(function(){
-		   var AFPP = {
-			   modifier:1e-7,
+			var AFPP = {
+				modifier:1e-7,
+				currChannelData:null,
 
-			   currChannelData:null,
+				init:function(frame){
+					AFPP.channelData(frame.AudioBuffer.prototype);
 
-			   init:function(frame){
-				   AFPP.channelData(frame.AudioBuffer.prototype);
-			   },
+					AFPP.createAnalyser(frame.AudioContext.prototype.__proto__);
+					AFPP.createAnalyser(frame.OfflineAudioContext.prototype.__proto__);
 
-			   channelData:function(obj){
-				   var func = obj.getChannelData;
+					try{
+						AFPP.createAnalyser(frame.webkitAudioContext.prototype.__proto__);
+						AFPP.createAnalyser(frame.webkitOfflineAudioContext.prototype.__proto__);
+					} catch(e){}
+				},
 
-				   Object.defineProperty(obj, "getChannelData", {
-					   "value":function(){
-						   var result = func.apply(this, arguments);
-						   if (AFPP.currChannelData !== result) {
-							   AFPP.currChannelData = result;
+				channelData:function(obj){
+					var func = obj.getChannelData;
 
-							   for (var i = 0; i < result.length; i += 100) {
-								   var index = Math.floor(Math.random() * i);
-								   result[index] = result[index] + Math.random() * AFPP.modifier;
-							   }
-						   }
+					Object.defineProperty(obj, "getChannelData", {
+						"value":function(){
+							var result = func.apply(this, arguments);
+							if (AFPP.currChannelData !== result) {
+								AFPP.currChannelData = result;
 
-						   console.log("Protected Audio Fingerprinting");
+								for (var i = 0;i < result.length;i += 100) {
+									var index = Math.floor(Math.random() * i);
+									result[index] = result[index] + Math.random() * AFPP.modifier;
+								}
+							}
+							return result;
+						}
+					});
+				},
 
-						   return result;
-					   }
-				   });
-			   }
-		   };
-		   AFPP.init(window);
+				createAnalyser:function(obj){
+					var func = obj.createAnalyser;
+
+					Object.defineProperty(obj, "createAnalyser", {
+						"value":function(){
+							var result = func.apply(this, arguments);
+
+							/*for (var i = 0;i < result.length;i = 100) {
+								var index = Math.floor(Math.random() * i);
+								result[index] = result[index] + Math.random() * AFPP.modifier;
+							}*/
+							console.log(result);
+							console.log("Protected Audio Fingerprinting");
+
+							return result;
+						}
+					});
+				}
+			};
+			AFPP.init(window);
 		});
 
 		if (TPage.debug <= 2) console.info("%c[TracePage]->[AF] Using smart Audio Fingerprinting Protection",TPage.css);
