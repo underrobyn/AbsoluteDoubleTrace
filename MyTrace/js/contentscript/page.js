@@ -16,12 +16,14 @@ var TPage = {
 		BlockBattery:{enabled:true},
 		BlockNetInfo:{enabled:true},
 		RandUserAgent:{enabled:true},
-		BlockScreenRes:{enabled:true,randomOpts:{enabled:true,values:[-10,10]},commonResolutions:{enabled:false,resolutions:[]},modifyDepths:{enabled:false}},
-		BlockReferHeader:{enabled:false,mainFunction:"remove",jsVariable:{enabled:true,method:"remove"}},
+		BlockScreenRes:{enabled:true,randomOpts:{enabled:true,values:[-10,10]},commonResolutions:{enabled:false,resolutions:[]},modifyDepths:{enabled:false},modifyPixelRatio:{enabled:false}},
+		BlockReferHeader:{enabled:false,jsVariable:{enabled:true,method:"remove"}},
 		BlockAudioFinger:{enabled:true,audioBuffer:{enabled:false},audioData:{enabled:false},audioOfflineMain:{enabled:true},audioMain:{enabled:true}},
 		BlockCanvasFinger:{enabled:true,customRGBA:{enabled:false,rgba:[0,0,0,0]}},
 		BlockWebRTC:{enabled:true,wrtcPeerConnection:{enabled:false},wrtcDataChannel:{enabled:false},wrtcRtpReceiver:{enabled:false}},
 		ClientRects:{enabled:true},
+		WebGL:{enabled:true},
+		NativeFunctions:{enabled:false, windowOpen:{enabled:true}},
 		Hardware:{enabled:false,hardware:{enabled:true,hardwareConcurrency:{enabled:true,value:4},deviceMemory:{enabled:true,value:4}}}
 	},
 	protections:{},
@@ -66,6 +68,8 @@ var TPage = {
 				"Pref_CanvasFingerprint",
 				"Pref_ReferHeader",
 				"Pref_ClientRects",
+				"Pref_WebGLFingerprint",
+				"Pref_NativeFunctions",
 				"Pref_HardwareSpoof"
 			],function(prefs){
 				TPage.Prefs = {
@@ -80,7 +84,9 @@ var TPage = {
 					BlockCanvasFinger:prefs.Pref_CanvasFingerprint,
 					BlockReferHeader:prefs.Pref_ReferHeader,
 					ClientRects:prefs.Pref_ClientRects,
-					Hardware:prefs.Pref_HardwareSpoof
+					Hardware:prefs.Pref_HardwareSpoof,
+					NativeFunctions:prefs.Pref_NativeFunctions,
+					WebGL:prefs.Pref_WebGLFingerprint
 				};
 
 				//console.timeStamp("tracePageGo");
@@ -96,8 +102,6 @@ var TPage = {
 			return;
 		}
 
-		// TPage.protectJsVars();
-		// TPage.protectWebGL();
 		// TPage.protectCommonTracking();
 
 		if (TPage.Prefs.ClientRects.enabled === true && TPage.canExec("Pref_ClientRects")){
@@ -109,8 +113,8 @@ var TPage = {
 		}
 
 		if (TPage.Prefs.BlockAudioFinger.enabled === true && TPage.canExec("Pref_AudioFingerprint")){
-			TPage.protectAudioFinger();
-			//TPage.protectAudioFingerNew();
+			//TPage.protectAudioFinger();
+			TPage.protectAudioFingerNew();
 		}
 
 		if (TPage.Prefs.BlockWebRTC.enabled === true && TPage.canExec("Pref_WebRTC")){
@@ -143,6 +147,14 @@ var TPage = {
 
 		if (TPage.Prefs.Hardware.enabled === true && TPage.canExec("Pref_HardwareSpoof")){
 			TPage.protectDeviceHardware();
+		}
+
+		if (TPage.Prefs.WebGL.enabled === true && TPage.canExec("Pref_WebGLFingerprint")){
+			TPage.protectWebGL();
+		}
+
+		if (TPage.Prefs.NativeFunctions.enabled === true && TPage.canExec("Pref_NativeFunctions")){
+			TPage.protectJsVars();
 		}
 
 		if (TPage.Prefs.RandUserAgent.enabled === true && TPage.canExec("Pref_UserAgent")){
@@ -264,31 +276,53 @@ var TPage = {
 	protectAudioFingerNew:function(){
 		TPage.codeInject(function(){
 			var AFPP = {
-				modifier:1e-7,
+				modifier:1e-5,
 				currChannelData:null,
 
 				init:function(frame){
-					AFPP.channelData(frame.AudioBuffer.prototype);
+					if (frame === null) return;
+					if (frame.traceDefinedAudio) return;
 
-					AFPP.createAnalyser(frame.AudioContext.prototype.__proto__);
-					AFPP.createAnalyser(frame.OfflineAudioContext.prototype.__proto__);
+					AFPP.channelData(frame.AudioBuffer.prototype,"getChannelData",10);
+					AFPP.frequencyAnalyser(frame.AudioBuffer.prototype,"copyFromChannel",10);
+					//AFPP.frequencyAnalyser(frame.AudioBuffer.prototype,"getByteFrequencyData",10);
+					//AFPP.channelData(frame.AnalyserNode.prototype,"getFloatFrequencyData",100);
+					//AFPP.channelData(frame.AnalyserNode.prototype,"getFloatTimeDomainData",100);
+					//AFPP.frequencyAnalyser(frame.AnalyserNode.prototype,"getFloatFrequencyData",100);
+					//AFPP.frequencyAnalyser(frame.AnalyserNode.prototype,"getFloatTimeDomainData",100);
+
+					AFPP.frequencyData(frame.AudioContext.prototype.__proto__,"createAnalyser","getFloatFrequencyData",100);
+					AFPP.frequencyData(frame.OfflineAudioContext.prototype.__proto__,"createAnalyser","getFloatFrequencyData",100);
+					AFPP.frequencyData(frame.AudioContext.prototype.__proto__,"createAnalyser","getFloatTimeDomainData",100);
+					AFPP.frequencyData(frame.OfflineAudioContext.prototype.__proto__,"createAnalyser","getFloatTimeDomainData",100);
 
 					try{
-						AFPP.createAnalyser(frame.webkitAudioContext.prototype.__proto__);
-						AFPP.createAnalyser(frame.webkitOfflineAudioContext.prototype.__proto__);
+						if (!frame.webkitAudioContext){
+							AFPP.frequencyData(frame.webkitAudioContext.prototype.__proto__,"createAnalyser","getFloatFrequencyData",100);
+							AFPP.frequencyData(frame.webkitAudioContext.prototype.__proto__,"createAnalyser","getFloatTimeDomainData",100);
+						}
+						if (!frame.webkitOfflineAudioContext){
+							AFPP.frequencyData(frame.webkitOfflineAudioContext.prototype.__proto__,"createAnalyser","getFloatFrequencyData",100);
+							AFPP.frequencyData(frame.webkitOfflineAudioContext.prototype.__proto__,"createAnalyser","getFloatTimeDomainData",100);
+						}
 					} catch(e){}
+
+					frame.traceDefinedAudio = true;
 				},
 
-				channelData:function(obj){
-					var func = obj.getChannelData;
+				// Modify result
+				channelData:function(obj,name,consistency){
+					var func = obj[name];
 
-					Object.defineProperty(obj, "getChannelData", {
+					Object.defineProperty(obj, name, {
 						"value":function(){
 							var result = func.apply(this, arguments);
+
 							if (AFPP.currChannelData !== result) {
 								AFPP.currChannelData = result;
 
-								for (var i = 0;i < result.length;i += 100) {
+								// result.length usually = 44100
+								for (var i = 0;i < result.length;i += consistency) {
 									var index = Math.floor(Math.random() * i);
 									result[index] = result[index] + Math.random() * AFPP.modifier;
 								}
@@ -298,26 +332,75 @@ var TPage = {
 					});
 				},
 
-				createAnalyser:function(obj){
-					var func = obj.createAnalyser;
+				// Modify an AudioCtx function's argument[0]
+				frequencyData:function(obj,name,frequencyFunction,consistency){
+					var func = obj[name];
 
-					Object.defineProperty(obj, "createAnalyser", {
+					Object.defineProperty(obj, name, {
+						"value":function(){
+							var result = func.apply(this, arguments);
+							//if (result === undefined) return undefined;
+
+							var frequencyData = result.__proto__[frequencyFunction];
+							Object.defineProperty(result.__proto__, frequencyFunction, {
+								"value":function(){
+									var frequencyResult = frequencyData.apply(this, arguments);
+
+									for (var i = 0;i < arguments[0].length;i += consistency) {
+										var index = Math.floor(Math.random() * i);
+										arguments[0][index] = arguments[0][index] + Math.random() * AFPP.modifier;
+									}
+									return frequencyResult;
+								}
+							});
+							return result;
+						}
+					});
+				},
+
+				// Modify argument[0]
+				frequencyAnalyser:function(obj,name,consistency){
+					var func = obj[name];
+
+					Object.defineProperty(obj, name, {
 						"value":function(){
 							var result = func.apply(this, arguments);
 
-							/*for (var i = 0;i < result.length;i = 100) {
+							// result.length usually = 44100
+							for (var i = 0;i < arguments[0].length;i++) {
 								var index = Math.floor(Math.random() * i);
-								result[index] = result[index] + Math.random() * AFPP.modifier;
-							}*/
-							console.log(result);
-							console.log("Protected Audio Fingerprinting");
+								arguments[0][index] = arguments[0][index] + Math.random() * AFPP.modifier;
+							}
 
-							return result;
+							return func.apply(this, arguments);
+							//return result;
 						}
 					});
 				}
 			};
+
 			AFPP.init(window);
+
+			var wind = HTMLIFrameElement.prototype.__lookupGetter__('contentWindow'),
+				cont = HTMLIFrameElement.prototype.__lookupGetter__('contentDocument');
+			Object.defineProperties(HTMLIFrameElement.prototype,{
+				contentWindow:{
+					get:function(){
+						var frame = wind.apply(this);
+						if (this.src && this.src.indexOf('//') !== -1 && location.host !== this.src.split('/')[2]) return frame;
+						AFPP.init(frame);
+						return frame;
+					}
+				},
+				contentDocument:{
+					get:function(){
+						if (this.src && this.src.indexOf('//') !== -1 && location.host !== this.src.split('/')[2]) return cont.apply(this);
+						var frame = wind.apply(this);
+						AFPP.init(frame);
+						return cont.apply(this);
+					}
+				}
+			});
 		});
 
 		if (TPage.debug <= 2) console.info("%c[TracePage]->[AF] Using smart Audio Fingerprinting Protection",TPage.css);
@@ -367,6 +450,11 @@ var TPage = {
 					return true;
 				}
 			});
+			Object.defineProperty(navigator.sendBeacon,"toString",{
+				value:function(){
+					return "function sendBeacon() { [native code] }";
+				}
+			});
 		});
 
 		if (TPage.debug <= 2) console.info("%c[TracePage]->[SB] Disabled Ping Tracking.",TPage.css);
@@ -388,6 +476,7 @@ var TPage = {
 				if (frame === null) return;
 				if (frame.traceDefinedRects === true) return;
 
+				// Add support for getBoundingClientRects()
 				var clientRects = frame.HTMLElement.prototype.getClientRects;
 
 				Object.defineProperty(frame.HTMLElement.prototype,"getClientRects",{
@@ -416,6 +505,11 @@ var TPage = {
 						}
 
 						return list;
+					}
+				});
+				Object.defineProperty(frame.HTMLElement.prototype.getClientRects, "toString",{
+					value:function(){
+						return "getClientRects() { [native code] }";
 					}
 				});
 				frame.traceDefinedRects = true;
@@ -469,6 +563,11 @@ var TPage = {
 					enumerable:true,
 					configurable:false,
 					value:new PluginArray()
+				});
+				Object.defineProperty(frame.navigator.plugins,"toString",{
+					value:function(){
+						return "[object PluginArray]";
+					}
 				});
 
 				frame.traceDefinedPlugins = true;
@@ -602,15 +701,17 @@ var TPage = {
 			}
 
 			if (opts.wrtcPeerConnection.enabled === true){
-				Object.defineProperty(window, "RTCPeerConnection",{
-					enumerable:true,
-					configurable:false,
-					value:function(){console.log("%c [TracePage]->Protected[RTCPeerConnection] ","font-size:1em;line-height:2em;color:#1a1a1a;background-color:#ffffff;border:.2em solid #0f0;");}
-				});
-				Object.defineProperty(window, "webkitRTCPeerConnection",{
-					enumerable:true,
-					configurable:false,
-					value:function(){console.log("%c [TracePage]->Protected[webkitRTCPeerConnection] ","font-size:1em;line-height:2em;color:#1a1a1a;background-color:#ffffff;border:.2em solid #0f0;");}
+				Object.defineProperties(window, {
+					"RTCPeerConnection":{
+						enumerable:true,
+						configurable:false,
+						value:function(){console.log("%c [TracePage]->Protected[RTCPeerConnection] ","font-size:1em;line-height:2em;color:#1a1a1a;background-color:#ffffff;border:.2em solid #0f0;");}
+					},
+					"webkitRTCPeerConnection":{
+						enumerable:true,
+						configurable:false,
+						value:function(){console.log("%c [TracePage]->Protected[webkitRTCPeerConnection] ","font-size:1em;line-height:2em;color:#1a1a1a;background-color:#ffffff;border:.2em solid #0f0;");}
+					}
 				});
 			}
 			if (opts.wrtcDataChannel.enabled === true){
@@ -642,12 +743,15 @@ var TPage = {
 				resolutions:TPage.Prefs.BlockScreenRes.commonResolutions.resolutions
 			},
 			modifyDepths:{
-				enabled:false
+				enabled:true
+			},
+			modifyPixelRatio:{
+				enabled:true
 			}
 		};
 
 		// If nothing is enabled just don't run the protection
-		if (opts["randomOpts"]["enabled"] !== true && opts["commonResolutions"]["enabled"] !== true){
+		if (opts["randomOpts"]["enabled"] !== true && opts["commonResolutions"]["enabled"] !== true && opts["modifyPixelRatio"]["enabled"] !== true){
 			return;
 		}
 		if (opts["commonResolutions"]["enabled"] === true && opts["commonResolutions"]["resolutions"].length === 0){
@@ -657,7 +761,7 @@ var TPage = {
 		TPage.codeInject(function(opts){
 			var opts = JSON.parse(opts);
 
-			function disableFunction(frame){
+			function disableFunction(frame,opts,data){
 				if (frame === null) return;
 
 				function defProp(name,val,offset){
@@ -666,6 +770,7 @@ var TPage = {
 					Object.defineProperty(frame.screen,name,{
 						enumerable:true,
 						configurable:false,
+						writable:false,
 						value:val
 					});
 				}
@@ -685,18 +790,20 @@ var TPage = {
 				}
 
 				if (opts["commonResolutions"]["enabled"] === true){
-					var chosen = opts["commonResolutions"]["resolutions"][Math.floor(Math.random()*opts["commonResolutions"]["resolutions"].length)];
-					defProp("availHeight",chosen[1],false);
-					defProp("availWidth",chosen[0],false);
-					defProp("height",chosen[1],false);
-					defProp("width",chosen[0],false);
+					defProp("availHeight",data["scRes"][1],false);
+					defProp("availWidth",data["scRes"][0],false);
+					defProp("height",data["scRes"][1],false);
+					defProp("width",data["scRes"][0],false);
 				}
 
 				// Change pixel depths
-				var depthOffsets = [-6,6,12,24];
 				if (opts["modifyDepths"]["enabled"] === true) {
-					defProp("colorDepth", depthOffsets[Math.floor(Math.random() * depthOffsets.length)], true);
-					defProp("pixelDepth", depthOffsets[Math.floor(Math.random() * depthOffsets.length)], true);
+					defProp("colorDepth", data["colorDepth"], true);
+					defProp("pixelDepth", data["pixelDepth"], true);
+				}
+
+				if (opts["modifyPixelRatio"]["enabled"] === true){
+					frame.devicePixelRatio = data["pixelRatio"];
 				}
 
 				if (screen.mozOrientation) defProp("mozOrientation",undefined);
@@ -704,7 +811,19 @@ var TPage = {
 				frame.traceDefinedScreen = true;
 			}
 
-			disableFunction(window,opts);
+			var rand = function(max){
+				return Math.floor(Math.random()*max);
+			};
+
+			var depthOffsets = [-6,6,12,24];
+			var data = {
+				"scRes":opts["commonResolutions"]["resolutions"][rand(opts["commonResolutions"]["resolutions"].length)],
+				"colorDepth":depthOffsets[rand(depthOffsets.length)],
+				"pixelDepth":depthOffsets[rand(depthOffsets.length)],
+				"pixelRatio":rand(4)+1
+			};
+
+			disableFunction(window,opts,data);
 			var wind = HTMLIFrameElement.prototype.__lookupGetter__('contentWindow'),
 				cont = HTMLIFrameElement.prototype.__lookupGetter__('contentDocument');
 
@@ -714,7 +833,7 @@ var TPage = {
 						var frame = wind.apply(this);
 						if (this.src && this.src.indexOf('//') !== -1 && location.host !== this.src.split('/')[2]) return frame;
 						try {frame.HTMLCanvasElement;}catch(e){}
-						disableFunction(frame,opts);
+						disableFunction(frame,opts,data);
 						return frame;
 					}
 				},
@@ -723,7 +842,7 @@ var TPage = {
 						if (this.src && this.src.indexOf('//') !== -1 && location.host !== this.src.split('/')[2]) return cont.apply(this);
 						var frame = wind.apply(this);
 						try {frame.HTMLCanvasElement} catch(e){}
-						disableFunction(frame,opts);
+						disableFunction(frame,opts,data);
 						return cont.apply(this);
 					}
 				}
@@ -756,15 +875,17 @@ var TPage = {
 					value:appVer || ""
 				});
 			}
-			Object.defineProperty(navigator, "oscpu",{
-				enumerable:true,
-				configurable:true,
-				value:opts.os || ""
-			});
-			Object.defineProperty(navigator, "platform",{
-				enumerable:true,
-				configurable:true,
-				value:opts.plat || ""
+			Object.defineProperties(navigator, {
+				"oscpu":{
+					enumerable:true,
+					configurable:true,
+					value:opts.os || ""
+				},
+				"platform":{
+					enumerable:true,
+					configurable:true,
+					value:opts.plat || ""
+				}
 			});
 		},"'" + JSON.stringify(opts) + "'");
 
@@ -775,20 +896,22 @@ var TPage = {
 
 				if (frame.traceDefinedBrowserIdentity === true) return;
 
-				Object.defineProperty(frame.navigator,"buildID",{
-					enumerable:true,
-					configurable:false,
-					value:undefined
-				});
-				Object.defineProperty(frame.navigator,"vendor",{
-					enumerable:true,
-					configurable:false,
-					value:""
-				});
-				Object.defineProperty(frame.navigator,"product",{
-					enumerable:true,
-					configurable:false,
-					value:"Gecko"
+				Object.defineProperties(frame.navigator,{
+					"buildID":{
+						enumerable:true,
+						configurable:false,
+						value:undefined
+					},
+					"vendor": {
+						enumerable: true,
+						configurable: false,
+						value: ""
+					},
+					"product":{
+						enumerable:true,
+						configurable:false,
+						value:"Gecko"
+					}
 				});
 
 				frame.traceDefinedBrowserIdentity = true;
@@ -883,47 +1006,147 @@ var TPage = {
 		});
 	},
 	protectWebGL:function(){
-		// More work needs to be done on this - revisit for 2.1
+		var gpuDirect2 = ' Direct3D9Ex vs_0_0 ps_2_0';
+		var gpuDirect3 = ' Direct3D9Ex vs_3_0 ps_3_0';
+		var gpuDirect5 = ' Direct3D11 vs_5_0 ps_5_0';
+		var gpuModels = [
+			'AMD Radeon HD 6350' + gpuDirect3,
+			'AMD Radeon HD 6450' + gpuDirect3,
+			'AMD Radeon HD 7520G' + gpuDirect3,
+			'AMD Radeon HD 7640G' + gpuDirect3,
+			'AMD Radeon HD 8240' + gpuDirect3,
+			'AMD Radeon R9 200 Series' + gpuDirect5,
+			'AMD Radeon R9 300 Series' + gpuDirect5,
+			'ATI Radeon 3000 Graphics' + gpuDirect3,
+			'ATI Radeon HD 3200 Graphics' + gpuDirect3,
+			'ATI Radeon HD 4200' + gpuDirect3,
+			'ATI Radeon HD 5470' + gpuDirect3,
+			'ATI Radeon HD 5570' + gpuDirect3,
+			'ATI Radeon HD 5670' + gpuDirect3,
+			'Intel(R) G41 Express Chipset' + gpuDirect3,
+			'Intel(R) G41 Express Chipset',
+			'Intel(R) HD Graphics 3000' + gpuDirect3,
+			'Intel(R) HD Graphics 3000',
+			'Intel(R) HD Graphics 4000' + gpuDirect5,
+			'Intel(R) HD Graphics 4000' + gpuDirect3,
+			'Intel(R) HD Graphics 4000',
+			'Intel(R) HD Graphics 5000' + gpuDirect5,
+			'Intel(R) HD Graphics 5000' + gpuDirect3,
+			'Intel(R) HD Graphics 5000',
+			'Intel(R) HD Graphics 6000' + gpuDirect5,
+			'Intel(R) HD Graphics 6000' + gpuDirect3,
+			'Intel(R) HD Graphics 6000',
+			'Intel(R) HD Graphics' + gpuDirect3,
+			'Intel(R) HD Graphics',
+			'Intel(R) HD Graphics Family' + gpuDirect3,
+			'Intel(R) HD Graphics Family',
+			'NVIDIA GeForce 8400 GS' + gpuDirect3,
+			'NVIDIA GeForce 9200' + gpuDirect3,
+			'NVIDIA GeForce 9500 GT' + gpuDirect3,
+			'NVIDIA GeForce 9500 GT',
+			'NVIDIA GeForce 9800 GT' + gpuDirect3,
+			'NVIDIA GeForce G100',
+			'NVIDIA GeForce GTX 550 Ti' + gpuDirect3,
+			'NVIDIA GeForce GTX 560' + gpuDirect3,
+			'NVIDIA GeForce GTX 560 Ti' + gpuDirect3,
+			'NVIDIA GeForce GTX 650' + gpuDirect3,
+			'NVIDIA GeForce GTX 660' + gpuDirect3,
+			'NVIDIA GeForce GTX 670' + gpuDirect3,
+			'NVIDIA GeForce GTX 680' + gpuDirect3,
+			'NVIDIA GeForce GTX 760' + gpuDirect5,
+			'NVIDIA Quadro NVS 140M',
+			'NVIDIA Quadro NVS 150M',
+			'NVIDIA Quadro NVS 160M' + gpuDirect3,
+			'NVIDIA GeForce GTX 970M' + gpuDirect5,
+			'NVIDIA GeForce GTX 980M' + gpuDirect5,
+			'NVIDIA GeForce GTX 1050M' + gpuDirect5,
+			'NVIDIA GeForce GTX 1060M' + gpuDirect5
+		];
 
-		var gpu = "";
-		if (true){
-			//gpu += "ANGLE (" + gpuOptions + ")";
-		}
-		TPage.codeInject(function(){
-			// https://browserleaks.com/webgl
-			function disableFunction(frame){
+		var pickedGpu = gpuModels[Math.floor(Math.random() * gpuModels.length)];
+
+		TPage.codeInject(function(optGpu){
+			var rand = function(min,max){
+				return Math.floor(Math.random() * (max - min) + min);
+			};
+
+			// Parameters we will set to fake WebGL data
+			var base = {
+				3379:16384,
+				3410:Math.pow(2,rand(2,5)),	// 8 R
+				3411:Math.pow(2,rand(2,5)),	// 8 G
+				3412:Math.pow(2,rand(2,5)),	// 8 B
+				3413:Math.pow(2,rand(2,5)),	// 8 A
+				3414:24,						// Bit depth
+				3415:Math.pow(2,rand(2,5)),	// 8 Stencil bits
+				6408:rand(6400,6420),
+				7936:"WebKit",
+				7937:"WebKit WebGL",
+				34024:16384,
+				34076:16384,
+				35660:Math.pow(2,rand(2,5)),
+				36347:Math.pow(2,rand(11,14)-1),
+				36349:Math.pow(2,rand(9,12)),
+				37445:"Google Inc.",
+				37446:"ANGLE (" + optGpu + ")"
+			};
+
+			var objsGL1 = base;
+			objsGL1[7938] = "WebGL 1.0 (OpenGL ES 2.0 Chromium)";
+			objsGL1[35724] = "WebGL GLSL ES 1.0 (OpenGL ES GLSL ES 1.0 Chromium)";
+
+			var objsGL2 = base;
+			objsGL2[7938] = "WebGL 2.0 (OpenGL ES 3.0 Chromium)";
+			objsGL2[35724] = "WebGL GLSL ES 3.00 (OpenGL ES GLSL ES 3.0 Chromium)";
+
+			function disableFunction(frame,obj){
 				if (frame === null) return;
 				if (frame.traceDefinedWebGL === true) return;
 
+				//var bd = frame.WebGL2RenderingContext.prototype.bufferData;
+				frame.WebGL2RenderingContext.prototype.bufferData = function(){ /* Do not apply buffer data */ };
+
+				var glCreateProgram = frame.WebGL2RenderingContext.prototype.createProgram;
+				frame.WebGL2RenderingContext.prototype.createProgram = function(){
+					var rData = glCreateProgram.apply(this,arguments);
+					Object.defineProperty(rData,"vertexPosAttrib",{
+						configurable:false,
+						writable:false,
+						value:Math.floor(Math.random()*2)
+					});
+
+					return rData;
+				};
+
+				var glGetUniformLocation = frame.WebGL2RenderingContext.prototype.getUniformLocation;
+				frame.WebGL2RenderingContext.prototype.getUniformLocation = function(){return glGetUniformLocation.apply(this,arguments);};
+
 				var webgl1 = frame.WebGLRenderingContext.prototype.getParameter,
 					webgl2 = frame.WebGL2RenderingContext.prototype.getParameter;
+
+				// WebGL1
 				frame.WebGLRenderingContext.prototype.getParameter = function(param){
-					console.log("GL1",param);
+					if (obj[0][param]) return obj[0][param];
 					return webgl1.apply(this,arguments);
 				};
-				Object.defineProperty(
-					frame.WebGL2RenderingContext.prototype,
-					"getParameter",
-					{
+
+				// WebGL2
+				Object.defineProperties(frame.WebGL2RenderingContext.prototype,{
+					"getParameter":{
 						enumerable:true,
-						writeable:true,
-						configurable:true,
+						writeable:false,
+						configurable:false,
 						value:function(param){
-							var xy = [7936,7937,7938,35724,36347,39421];
-							if (xy.indexOf(param) === -1){
-								console.warn("GL2",param);
-							} else {
-								console.log("GL2",param);
-							}
+							if (obj[1][param]) return obj[1][param];
 							return webgl2.apply(this,arguments);
 						}
 					}
-				);
+				});
 
 				frame.traceDefinedWebGL = true;
 			}
 
-			disableFunction(window);
+			disableFunction(window,[objsGL1,objsGL2]);
 			var wind = HTMLIFrameElement.prototype.__lookupGetter__('contentWindow'),
 				cont = HTMLIFrameElement.prototype.__lookupGetter__('contentDocument');
 
@@ -933,7 +1156,7 @@ var TPage = {
 						var frame = wind.apply(this);
 						if (this.src && this.src.indexOf('//') !== -1 && location.host !== this.src.split('/')[2]) return frame;
 						try {frame.HTMLCanvasElement;}catch(e){}
-						//disableFunction(frame);
+						disableFunction(frame,[objsGL1,objsGL2]);
 						return frame;
 					}
 				},
@@ -942,12 +1165,14 @@ var TPage = {
 						if (this.src && this.src.indexOf('//') !== -1 && location.host !== this.src.split('/')[2]) return cont.apply(this);
 						var frame = wind.apply(this);
 						try {frame.HTMLCanvasElement} catch(e){}
-						//disableFunction(frame);
+						disableFunction(frame,[objsGL1,objsGL2]);
 						return cont.apply(this);
 					}
 				}
 			});
-		});
+		},"'" + pickedGpu + "'");
+
+		if (TPage.debug <= 2) console.info("%c[TracePage]->[GL] Modified WebGL Information.",TPage.css);
 	},
 	protectCanvasFinger:function(){
 		/*

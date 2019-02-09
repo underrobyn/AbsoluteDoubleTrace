@@ -93,9 +93,6 @@ form input {
 	/* And hide the input's outline, so the form looks like the outline */
 	border:none;
 }
-.apply_act{
-	float:right;
-}
 input[type="text"] {
 	display:inline-block;
 	min-width:268px;

@@ -439,69 +439,6 @@ button:hover,button:focus{
 	font-size:1.1em;
 	text-decoration:dotted;
 }
-.checkbox_cont {
-	display:block;
-	position:relative;
-	padding-left:35px;
-	margin-bottom:12px;
-	cursor:pointer;
-	line-height:1.3em;
-	font-size:1.35em;
-	-webkit-user-select:none;
-	-moz-user-select:none;
-	-ms-user-select:none;
-	user-select: none;
-}
-.scheckbox_cont{
-	padding-left:29px;
-	margin-bottom:12px;
-	cursor:pointer;
-	line-height:1.1em;
-	font-size:1.2em;
-}
-.checkbox_cont input[type="checkbox"] {
-	position:absolute;
-	opacity:0;
-	cursor:pointer;
-}
-.ccheck {
-	position:absolute;
-	top:7px;
-	left:0;
-	height:25px;
-	width:25px;
-	background-color:#303030;
-}
-.sccheck {
-	top:3px;
-	height:23px;
-	width:23px;
-}
-.checkbox_cont:hover input ~ .ccheck {
-	background-color:#1a1a1a;
-}
-.checkbox_cont input:checked ~ .ccheck {
-	background-color: #22ff47;
-}
-.ccheck:after {
-	content:"";
-	position:absolute;
-	display:none;
-}
-.checkbox_cont input:checked ~ .ccheck:after {
-	display: block;
-}
-.checkbox_cont .ccheck:after {
-	left:9px;
-	top:5px;
-	width:5px;
-	height:10px;
-	border:solid white;
-	border-width:0 3px 3px 0;
-	-webkit-transform:rotate(45deg);
-	-ms-transform:rotate(45deg);
-	transform:rotate(45deg);
-}
 
 #settings_straceorder, #settings_straceadvanced, #settings_sbrowserfeature, #settings_stracesetting{
 	display:none;

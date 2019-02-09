@@ -429,6 +429,22 @@ var TraceOpt = {
 					$("#trace_info").html(text);
 				});
 			});
+		},
+		NavigateFromHash:function(){
+			if (!window.location.hash) return;
+			if (!window.location.hash.includes("=")) return;
+
+
+			var spl = window.location.hash.split("=");
+			if (spl[0] !== "#view") return;
+
+			console.log(spl);
+			var allowed = ["home","statistics","settings","requests","whitelist","information"];
+			if (allowed.indexOf(spl[1]) === -1) return;
+
+			TraceOpt.LoadPage(spl[1]);
+
+			window.location.hash = "";
 		}
 	},
 
@@ -452,14 +468,20 @@ var TraceOpt = {
 			$("#nav").fadeIn(250);
 		});
 	},
-	LoadPage:function(){
+	LoadPage:function(override){
 		if ($(".menutoggle").is(":visible")){
 			$("#nav").fadeOut(250);
 		}
 
 		$(".view").addClass("hidden");
 
-		var load = $(this).data("load");
+		var load;
+		if (typeof override === "string"){
+			load = override;
+		} else {
+			load = $(this).data("load");
+		}
+
 		$("#" + load).removeClass("hidden");
 
 		switch(load){
@@ -1196,6 +1218,7 @@ var TraceOpt = {
 			"Pref_ReferHeader":"Referer Controller",
 			"Pref_ScreenRes":"Screen Resolution Tracking",
 			"Pref_UserAgent":"User-Agent Randomiser",
+			"Pref_WebGLFingerprint":"WebGL Fingerprinting Protection",
 			"Pref_WebRTC":"WebRTC Protection"
 		},
 		ReloadInterface:function(){
@@ -2202,6 +2225,8 @@ var TraceOpt = {
 			TraceOpt.AssignCloseOverlay(true);
 		},
 		ToggleModeUI:function(){
+			$(this).text("Changing...");
+
 			if (TraceOpt.Config.CurrentSel.randomOpts.enabled === true){
 				chrome.runtime.getBackgroundPage(function(bg){
 					bg.Trace.p.SetMultiple({
@@ -2217,7 +2242,8 @@ var TraceOpt = {
 					});
 				});
 			}
-			TraceOpt.ScreenRes.OpenDialog();
+
+			setTimeout(TraceOpt.ScreenRes.OpenDialog,500);
 		},
 		UpdateOffsets:function(){
 			$("#sr_offsetminval").val(TraceOpt.Config.CurrentSel.randomOpts.values[0]);
@@ -2301,8 +2327,11 @@ var TraceOpt = {
 			var max = parseInt($("#sr_offsetmaxval").val()),
 				min = parseInt($("#sr_offsetminval").val());
 			TraceOpt.Config.CurrentSel.randomOpts.values = [min,max];
-			chrome.extension.getBackgroundPage().Trace.p.Set("Pref_ScreenRes.randomOpts.values",TraceOpt.Config.CurrentSel.randomOpts.values);
-			TraceOpt.ScreenRes.UpdateOffsets();
+
+			chrome.runtime.getBackgroundPages(function(bg){
+				bg.Trace.p.Set("Pref_ScreenRes.randomOpts.values",TraceOpt.Config.CurrentSel.randomOpts.values);
+				TraceOpt.ScreenRes.UpdateOffsets();
+			});
 
 			$("#sr_updateoffsets").text("Saved!");
 			setTimeout(function(){
@@ -2873,7 +2902,7 @@ var TraceOpt = {
 				bg.Trace.c.EditItem(removeItem,addItem,scopeData,function(){
 					TraceOpt.Scope.ReloadList();
 				});
-			})
+			});
 		},
 		RemoveDomain:function(){
 			if(TraceOpt.Scope.CurrentSelect === null){
@@ -3106,7 +3135,79 @@ var TraceOpt = {
 				reader.readAsText(this.files[0]);
 			},
 			UploadUI:function(){
+				// Check backup file..
+				var keys = Object.keys(TraceOpt.Scope.Export.Data);
+				var redFlags = 0;
+				if (TraceOpt.Scope.Export.Data["backupTime"] === undefined) redFlags++;
+				if (TraceOpt.Scope.Export.Data["traceVersion"] === undefined) redFlags++;
+				if (TraceOpt.Scope.Export.Data["traceBrowser"] === undefined) redFlags++;
+				if (TraceOpt.Scope.Export.Data["entries"] === undefined) redFlags++;
 
+				if (redFlags >= 2){
+					$("#restore_info").empty().append(
+						$("<h2/>").text("This file isn't a valid Trace Whitelist Export.")
+					);
+					return;
+				}
+
+				var versionInfo = $("<span/>").text("This export is the same version as your current version of Trace.");
+				if (TraceOpt.Scope.Export.Data.traceVersion !== chrome.runtime.getManifest().version){
+					versionInfo = $(
+						$("<p/>").append(
+							$("<strong/>").text("Trace Export Version: "),
+							$("<span/>").text(TraceOpt.Scope.Export.Data.traceVersion || "Unknown.")
+						),
+						$("<p/>").append(
+							$("<strong/>").text("Trace Current Version: "),
+							$("<span/>").text(chrome.runtime.getManifest().version || "Unknown.")
+						)
+					);
+				}
+
+				$("#backuprestore_section").hide();
+				$("#backuprestore_title").text("Import Whitelist Entries");
+
+				$("#restore_info").empty().append(
+					$("<p/>").append(
+						$("<span/>").text("Please note: If an item in the import has the same key as one in the list then the list currently will be overridden."),
+						$("<br/>"),
+						$("<strong/>").text("Date: "),
+						$("<span/>").text(TraceOpt.Scope.Export.Data.exportTime || "Unknown.")
+					),
+					versionInfo,
+					$("<br/>"),
+					$("<button/>",{"title":"Import whitelist entries","class":"small"}).text("Just import entries").on("click enter",TraceOpt.Scope.Export.ImportList),
+					$("<br/>"),$("<br/>"),
+					$("<button/>",{"title":"Clear whitelist and add entries","class":"small"}).text("Clear whitelist & Import Entries").on("click enter",TraceOpt.Scope.Export.ClearImportList)
+				);
+			},
+			ImportedListUI:function(){
+				$("#restore_info").empty().append(
+					$("<h2/>").text("Import Complete. Trace will now reload.")
+				);
+				setTimeout(function(){
+					window.location.reload(true);
+				},3000);
+			},
+			ImportList:function(){
+				var data = {};
+				data = TraceOpt.Scope.Export.Data.entries;
+
+				//window.location.href = "#whitelistImported";
+				chrome.runtime.getBackgroundPage(function(bg){
+					bg.Trace.c.WhitelistImport(data,function(){
+						bg.Trace.c.SaveWhitelist(function(){
+							TraceOpt.Scope.Export.ImportedListUI();
+							bg.window.location.reload();
+						});
+					});
+				});
+			},
+			ClearImportList:function(){
+				chrome.runtime.getBackgroundPage(function(bg){
+					bg.Trace.c.EmptyList();
+					TraceOpt.Scope.Export.ImportList();
+				});
 			}
 		}
 	},
@@ -3114,7 +3215,7 @@ var TraceOpt = {
 		tldPresets:{
 			all:["accountant", "date", "diet", "loan", "mom", "online", "om", "racing", "ren", "stream", "study", "top", "xin", "yokohama"],
 			extended:["asia", "cc", "cf", "christmas", "cricket", "party", "pro", "review", "systems", "trade", "vip", "zip"],
-			most:["ads", "club", "link", "kim", "top", "science", "space", "webcam", "men", "win", "work"],
+			most:["ads", "club", "link", "market", "kim", "top", "science", "space", "webcam", "men", "win", "work"],
 			few:["bid","click","country","download","faith","gdn","gq"]
 		},
 		AssignEvents:function(){
@@ -3158,7 +3259,7 @@ var TraceOpt = {
 				"gdn":false, "gq":false,
 				"kim":false,
 				"link":false, "loan":false,
-				"men":false, "mom":false,
+				"market":false, "men":false, "mom":false,
 				"om":false, "online":false,
 				"party":false, "pro":false,
 				"racing":false, "ren":false, "review":false,
@@ -3205,9 +3306,12 @@ var TraceOpt = {
 			});
 		},
 		SaveSelection:function(){
-			var newVal = ($(this).data("current") == true ? false : true);
-			chrome.extension.getBackgroundPage().Trace.p.Set("Pref_WebController.tld.settings."+$(this).data("tldid"),newVal);
-			TraceOpt.BadTopLevelBlock.LoadTLDs();
+			var newVal = $(this).data("current") !== true;
+			var tldId = $(this).data("tldid");
+			chrome.runtime.getBackgroundPage(function(bg){
+				bg.Trace.p.Set("Pref_WebController.tld.settings."+tldId,newVal);
+				TraceOpt.BadTopLevelBlock.LoadTLDs();
+			});
 		}
 	},
 	UserInterfaceCustomiser:{
@@ -3488,8 +3592,13 @@ var TraceOpt = {
 				parseInt($("#trcanv_custb").val()),
 				parseInt($("#trcanv_custa").val())
 			];
-			chrome.extension.getBackgroundPage().Trace.p.Set("Pref_CanvasFingerprint.customRGBA.enabled",$("#trcanv_custrgba").is(":checked"));
-			chrome.extension.getBackgroundPage().Trace.p.Set("Pref_CanvasFingerprint.customRGBA.rgba",rgba);
+			var custRgba = $("#trcanv_custrgba").is(":checked");
+			chrome.runtime.getBackgroundPage(function(bg){
+				bg.Trace.p.SetMultiple({
+					"Pref_CanvasFingerprint.customRGBA.rgba":rgba,
+					"Pref_CanvasFingerprint.customRGBA.enabled":custRgba
+				});
+			});
 			TraceOpt.CloseOverlay();
 		}
 	},
@@ -3633,9 +3742,12 @@ var TraceOpt = {
 				});
 			},
 			SaveSelection:function(){
-				var newVal = ($(this).data("current") == true ? false : true);
-				chrome.extension.getBackgroundPage().Trace.p.Set("Pref_CookieEater.list."+$(this).data("cookieid"),newVal);
-				TraceOpt.CookieEaterUI.List.LoadCookies();
+				var newVal = ($(this).data("current") !== true);
+				var cookieId = $(this).data("cookieid");
+				chrome.runtime.getBackgroundPage(function(bg){
+					bg.Trace.p.Set("Pref_CookieEater.list."+cookieId,newVal);
+					TraceOpt.CookieEaterUI.List.LoadCookies();
+				});
 			}
 		}
 	},
@@ -3780,20 +3892,6 @@ var TraceOpt = {
 	}
 };
 
-try{
-	$(document).ready(TraceOpt.WindowLoad);
-} catch(e){
-	showErr("Unable to load UI.");
-	console.error(e);
-}
-
-// Check if is new install
-if(window.location.hash && window.location.hash === "#v2installed") {
-	TraceOpt.NewInstall.ShowInterface();
-} else {
-	setTimeout(function(){$("#ux").removeClass("blurred");},10);
-}
-
 // Polyfill: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/includes#Polyfill
 if (!String.prototype.includes) {
 	String.prototype.includes = function(search, start) {
@@ -3807,4 +3905,21 @@ if (!String.prototype.includes) {
 			return this.indexOf(search, start) !== -1;
 		}
 	};
+}
+
+try{
+	$(document).ready(TraceOpt.WindowLoad);
+} catch(e){
+	showErr("Unable to load UI.");
+	console.error(e);
+}
+
+// Check if is new install
+if(window.location.hash && window.location.hash === "#v2installed") {
+	TraceOpt.NewInstall.ShowInterface();
+} else {
+	$("#ux").removeClass("blurred");
+	if (window.location.hash && window.location.hash.includes("#view")) {
+		TraceOpt.Interface.NavigateFromHash();
+	}
 }

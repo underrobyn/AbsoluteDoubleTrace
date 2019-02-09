@@ -100,7 +100,6 @@ var Trace = {
 			}
 		},
 		ContentTalk:function(request, sender, sendResponse){
-			if (Trace.DEBUG) console.log("[TracePage] " + sender.tab ? "from a content script:" + sender.tab.url : "from the extension");
 			if (request.msg === "uaReq"){
 				sendResponse({
 					userAgentString:Trace.n.useragent,
@@ -155,6 +154,9 @@ var Trace = {
 				});
 
 			} else if (request.msg === "protectionUpdate"){
+
+				if (Trace.DEBUG) console.log("[TracePage] " + sender.tab ? "from a content script:" + sender.tab.url : "from the extension");
+				//console.log(request);
 
 				sendResponse({
 					"pingAttr":Trace.p.Current.Pref_PingBlock.removePingAttr.enabled,
@@ -436,7 +438,7 @@ var Trace = {
 				Trace.h.IPSpoof.Start();
 
 			// Start keeping tabs on the tabs
-			/*if (Math.random() > .5)*/ Trace.t.Init();
+			Trace.t.Init();
 
 			// Alarm events to change UserAgent
 			Trace.f.StartAlarmEvent();
@@ -449,11 +451,6 @@ var Trace = {
 
 			// Toggle IPSpoof
 			Trace.i.ToggleIPSpoof(true);
-
-			// Cleanup (Don't care if it fails)
-			try {
-				Trace.v.s.remove(["db_type","domain_db","db_version","adv_prefs_ipspoof"]);
-			}catch(e){}
 
 			// Tell the user that we're done!
 			Trace.Notify("Finished setting up.","initd");
@@ -1123,10 +1120,34 @@ var Trace = {
 				"exportTime":(new Date).toString(),
 				"traceVersion":chrome.runtime.getManifest().version || null,
 				"traceBrowser":navigator.userAgent || "Unknown.",
-				"data":Trace.c.storedWhitelist
+				"entries":Trace.c.storedWhitelist
 			};
 
 			cb(exportObj);
+		},
+		WhitelistImport:function(entries,cb){
+			// Remove memory references
+			var curr = JSON.parse(JSON.stringify(Trace.c.storedWhitelist));
+			var fMem = JSON.parse(JSON.stringify(entries));
+
+			var keys = Object.keys(fMem);
+
+			for (var i = 0, l = keys.length;i<l;i++){
+				// Override values already in list with same key
+				if (curr[keys[i]] !== undefined){
+					console.log("[plstd]-> Overriding Entry:",keys[i]);
+					curr[keys[i]] = fMem[keys[i]];
+					continue;
+				}
+
+				// Write new keys to list
+				curr[keys[i]] = fMem[keys[i]];
+				console.log("[plstd]-> Imported Entry:",keys[i]);
+			}
+
+			Trace.c.storedWhitelist = curr;
+
+			if (cb) cb();
 		},
 		ReturnWhitelist:function(callback){
 			callback(Trace.c.storedWhitelist);
@@ -2260,8 +2281,8 @@ var Trace = {
 						}
 
 						Trace.t.List.Add(tabs[i].id,tabs[i].url);
-						if (Trace.DEBUG) console.log("[tabmd]-> Found new tab id", tabs[i].id);
 					}
+					if (Trace.DEBUG) console.log("[tabmd]-> Found new tabs! [" + tabs.length + " total]");
 				});
 			}
 		},
@@ -2269,7 +2290,7 @@ var Trace = {
 		LogHeaders:function(tabId,header){
 			// Check if the tab is in the list, if not add it
 			Trace.t.List.GetTabId(tabId,function(){
-				if (Trace.DEBUG) console.log("[tabmd]-> Logged stat for tab",tabId,header);
+				//if (Trace.DEBUG) console.log("[tabmd]-> Logged stat for tab",tabId,header);
 				Trace.t.TabList[tabId].data.headers[header] = Trace.t.TabList[tabId].data.headers[header] + 1;
 			});
 		},
@@ -2277,7 +2298,7 @@ var Trace = {
 		LogRequest:function(tabId,type){
 			// Check if the tab is in the list, if not add it
 			Trace.t.List.GetTabId(tabId,function(){
-				if (Trace.DEBUG) console.log("[tabmd]-> Logged stat for tab",tabId,Trace.s.TypeNames[type]);
+				//if (Trace.DEBUG) console.log("[tabmd]-> Logged stat for tab",tabId,Trace.s.TypeNames[type]);
 				Trace.t.TabList[tabId].data.webRequests[Trace.s.TypeNames[type]] = Trace.t.TabList[tabId].data.webRequests[Trace.s.TypeNames[type]] + 1;
 			});
 		},
@@ -2474,6 +2495,7 @@ var Trace = {
 						"kim":true,
 						"link":true,
 						"loan":false,
+						"market":true,
 						"men":false,
 						"mom":false,
 						"om":true,
@@ -2757,6 +2779,9 @@ var Trace = {
 				},
 				"modifyDepths":{
 					"enabled":false
+				},
+				"modifyPixelRatio":{
+					"enabled":false
 				}
 			},
 			"Pref_BatteryApi":{
@@ -2893,8 +2918,8 @@ var Trace = {
 					"Pref_ReferHeader",
 					"Pref_UserAgent",
 					"Pref_BatteryApi",
-					"Pref_IPSpoof"//,
-					//"Pref_WebGLFingerprint"
+					"Pref_IPSpoof",
+					"Pref_WebGLFingerprint"
 				],
 				"PerPage":[]
 			}

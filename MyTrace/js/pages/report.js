@@ -18,39 +18,6 @@ var TraceTool = {
 	prefs:{},
 	reloadInt:null,
 
-	ProtectionTemplate:{
-		SiteBlocked:false,
-		InitRequests:true,
-		Protections:{
-			Pref_AudioFingerprint:true,
-			Pref_BatteryApi:false,
-			Pref_CanvasFingerprint: true,
-			Pref_ClientRects:true,
-			Pref_CookieEater:false,
-			Pref_ETagTrack:false,
-			Pref_GoogleHeader:false,
-			Pref_IPSpoof:false,
-			Pref_NativeFunctions:false,
-			Pref_NetworkInformation:false,
-			Pref_HardwareSpoof:false,
-			Pref_PingBlock:false,
-			Pref_PluginHide:false,
-			Pref_ReferHeader:false,
-			Pref_ScreenRes:false,
-			Pref_UserAgent:false,
-			Pref_WebRTC:false,
-			Pref_WebGLFingerprint:false
-		}
-	},
-
-	Home:{
-		"rTypes":["code","media","webpage","other"],
-		"rNames":["Code Requests","Media Requests", "Webpage Requests", "Misc"],
-		"hTypes":["etag","google","proxyip","referer","cookies","setcookie","useragent"],
-		"hNames":["E-Tags blocked", "Google Headers blocked", "Requests with IP Spoofed", "Referer Headers blocked","Cookie Headers modified","Set-Cookies modified","User-Agent Headers spoofed"],
-		"hPrefs":["Pref_ETagTrack","Pref_GoogleHeader","Pref_IPSpoof","Pref_ReferHeader","Pref_CookieEater","Pref_CookieEater","Pref_UserAgent"]
-	},
-
 	init:function(){
 		TraceTool.reloadInt = setInterval(function(){TraceTool.loadThisTab("update");},1000);
 
@@ -68,6 +35,7 @@ var TraceTool = {
 			$("body").css("font-size", "0.8em");
 		}
 	},
+
 	Auth:{
 		Channel:null,
 		Init:function(){
@@ -101,7 +69,7 @@ var TraceTool = {
 				} else if (sel === "report"){
 					TraceTool.createReportPanel();
 				} else if (sel === "whitelist"){
-					TraceTool.createWhitelistPanel();
+					TraceTool.scope.createPanel();
 				} else if (sel === "settings"){
 					TraceTool.settingsWindow();
 				} else {
@@ -122,12 +90,10 @@ var TraceTool = {
 				if (currTab) {
 					var data = bg.Trace.t.TabList[currTab.id];
 
-					var call = TraceTool.updateHomePage;
-					if (type === "create") call = TraceTool.createHomeStructure;
+					var call = TraceTool.home.updateSection;
+					if (type === "create") call = TraceTool.home.createStructure;
 
 					call(data,currTab,bg.Trace.p.Current);
-
-					console.log("Loaded tab info!");
 				}
 			});
 		});
@@ -150,92 +116,120 @@ var TraceTool = {
 			}
 		});
 	},
-	settingsWindow:function(){
+
+	openTab:function(page){
 		if (/Chrome/.test(navigator.userAgent)){
-			chrome.tabs.create({url:"html/options.html"});
+			chrome.tabs.create({url:"html/"+page});
 		} else {
-			chrome.tabs.create({url:"options.html"});
+			chrome.tabs.create({url:page});
 		}
 		window.close();
 	},
-	createHomeStructure:function(data,tab,prefs){
-		$("#title").text("Trace");
-		if (TraceTool.currentStatistics === undefined){
-			$("#current_section").empty().append(
-				$("<h1/>").text("Trace")
-			);
-		}
-
-		// Create main element
-		var el = $("<div/>",{"class":"home_section"});
-		el.append($("<h1/>").text("Blocked in this tab:"));
-
-		if (TraceTool.DEBUG === true) el.append($("<h2/>").text("TabID: "+tab.id));
-
-		// Web requests section
-		var	rTotal = 0, rEl = $("<div/>",{"class":"home_sect_d","id":"home_data_requests"});
-
-		for (var i = 0;i<TraceTool.Home.rTypes.length;i++){
-			rEl.append(
-				$("<div/>",{"class":"home_sect_r","id":"home_upd_r"+TraceTool.Home.rTypes[i]}).text(TraceTool.Home.rNames[i] + ": " + data.data.webRequests[TraceTool.Home.rTypes[i]])
-			);
-			rTotal += data.data.webRequests[TraceTool.Home.rTypes[i]];
-		}
-		el.append($("<div/>",{"class":"home_sect_t","id":"home_requests_title","data-opens":"#home_data_requests"}).text("Web Requests (" + rTotal + " blocked)"),rEl);
-
-		// HTTP Header section
-		/*var hTotal = 0, hEl = $("<div/>",{"class":"home_sect_d","id":"home_data_headers"}), hTot = 0;
-		for (var i = 0;i<TraceTool.Home.hTypes.length;i++){
-			var cList = "home_sect_r";
-			if (prefs[TraceTool.Home.hPrefs[i]].enabled !== true){
-				cList += " home_sect_fade";
-			} else {
-				hTot++;
-			}
-
-			hEl.append(
-				$("<div/>",{"class":cList,"id":"home_upd_h"+TraceTool.Home.hTypes[i]}).text(TraceTool.Home.hNames[i] + ": " + data.data.headers[TraceTool.Home.hTypes[i]].toString())
-			);
-			hTotal += data.data.headers[TraceTool.Home.hTypes[i]];
-		}
-		el.append($("<div/>",{"class":"home_sect_t","id":"home_headers_title","data-opens":"#home_data_headers"}).text(
-			(hTot === 0 ? "No Header Protections Enabled" : "Headers (" + hTotal + " modified)")
-		),hEl);*/
-
-		// Update HTML
-		$("#current_section").empty().append(el);
-
-		$(".home_sect_t").on("click enter",function(){
-			$($(this).data("opens")).toggle();
-		});
-
-		// Requests shown by default
-		$("#home_data_requests").show();
+	settingsWindow:function(){
+		TraceTool.openTab("options.html");
 	},
-	updateHomePage:function(data,tab,prefs){
-		// Web requests section
-		var	rTotal = 0;
-		for (var i = 0;i<TraceTool.Home.rTypes.length;i++){
-			$("#home_upd_r"+TraceTool.Home.rTypes[i]).text(TraceTool.Home.rNames[i] + ": " + data.data.webRequests[TraceTool.Home.rTypes[i]]);
-			rTotal += data.data.webRequests[TraceTool.Home.rTypes[i]];
-		}
-		$("#home_requests_title").text("Web Requests (" + rTotal + " blocked)");
-		/*
-		// HTTP Header section
-		var hTotal = 0, hTot = 0;
-		for (var i = 0;i<TraceTool.Home.hTypes.length;i++){
-			var cList = "home_sect_r";
-			if (prefs[TraceTool.Home.hPrefs[i]].enabled !== true){
-				cList += " home_sect_fade";
-			} else {
-				hTot++;
-			}
-			$("#home_upd_h"+TraceTool.Home.hTypes[i]).text(TraceTool.Home.hNames[i] + ": " + data.data.headers[TraceTool.Home.hTypes[i]]).attr("class",cList);
-			hTotal += data.data.headers[TraceTool.Home.hTypes[i]];
-		}
+	gotoWhitelist:function(){
+		TraceTool.openTab("options.html#view=whitelist");
+	},
 
-		$("#home_headers_title").text((hTot === 0 ? "No Header Protections Enabled" : "Headers (" + hTotal + " modified)"));
-		*/
+	home:{
+		text:{
+			"rTypes":["code","media","webpage","other"],
+			"rNames":["Code Requests","Media Requests", "Webpage Requests", "Misc"],
+			"hTypes":["etag","google","proxyip","referer","cookies","setcookie","useragent"],
+			"hNames":["E-Tags blocked", "Google Headers blocked", "Requests with IP Spoofed", "Referer Headers blocked","Cookie Headers modified","Set-Cookies modified","User-Agent Headers spoofed"],
+			"hPrefs":["Pref_ETagTrack","Pref_GoogleHeader","Pref_IPSpoof","Pref_ReferHeader","Pref_CookieEater","Pref_CookieEater","Pref_UserAgent"]
+		},
+		createStructure:function(data,tab,prefs){
+			$("#title").text("Trace");
+			if (TraceTool.currentStatistics === undefined){
+				$("#current_section").empty().append(
+					$("<h1/>").text("Trace")
+				);
+			}
+
+			// Create main element
+			var el = $("<div/>",{"class":"home_section"});
+			el.append($("<h1/>").text("Blocked in this tab:"));
+
+			if (TraceTool.DEBUG === true) el.append($("<h2/>").text("TabID: "+tab.id));
+
+			// Web requests section
+			var	rTotal = 0, rEl = $("<div/>",{"class":"home_sect_d","id":"home_data_requests"});
+
+			for (var i = 0;i<TraceTool.home.text.rTypes.length;i++){
+				rEl.append(
+					$("<div/>",{"class":"home_sect_r","id":"home_upd_r"+TraceTool.home.text.rTypes[i]}).text(TraceTool.home.text.rNames[i] + ": " + data.data.webRequests[TraceTool.home.text.rTypes[i]])
+				);
+				rTotal += data.data.webRequests[TraceTool.home.text.rTypes[i]];
+			}
+			el.append($("<div/>",{"class":"home_sect_t","id":"home_requests_title","data-opens":"#home_data_requests"}).text("Web Requests (" + rTotal + " blocked)"),rEl);
+
+			// HTTP Header section
+			var hTotal = 0, hEl = $("<div/>",{"class":"home_sect_d","id":"home_data_headers"}), hTot = 0;
+			for (var i = 0;i<TraceTool.home.text.hTypes.length;i++){
+				var cList = "home_sect_r";
+				if (prefs[TraceTool.home.text.hPrefs[i]].enabled !== true){
+					cList += " home_sect_hide";
+				} else {
+					if (data.data.headers[TraceTool.home.text.hTypes[i]] === 0){
+						cList += " home_sect_fade";
+					}
+					hTot++;
+				}
+
+				hEl.append(
+					$("<div/>",{"class":cList,"id":"home_upd_h"+TraceTool.home.text.hTypes[i]}).text(TraceTool.home.text.hNames[i] + ": " + data.data.headers[TraceTool.home.text.hTypes[i]].toString())
+				);
+				hTotal += data.data.headers[TraceTool.home.text.hTypes[i]];
+			}
+
+			var msg = "Headers (" + hTotal + " modified)";
+			if (hTot === 0) msg = "No Header Protections Enabled";
+			if (hTotal === 0) msg = "No Header Protections Used In This Tab";
+
+			el.append($("<div/>",{"class":"home_sect_t","id":"home_headers_title","data-opens":"#home_data_headers"}).text(msg),hEl);
+
+			// Update HTML
+			$("#current_section").empty().append(el);
+
+			$(".home_sect_t").on("click enter",function(){
+				$($(this).data("opens")).toggle();
+			});
+
+			// Requests shown by default
+			$("#home_data_requests").show();
+		},
+		updateSection:function(data,tab,prefs){
+			// Web requests section
+			var	rTotal = 0;
+			for (var i = 0;i<TraceTool.home.text.rTypes.length;i++){
+				$("#home_upd_r"+TraceTool.home.text.rTypes[i]).text(TraceTool.home.text.rNames[i] + ": " + data.data.webRequests[TraceTool.home.text.rTypes[i]]);
+				rTotal += data.data.webRequests[TraceTool.home.text.rTypes[i]];
+			}
+			$("#home_requests_title").text("Web Requests (" + rTotal + " blocked)");
+
+			// HTTP Header section
+			var hTotal = 0, hTot = 0;
+			for (var i = 0;i<TraceTool.home.text.hTypes.length;i++){
+				var cList = "home_sect_r";
+				if (prefs[TraceTool.home.text.hPrefs[i]].enabled !== true){
+					cList += " home_sect_fade";
+				} else {
+					if (data.data.headers[TraceTool.home.text.hTypes[i]] === 0){
+						cList += " home_sect_fade";
+					}
+					hTot++;
+				}
+				$("#home_upd_h"+TraceTool.home.text.hTypes[i]).text(TraceTool.home.text.hNames[i] + ": " + data.data.headers[TraceTool.home.text.hTypes[i]]).attr("class",cList);
+				hTotal += data.data.headers[TraceTool.home.text.hTypes[i]];
+			}
+
+			var msg = "Headers (" + hTotal + " modified)";
+			if (hTot === 0) msg = "No Header Protections Enabled";
+			if (hTotal === 0) msg = "No Header Protections Used In This Tab";
+			$("#home_headers_title").text(msg);
+		},
 	},
 	createReportPanel:function(){
 		$("#title").text("Report Website");
@@ -322,119 +316,338 @@ var TraceTool = {
 			}
 		});
 	},
-	createWhitelistPanel:function(){
-		// Start writing the UI
-		$("#current_section").empty().append($("<div/>",{"id":"page_form"}));
-		$("#title").text("Whitelist");
+	
+	scope:{
+		ProtectionTemplate:{
+			SiteBlocked:false,
+			InitRequests:true,
+			Protections:{
+				Pref_AudioFingerprint:true,
+				Pref_BatteryApi:false,
+				Pref_CanvasFingerprint: true,
+				Pref_ClientRects:true,
+				Pref_CookieEater:false,
+				Pref_ETagTrack:false,
+				Pref_GoogleHeader:false,
+				Pref_IPSpoof:false,
+				Pref_NativeFunctions:false,
+				Pref_NetworkInformation:false,
+				Pref_HardwareSpoof:false,
+				Pref_PingBlock:false,
+				Pref_PluginHide:false,
+				Pref_ReferHeader:false,
+				Pref_ScreenRes:false,
+				Pref_UserAgent:false,
+				Pref_WebRTC:false,
+				Pref_WebGLFingerprint:false
+			}
+		},
+		SettingName:{
+			"Pref_AudioFingerprint":"Audio Fingerprinting Protection",
+			"Pref_BatteryApi":"Battery API Protection",
+			"Pref_CanvasFingerprint":"Canvas Fingerprinting Protection",
+			"Pref_ClientRects":"getClientRects Protection",
+			"Pref_CookieEater":"Cookie Eater",
+			"Pref_HardwareSpoof":"Hardware Fingerprinting Protection",
+			"Pref_ETagTrack":"E-Tag Tracking Protection",
+			"Pref_GoogleHeader":"Google Header Removal",
+			"Pref_IPSpoof":"Proxy IP Header Spoofing",
+			"Pref_NativeFunctions":"JS functions",
+			"Pref_NetworkInformation":"Network Information API",
+			"Pref_PingBlock":"Ping Protection",
+			"Pref_PluginHide":"JS Plugin Hide",
+			"Pref_ReferHeader":"Referer Controller",
+			"Pref_ScreenRes":"Screen Resolution Tracking",
+			"Pref_UserAgent":"User-Agent Randomiser",
+			"Pref_WebGLFingerprint":"WebGL Fingerprinting Protection",
+			"Pref_WebRTC":"WebRTC Protection"
+		},
+		createPanel:function(){
+			// Start writing the UI
+			$("#current_section").empty().append($("<div/>",{"id":"page_form"}));
+			$("#title").text("Whitelist");
 
-		if (TraceTool.whitelistData.currentOpenURL === false || TraceTool.whitelistData.currentOpenURL === null){
-			$("#page_form").empty().append(
-				$("<h1/>").text("Unsupported URL"),
-				$("<span/>").text("You can only whitelist pages that are http or https")
+			if (TraceTool.whitelistData.currentOpenURL === false || TraceTool.whitelistData.currentOpenURL === null){
+				$("#page_form").empty().append(
+					$("<h1/>").text("Unsupported URL"),
+					$("<span/>").text("You can only whitelist pages that are http or https")
+				);
+				return;
+			}
+
+			// Check if hostname is affected by the whitelist
+			chrome.runtime.getBackgroundPage(function(bg){
+				var decWl = bg.Trace.c.decodedWhitelist;
+				var stoWl = bg.Trace.c.storedWhitelist;
+				for (var i = 0, l = decWl.keys.length;i<l;i++){
+					if (decWl.keys[i].test(TraceTool.whitelistData.currentOpenURL) !== true) continue;
+
+					// Add UI for multiple whitelist entries that apply to a domain
+					if (decWl.values[i].SiteBlocked === false){
+						TraceTool.whitelistData.txtEntry = Object.keys(stoWl)[i];
+						TraceTool.whitelistData.entry = decWl.keys[i];
+						TraceTool.scope.createEditor(bg);
+					}
+				}
+			});
+
+			TraceTool.scope.createOpts();
+		},
+		createEditor:function(bg){
+			$("#current_section").empty().append(
+				$("<br/>"),$("<span/>",{"class":"msg","style":"font-weight:400;"}).text("Edit whitelist entry for this site:"),$("<br/>"),$("<br/>"),
+				$("<div/>",{"id":"user_in"}).append(
+					$("<div/>",{"class":"setting_conf_opt"}).append(
+						$("<label/>",{
+							"for":"s_prot_blocksite",
+							"class":"checkbox_cont xlarge"
+						}).text("Block access to this site").append(
+							$("<input/>",{"id":"s_prot_blocksite","type":"checkbox"}),
+							$("<span/>",{"class":"ccheck"})
+						)
+					),
+					$("<div/>",{"class":"setting_conf_opt"}).append(
+						$("<label/>",{
+							"for":"s_prot_initreqs",
+							"class":"checkbox_cont xlarge"
+						}).text("Allow this site to make requests to blocked sites").append(
+							$("<input/>",{"id":"s_prot_initreqs","type":"checkbox","checked":"checked"}),
+							$("<span/>",{"class":"ccheck"})
+						)
+					),
+					$("<div/>",{"id":"whitelist_prots_list"}).append($("<h1/>").text("Loading...")),
+					$("<button/>",{"id":"whitelist_save"}).text("Save Entry").on("click enter",TraceTool.scope.updateEntry),
+					$("<button/>",{"id":"whitelist_rmdomain"}).text("Remove Entry").on("click enter",TraceTool.scope.removeEntry),
+					$("<button/>",{"id":"whitelist_goto"}).text("Open Whitelist").on("click enter",TraceTool.gotoWhitelist)
+				)
 			);
-			return;
-		}
+			TraceTool.scope.createExecs(bg);
+			TraceTool.scope.updateExecs(bg);
+		},
+		createExecs:function(bg){
+			var dpAllPage = bg.Trace.p.Current.Main_ExecutionOrder.AllPage || [];
+			var dpPerPage = bg.Trace.p.Current.Main_ExecutionOrder.PerPage || [];
+			var w = $("#whitelist_prots_list");
 
-		// Check if hostname is affected by the whitelist
-		chrome.runtime.getBackgroundPage(function(bg){
-			var decWl = bg.Trace.c.decodedWhitelist;
-			var stoWl = bg.Trace.c.storedWhitelist;
-			for (var i = 0, l = decWl.keys.length;i<l;i++){
-				if (decWl.keys[i].test(TraceTool.whitelistData.currentOpenURL) !== true) continue;
+			w.empty();
 
-				// Add UI for multiple whitelist entries that apply to a domain
-				if (decWl.values[i].SiteBlocked === false){
-					TraceTool.whitelistData.txtEntry = Object.keys(stoWl)[i];
-					TraceTool.whitelistData.entry = decWl[i];
-					TraceTool.createWhitelistEdit();
+			if (dpAllPage.length !== 0){
+				w.append($("<h2/>").text("Applies to all pages"));
+				for (var i = 0;i<dpAllPage.length;i++){
+					var style = "", protmsg = "When checked, this setting is allowed to run", enabledStatus = "";
+					if (bg.Trace.p.Current[dpAllPage[i]].enabled !== true) {
+						style = "cursor:not-allowed";
+						enabledStatus = " (Disabled)";
+						protmsg = "This setting is disabled fully. Go to the Trace settings page to enable it.";
+					}
+
+					w.append(
+						$("<div/>",{"class":"setting_conf_opt"}).append(
+							$("<label/>",{
+								"class":"checkbox_cont xlarge",
+								"style":style,
+								"title":protmsg
+							}).text((TraceTool.scope.SettingName[dpAllPage[i]] || dpAllPage[i]) + enabledStatus).append(
+								$("<input/>",{
+									"type":"checkbox",
+									"checked":"checked",
+									"data-controls":dpAllPage[i]
+								}),
+								$("<span/>",{"class":"ccheck"})
+							)
+						)
+					);
 				}
 			}
-		});
 
-		TraceTool.createWhitelistOpts();
-	},
-	createWhitelistEdit:function(data){
-		$("#current_section").empty().append(
-			$("<br/>"),$("<span/>",{"class":"msg"}).text("This URL matches an item already in the Whitelist."),$("<br/>"),$("<br/>"),
-			$("<div/>",{"id":"user_in"}).append(
-				$("<button/>",{"id":"whitelist_rmdomain"}).text("Remove Entry").on("click enter",TraceTool.whitelistRemove)
-			)
-		);
-	},
-	createWhitelistOpts:function(){
-		var url = new URL(TraceTool.whitelistData.currentOpenURL);
-		TraceTool.whitelistData["origin"] = url.origin + "/*";
-		TraceTool.whitelistData["path"] = "*" + url + "*";
-		TraceTool.whitelistData["host"] = "*" + TraceTool.extractHostname(TraceTool.whitelistData.currentOpenURL) + "*";
-		TraceTool.whitelistData["root"] = "*" + TraceTool.extractRootDomain(TraceTool.whitelistData.currentOpenURL) + "*";
+			if (dpPerPage.length !== 0){
+				w.append($("<h2/>").text("Applies to some pages"));
+				for (var i = 0;i<dpPerPage.length;i++){
+					var style = "", protmsg = "When checked, this setting is allowed to run", enabledStatus = "";
+					if (bg.Trace.p.Current[dpPerPage[i]].enabled !== true) {
+						style = "cursor:not-allowed";
+						enabledStatus = " (Disabled)";
+						protmsg = "This setting is disabled fully. Go to the Trace settings page to enable it.";
+					}
 
-		var el = $("#page_form");
+					w.append(
+						$("<div/>",{"class":"setting_conf_opt"}).append(
+							$("<label/>",{
+								"class":"checkbox_cont xlarge",
+								"style":style,
+								"title":protmsg
+							}).text((TraceTool.scope.SettingName[dpPerPage[i]] || dpPerPage[i]) + enabledStatus).append(
+								$("<input/>",{
+									"type":"checkbox",
+									"data-controls":dpPerPage[i]
+								}),
+								$("<span/>",{"class":"ccheck"})
+							)
+						)
+					);
+				}
+			}
+		},
+		updateExecs:function(bg){
+			var currData = bg.Trace.c.storedWhitelist[TraceTool.whitelistData.txtEntry];
 
-		if (typeof TraceTool.whitelistData["origin"] === "string"){
-			el.append(
-				$("<label/>",{"for":"url_origin"}).text("Unblock the Origin URL: "),
-				$("<form/>").append(
-					$("<input/>",{
-						"type":"text",
-						"name":"url_origin",
-						"id":"url_origin",
-						"placeholder":"Origin URL",
-						"readonly":true,
-						"value":TraceTool.whitelistData["origin"]
-					}),
-					$("<button/>",{"href":window.location.hash}).text("Apply this").on("click enter",function(){TraceTool.whitelistURL("origin");}),$("<br />")
-				)
-			);
-		}
-		if (typeof TraceTool.whitelistData["path"] === "string" && TraceTool.whitelistData["path"] !== "*/*" && TraceTool.whitelistData["path"].split("/").length > 4){
-			el.append(
-				$("<label/>",{"for":"url_path"}).text("Unblock the URL path: "),
-				$("<form/>").append(
-					$("<input/>",{
-						"type":"text",
-						"name":"url_path",
-						"id":"url_path",
-						"placeholder":"URL pathname",
-						"readonly":true,
-						"value":TraceTool.whitelistData["path"]
-					}),
-					$("<button/>",{"href":window.location.hash}).text("Apply this").on("click enter",function(){TraceTool.whitelistURL("path");}),$("<br />")
-				)
-			);
-		}
-		if (typeof TraceTool.whitelistData["host"] === "string" && TraceTool.whitelistData.host !== TraceTool.whitelistData.root){
-			el.append(
-				$("<label/>",{"for":"url_host"}).text("Unblock the Host URL: "),
-				$("<form/>").append(
-					$("<input/>",{
-						"type":"text",
-						"name":"url_host",
-						"id":"url_host",
-						"placeholder":"Hostname",
-						"readonly":true,
-						"value":TraceTool.whitelistData["host"]
-					}),
-					$("<button/>",{"href":window.location.hash}).text("Apply this").on("click enter",function(){TraceTool.whitelistURL("host");}),$("<br />")
-				)
-			);
-		}
-		if (typeof TraceTool.whitelistData["root"] === "string"){
-			el.append(
-				$("<label/>",{"for":"url_root"}).text("Unblock the Root Domain: "),
-				$("<form/>").append(
-					$("<input/>",{
-						"type":"text",
-						"name":"url_root",
-						"id":"url_root",
-						"placeholder":"Root Domain Name",
-						"readonly":true,
-						"value":TraceTool.whitelistData["root"]
-					}),
-					$("<button/>",{"href":window.location.hash}).text("Apply this").on("click enter",function(){TraceTool.whitelistURL("root");}),$("<br />")
-				)
-			);
+			if (typeof currData.Protections === "undefined"){
+				console.error(currData);
+				alert("Error with Scope entry.");
+			}
+
+			$("input[data-controls]").each(function() {
+				$(this).attr("checked",currData.Protections[$(this).data("controls")]);
+			});
+
+			$("#s_prot_blocksite").attr("checked",currData.SiteBlocked);
+			$("#s_prot_initreqs").attr("checked",currData.InitRequests);
+		},
+		createOpts:function(){
+			var url = new URL(TraceTool.whitelistData.currentOpenURL);
+			TraceTool.whitelistData["origin"] = url.origin + "/*";
+			TraceTool.whitelistData["path"] = "*" + url + "*";
+			TraceTool.whitelistData["host"] = "*" + TraceTool.extractHostname(TraceTool.whitelistData.currentOpenURL) + "*";
+			TraceTool.whitelistData["root"] = "*" + TraceTool.extractRootDomain(TraceTool.whitelistData.currentOpenURL) + "*";
+
+			var el = $("#page_form");
+
+			if (typeof TraceTool.whitelistData["origin"] === "string"){
+				el.append(
+					$("<label/>",{"for":"url_origin"}).text("Unblock the Origin URL: "),
+					$("<form/>").append(
+						$("<input/>",{
+							"type":"text",
+							"name":"url_origin",
+							"id":"url_origin",
+							"placeholder":"Origin URL",
+							"readonly":true,
+							"value":TraceTool.whitelistData["origin"]
+						}),
+						$("<button/>",{"data-type":"origin"}).text("Apply").on("click enter",TraceTool.scope.submitEntry),$("<br />")
+					)
+				);
+			}
+			if (typeof TraceTool.whitelistData["path"] === "string" && TraceTool.whitelistData["path"] !== "*/*" && TraceTool.whitelistData["path"].split("/").length > 4){
+				el.append(
+					$("<label/>",{"for":"url_path"}).text("Unblock the URL path: "),
+					$("<form/>").append(
+						$("<input/>",{
+							"type":"text",
+							"name":"url_path",
+							"id":"url_path",
+							"placeholder":"URL pathname",
+							"readonly":true,
+							"value":TraceTool.whitelistData["path"]
+						}),
+						$("<button/>",{"data-type":"path"}).text("Apply").on("click enter",TraceTool.scope.submitEntry),$("<br />")
+					)
+				);
+			}
+			if (typeof TraceTool.whitelistData["host"] === "string" && TraceTool.whitelistData.host !== TraceTool.whitelistData.root){
+				el.append(
+					$("<label/>",{"for":"url_host"}).text("Unblock the Host URL: "),
+					$("<form/>").append(
+						$("<input/>",{
+							"type":"text",
+							"name":"url_host",
+							"id":"url_host",
+							"placeholder":"Hostname",
+							"readonly":true,
+							"value":TraceTool.whitelistData["host"]
+						}),
+						$("<button/>",{"data-type":"host"}).text("Apply").on("click enter",TraceTool.scope.submitEntry),$("<br />")
+					)
+				);
+			}
+			if (typeof TraceTool.whitelistData["root"] === "string"){
+				el.append(
+					$("<label/>",{"for":"url_root"}).text("Unblock the Root Domain: "),
+					$("<form/>").append(
+						$("<input/>",{
+							"type":"text",
+							"name":"url_root",
+							"id":"url_root",
+							"placeholder":"Root Domain Name",
+							"readonly":true,
+							"value":TraceTool.whitelistData["root"]
+						}),
+						$("<button/>",{"data-type":"root"}).text("Apply").on("click enter",TraceTool.scope.submitEntry),$("<br />")
+					)
+				);
+			}
+		},
+		submitEntry:function(e){
+			e.preventDefault();
+			var that = $(this);
+
+			that.text("Applying...");
+			console.log("Calling addNewEntry("+that.data("type")+")");
+
+			TraceTool.scope.addNewEntry(that.data("type"),function(){
+				that.text("Applied!");
+
+				TraceTool.Auth.SafePost({action:"ReloadWhitelist"});
+				setTimeout(TraceTool.scope.createPanel,1500);
+			});
+		},
+		addNewEntry:function(type,callback){
+			var url = TraceTool.whitelistData[type], result;
+
+			result = confirm("Are you sure you wish to add the following item to the whitelist:\n"+url);
+			if (result !== true){
+				return;
+			}
+
+			chrome.runtime.getBackgroundPage(function(bg){
+				bg.Trace.c.AddItem(url,TraceTool.scope.ProtectionTemplate,callback);
+			});
+		},
+		removeEntry:function(){
+			var that = $(this);
+			that.text("Removing...");
+
+			chrome.runtime.getBackgroundPage(function(bg){
+				bg.Trace.c.RemoveItem(TraceTool.whitelistData.txtEntry,function(){
+					$("#current_section .msg").html("<strong>Action Completed!</strong>");
+					$("#user_in").empty().html("<span class='msg'><br />" + TraceTool.whitelistData.txtEntry + "<br /> Has been removed from the list.<br /><br />Reload page to apply action</span>");
+
+					TraceTool.Auth.SafePost({action:"ReloadWhitelist"});
+					setTimeout(TraceTool.scope.createPanel,2000);
+				});
+			});
+		},
+		updateEntry:function(){
+			var that = $(this);
+			that.text("Saving..");
+
+			// Get information
+			var item = TraceTool.whitelistData.txtEntry;
+			console.log("Updating",item);
+
+			// Default protection template
+			var scopeData = TraceTool.scope.ProtectionTemplate;
+
+			// Update 2 main controllers
+			scopeData["SiteBlocked"] = $("#s_prot_blocksite").is(":checked");
+			scopeData["InitRequests"] = $("#s_prot_initreqs").is(":checked");
+
+			// Update protection object
+			$("input[data-controls]").each(function() {
+				scopeData["Protections"][$(this).data("controls")] = $(this).is(":checked");
+			});
+
+			chrome.runtime.getBackgroundPage(function(bg){
+				bg.Trace.c.EditItem(item,item,scopeData,function(){
+					setTimeout(function(){
+						that.text("Save Entry");
+					},500);
+					TraceTool.Auth.SafePost({action:"ReloadWhitelist"});
+				});
+			});
 		}
 	},
+	
 	// Thanks to https://stackoverflow.com/a/23945027/
 	extractHostname:function(url){
 		var hostname;
@@ -468,34 +681,6 @@ var TraceTool = {
 			}
 		}
 		return domain;
-	},
-	whitelistURL:function(type){
-		var url = TraceTool.whitelistData[type], result;
-
-		result = confirm("Are you sure you wish to add the following item to the whitelist:\n"+url);
-		if (result !== true){
-			return;
-		}
-
-		chrome.runtime.getBackgroundPage(function(bg){
-			bg.Trace.c.AddItem(url,TraceTool.ProtectionTemplate,function(){
-				$("#current_section .msg").html("Whitelisted domain");
-				$("#user_in").empty().html("<span class='msg'>The domain: <br />" + url + "<br /><br /> Has been added to the list.</span>");
-				TraceTool.Auth.SafePost({action:"ReloadWhitelist"});
-			});
-		});
-	},
-	whitelistAdded:function(){
-
-	},
-	whitelistRemove:function(){
-		chrome.runtime.getBackgroundPage(function(bg){
-			bg.Trace.c.RemoveItem(TraceTool.whitelistData.txtEntry,function(){
-				$("#current_section .msg").html("Action Completed!");
-				$("#user_in").empty().html("<span class='msg'><br />" + TraceTool.whitelistData.txtEntry + "<br /> Has been removed from the list.<br /><br />Reload page to apply action</span>");
-				TraceTool.Auth.SafePost({action:"ReloadWhitelist"});
-			});
-		});
 	}
 };
 

@@ -147,7 +147,7 @@ a{
 }
 .home_sect_r{
 	width:auto;
-	background-color:rgba(0,0,0,0.2);
+	background-color:rgba(0,0,0,0.3);
 	font-size:1.45em;
 	height:1em;
 	line-height:0.9em;
@@ -160,8 +160,32 @@ a{
 	display: inline-block;
 }
 .home_sect_fade{
+	opacity:.75;
+}
+.home_sect_fade:hover{
+	opacity:1;
+}
+.home_sect_hide{
 	display:none;
 }
+#whitelist_prots_list{
+	width:100%;
+	height:35vh;
+	overflow-y:scroll;
+	margin-bottom:5px;
+	background-color:rgba(0,0,0,0.2);
+}
+.xlarge {
+	font-size:1.7em !important;
+}
+.setting_conf_opt{
+	text-align:left;
+}
+.ccheck {
+	top:2px !important;
+	left:4px !important;
+}
+
 #current_section{
 	margin:5% 0 0 0;
 	padding:2% 0 0 0;

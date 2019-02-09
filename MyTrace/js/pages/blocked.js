@@ -177,7 +177,7 @@ var TraceBlock = {
 						"placeholder":"Origin URL",
 						"value":TraceBlock.whitelistData["origin"]
 					}),
-					$("<button/>",{"href":window.location.hash}).text("Apply this").on("click enter",function(){TraceBlock.whitelistURL("origin");}),$("<br />")
+					$("<button/>").text("Apply").on("click enter",function(){TraceBlock.whitelistURL("origin");}),$("<br />")
 				)
 			);
 		}
@@ -192,7 +192,7 @@ var TraceBlock = {
 						"placeholder":"URL pathname",
 						"value":TraceBlock.whitelistData["path"]
 					}),
-					$("<button/>",{"href":window.location.hash}).text("Apply this").on("click enter",function(){TraceBlock.whitelistURL("path");}),$("<br />")
+					$("<button/>").text("Apply").on("click enter",function(){TraceBlock.whitelistURL("path");}),$("<br />")
 				)
 			);
 		}
@@ -207,7 +207,7 @@ var TraceBlock = {
 						"placeholder":"Hostname",
 						"value":TraceBlock.whitelistData["host"]
 					}),
-					$("<button/>",{"href":window.location.hash}).text("Apply this").on("click enter",function(){TraceBlock.whitelistURL("host");}),$("<br />")
+					$("<button/>").text("Apply").on("click enter",function(){TraceBlock.whitelistURL("host");}),$("<br />")
 				)
 			);
 		}
@@ -222,7 +222,7 @@ var TraceBlock = {
 						"placeholder":"Root Domain Name",
 						"value":TraceBlock.whitelistData["root"]
 					}),
-					$("<button/>",{"href":window.location.hash,"class":"apply_act"}).text("Apply this").on("click enter",function(){TraceBlock.whitelistURL("root");})
+					$("<button/>").text("Apply").on("click enter",function(){TraceBlock.whitelistURL("root");})
 				)
 			);
 		}

@@ -15,7 +15,7 @@
 	<body>
 
 		<!--
-			Trace Version 2.1.6
+			Trace Version 2.2
 			By Jake Mcneill
 
 			Website:	https://absolutedouble.co.uk/
@@ -252,22 +252,12 @@
 									<tr id="info_screenres" class="hiddensettinginfo">
 										<td colspan="3">
 											<span>JS Screen Variable Randomisation</span><br />
-											Javscript has an object called &quot;screen&quot; that provides websites with information about your screen resolution.<br /> This can be used to track you because it's a piece of information that always
+											JavaScript has an object called &quot;screen&quot; that provides websites with information about your screen resolution.<br /> This can be used to track you because it's a piece of information that always
 											stays constant unless you change your screen resolution in your display settings, which often isn't the best idea.<br />Enabling this setting will add a random offset between -10 and +10 to
 											most values in the object on each page reload.<br />This won't stop websites measuring the height and width of the HTML body.<br /><br />To see this setting in action check the &quot;screen resolution&quot; on
 											<a href="https://browserleaks.com/javascript" target="_blank">BrowserLeaks.com</a> and for more information, see Trace's 'Info' section.
 										</td>
 									</tr>
-									<!--<tr id="row_webglfinger">
-										<td class="setting_info" tabindex="0" data-info="info_hardwarespoof">WebGL Fingerprinting Protection</td>
-										<td class="setting_toggle" tabindex="0" data-toggle="Pref_WebGLFingerprint">Fetching Status...</td>
-										<td class="setting_config" tabindex="0" data-config="Pref_WebGLFingerprint">Configure</td>
-									</tr>
-									<tr id="info_webglfinger" class="hiddensettinginfo">
-										<td colspan="3">
-											<span>WebGL Fingerprint Spoofing</span><br />When enabled, Trace protects against WebGL fingerprinting - this stops websites being able to see your GPU model.
-										</td>
-									</tr>-->
 									<tr id="row_hardwarespoof">
 										<td class="setting_info" tabindex="0" data-info="info_hardwarespoof">Hardware Fingerprint Protection</td>
 										<td class="setting_toggle" tabindex="0" data-toggle="Pref_HardwareSpoof">Fetching Status...</td>
@@ -278,6 +268,16 @@
 											<span>Hardware Spoofing</span><br />
 											There are a number of Javascript variables and APIs that allow websites to know the configuration of your hardware which is more than likely unique, especially when you factor in things such as the GPU.<br /><br />
 											To protect against this, Trace changes the values of 2 navigator properties - hardwareConcurrency (CPU Core count) and deviceMemory (RAM available to browser).
+										</td>
+									</tr>
+									<tr id="row_webglfinger">
+										<td class="setting_info" tabindex="0" data-info="info_webglfinger">WebGL Fingerprinting Protection <strong>(Beta)</strong></td>
+										<td class="setting_toggle" tabindex="0" data-toggle="Pref_WebGLFingerprint" colspan="2">Fetching Status...</td>
+										<!--<td class="setting_config" tabindex="0" data-config="Pref_WebGLFingerprint">Configure</td>-->
+									</tr>
+									<tr id="info_webglfinger" class="hiddensettinginfo">
+										<td colspan="3">
+											<span>WebGL Fingerprint Spoofing</span><br />When enabled, Trace protects against WebGL fingerprinting - this stops websites being able to see your GPU model.
 										</td>
 									</tr>
 									<tr id="row_batteryapi">
@@ -325,7 +325,8 @@
 											<span>HTTP "Referer" Header Removal</span><br />
 											Stops sending the HTTP 'Referer' header in certain cases; the header itself tells websites the URL that referred you to that page.<br />
 											<blockquote>From Wikipedia: Referer logging is used to allow websites and web servers to identify where people are visiting them from, for promotional or statistical purposes</blockquote>
-											<strong>Some websites don't like it when browsers don't send the HTTP referer header, so please keep that in mind when enabling this.</strong>
+											<em>Some websites don't like it when browsers don't send the HTTP referer header, so please keep that in mind when enabling this.</em><br />
+											<strong><a href="https://www.youtube.com/watch?v=0EgpBQO-QSM" rel="noopener" target="_blank" title="YouTube">Demonstration of Referer Header Protection (YouTube)</a></strong>
 										</td>
 									</tr>
 									<tr id="row_cookieeater">
@@ -661,7 +662,7 @@
 								<button id="wlctrl_rement" disabled>Remove Entry</button>
 								<button id="wlctrl_editent" disabled>Edit Entry</button>
 							</div>
-							<button id="wlctrl_import" style="display:none">Import/Export</button>
+							<button id="wlctrl_import">Import/Export</button>
 							<button id="wlctrl_help">I Need Help</button>
 						</div>
 					</div>
@@ -725,7 +726,6 @@
 		</div>
 
 		<script src="../js/libraries/jquery.js"></script>
-		<script src="../js/libraries/longclick.js"></script>
 		<script src="../js/libraries/chart.js"></script>
 		<script src="../js/common/data.js"></script>
 		<script src="../js/pages/options.js" defer></script>
