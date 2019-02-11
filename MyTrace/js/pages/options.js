@@ -168,6 +168,7 @@ var TraceOpt = {
 				TraceOpt.Store("showSettingsTutorial",true);
 				TraceOpt.Store("showRequestTutorial",true);
 				TraceOpt.Store("showScopeTutorial",true);
+				TraceOpt.Store("hasAskedForFeedback",false);
 			}
 
 			$(window).click(function(e){
@@ -337,6 +338,26 @@ var TraceOpt = {
 			TraceOpt.Stats.MakeData(d, TraceOpt.Stats.MakeGraph);
 		});
 
+		// Update storage counter
+		if (TraceOpt.storage === true) {
+			var count = 1, askedFeedback = true;
+			if (localStorage["userStatOptionsOpenCount"] !== undefined && localStorage["userStatOptionsOpenCount"] !== null){
+				count = parseInt(localStorage["userStatOptionsOpenCount"]);
+			}
+			if (localStorage["hasAskedForFeedback"] !== undefined && localStorage["hasAskedForFeedback"] !== null){
+				askedFeedback = localStorage["hasAskedForFeedback"];
+			} else {
+				TraceOpt.Store("hasAskedForFeedback",false);
+			}
+
+			count++;
+			TraceOpt.Store("userStatOptionsOpenCount",count);
+
+			if (count > 10 && askedFeedback === "false"){
+				//TraceOpt.Interface.AskFeedback();
+			}
+		}
+
 		// Assign click events to stats page
 		TraceOpt.Stats.AssignGraphOptions();
 
@@ -429,6 +450,15 @@ var TraceOpt = {
 					$("#trace_info").html(text);
 				});
 			});
+		},
+		AskFeedback:function(){
+			$("#user_tip_title").html("&nbsp;Trace Feedback");
+			$("#user_tip").empty().append(
+				$("<span/>").text("Hi there! It would really help me out if you could leave a review (if not, no big deal, I'll not bother you again). Thanks!"),
+				$("<br />"),$("<br />"),
+				$("<button/>").text("Leave Feedback"),
+				$("<button/>").text("Dismiss"),
+			);
 		},
 		NavigateFromHash:function(){
 			if (!window.location.hash) return;
@@ -2313,7 +2343,7 @@ var TraceOpt = {
 			res = res.split("x");
 
 			if (res.length !== 2){
-				alert("Invalid resolution!\nMake sure you enter it in the format Width x Height")
+				alert("Invalid resolution!\nMake sure you enter it in the format Width x Height");
 				return;
 			}
 
@@ -2328,7 +2358,7 @@ var TraceOpt = {
 				min = parseInt($("#sr_offsetminval").val());
 			TraceOpt.Config.CurrentSel.randomOpts.values = [min,max];
 
-			chrome.runtime.getBackgroundPages(function(bg){
+			chrome.runtime.getBackgroundPage(function(bg){
 				bg.Trace.p.Set("Pref_ScreenRes.randomOpts.values",TraceOpt.Config.CurrentSel.randomOpts.values);
 				TraceOpt.ScreenRes.UpdateOffsets();
 			});

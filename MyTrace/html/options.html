@@ -15,7 +15,7 @@
 	<body>
 
 		<!--
-			Trace Version 2.2
+			Trace Version 2.2.1
 			By Jake Mcneill
 
 			Website:	https://absolutedouble.co.uk/
@@ -116,7 +116,7 @@
 							</div>
 						</div>
 						<div class="sect_adv">
-							<div class="sect_adv_header">&nbsp;Trace Tip</div>
+							<div class="sect_adv_header" id="user_tip_title">&nbsp;Trace Tip</div>
 							<div class="sect_adv_cont" id="user_tip">
 								Loading data...
 							</div>
@@ -277,7 +277,9 @@
 									</tr>
 									<tr id="info_webglfinger" class="hiddensettinginfo">
 										<td colspan="3">
-											<span>WebGL Fingerprint Spoofing</span><br />When enabled, Trace protects against WebGL fingerprinting - this stops websites being able to see your GPU model.
+											<span>WebGL Fingerprint Spoofing</span><br />
+											WebGL is a API for rendering 2D and 3D graphics on websites, it is very commonly used for tracking.
+											When enabled, Trace protects against WebGL fingerprinting - this will change your GPU model to a random one on each page load.
 										</td>
 									</tr>
 									<tr id="row_batteryapi">

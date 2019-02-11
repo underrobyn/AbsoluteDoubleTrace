@@ -379,23 +379,32 @@ var TraceTool = {
 			chrome.runtime.getBackgroundPage(function(bg){
 				var decWl = bg.Trace.c.decodedWhitelist;
 				var stoWl = bg.Trace.c.storedWhitelist;
+				var entriesApply = 0;
+
 				for (var i = 0, l = decWl.keys.length;i<l;i++){
 					if (decWl.keys[i].test(TraceTool.whitelistData.currentOpenURL) !== true) continue;
 
-					// Add UI for multiple whitelist entries that apply to a domain
-					if (decWl.values[i].SiteBlocked === false){
-						TraceTool.whitelistData.txtEntry = Object.keys(stoWl)[i];
-						TraceTool.whitelistData.entry = decWl.keys[i];
-						TraceTool.scope.createEditor(bg);
-					}
+					// Log number of entries that apply but only allow editing the first (Temp fix)
+					entriesApply++;
+					if (entriesApply > 1) continue;
+
+					TraceTool.whitelistData.txtEntry = Object.keys(stoWl)[i];
+					TraceTool.whitelistData.entry = decWl.keys[i];
 				}
+
+				// Update the UI
+				if (entriesApply !== 0) TraceTool.scope.createEditor(bg,entriesApply);
 			});
 
 			TraceTool.scope.createOpts();
 		},
-		createEditor:function(bg){
+		createEditor:function(bg,entriesApply){
+			var entriesWarning = $("<span/>",{"class":"msg","style":"font-weight:400;"}).text(
+				(entriesApply === 1 ? "" : "More than 1 whitelist entry applies to this site!")
+			).append($("<br/>")).prepend($("<br/>"));
+
 			$("#current_section").empty().append(
-				$("<br/>"),$("<span/>",{"class":"msg","style":"font-weight:400;"}).text("Edit whitelist entry for this site:"),$("<br/>"),$("<br/>"),
+				$("<br/>"),$("<span/>",{"class":"msg","style":"font-weight:400;"}).text("Edit whitelist entry for this site:"),entriesWarning,
 				$("<div/>",{"id":"user_in"}).append(
 					$("<div/>",{"class":"setting_conf_opt"}).append(
 						$("<label/>",{
