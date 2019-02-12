@@ -137,9 +137,10 @@ var TraceBlock = {
 		return domain;
 	},
 	setBasicContent:function(){
+		var u = $("#url"), r = $("#reason");
 		if (TraceBlock.blockedURL === null){
-			document.getElementById("url").innerHTML = "No information was provided";
-			document.getElementById("reason").innerHTML = "";
+			u.text("No information was provided");
+			r.empty();
 			return;
 		}
 
@@ -152,8 +153,8 @@ var TraceBlock = {
 			5:"Blocked because file matched blacklisted files",
 			"undefined":"No reason set"
 		};
-		document.getElementById("url").innerHTML = TraceBlock.blockedURL;
-		document.getElementById("reason").innerHTML = types[TraceBlock.blockReason];
+		u.text(TraceBlock.blockedURL);
+		r.text(types[TraceBlock.blockReason]);
 	},
 	setWhitelistOptions:function(){
 		if (TraceBlock.blockedURL === null) return;

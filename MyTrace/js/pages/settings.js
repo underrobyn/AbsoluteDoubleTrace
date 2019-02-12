@@ -7,7 +7,7 @@
 
 var showErr = function(m){
 	document.getElementById("e_msg").style.display = "block";
-	document.getElementById("fail_reason").innerHTML = m;
+	document.getElementById("fail_reason").innerText = m;
 };
 
 if (typeof $ !== "function" || typeof jQuery !== "function") {
