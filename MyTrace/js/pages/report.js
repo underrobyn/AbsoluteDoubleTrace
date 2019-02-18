@@ -150,7 +150,6 @@ var TraceTool = {
 
 			// Create main element
 			var el = $("<div/>",{"class":"home_section"});
-			el.append($("<h1/>").text("Blocked in this tab:"));
 
 			if (TraceTool.DEBUG === true) el.append($("<h2/>").text("TabID: "+tab.id));
 
@@ -159,7 +158,7 @@ var TraceTool = {
 
 			for (var i = 0;i<TraceTool.home.text.rTypes.length;i++){
 				rEl.append(
-					$("<div/>",{"class":"home_sect_r","id":"home_upd_r"+TraceTool.home.text.rTypes[i]}).text(TraceTool.home.text.rNames[i] + ": " + data.data.webRequests[TraceTool.home.text.rTypes[i]])
+					$("<div/>",{"class":"home_sect_r","id":"home_upd_r"+TraceTool.home.text.rTypes[i]}).text(TraceTool.home.text.rNames[i] + ": " + data.data.webRequests[TraceTool.home.text.rTypes[i]]).contextmenu(TraceTool.createUriList)
 				);
 				rTotal += data.data.webRequests[TraceTool.home.text.rTypes[i]];
 			}
@@ -229,8 +228,13 @@ var TraceTool = {
 			if (hTot === 0) msg = "No Header Protections Enabled";
 			if (hTotal === 0) msg = "No Header Protections Used In This Tab";
 			$("#home_headers_title").text(msg);
+			//TraceTool.createUriList(data,tab);
 		},
+		createUriList:function(data,tab){
+			console.log(data);
+		}
 	},
+
 	createReportPanel:function(){
 		$("#title").text("Report Website");
 		$("#current_section").empty().append(

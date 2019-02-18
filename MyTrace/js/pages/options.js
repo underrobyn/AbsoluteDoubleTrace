@@ -353,8 +353,8 @@ var TraceOpt = {
 			count++;
 			TraceOpt.Store("userStatOptionsOpenCount",count);
 
-			if (count > 10 && askedFeedback === "false"){
-				//TraceOpt.Interface.AskFeedback();
+			if (count > 10 && (count % 3 === 0) && count < 20 && askedFeedback === "false"){
+				TraceOpt.Interface.AskFeedback();
 			}
 		}
 
@@ -399,9 +399,12 @@ var TraceOpt = {
 				"You can reset Trace's settings to default in 'Settings' then 'Trace Options'",
 				"Click the Trace icon in the top corner of your browser window to report a site to Trace's developer.",
 				"You can find links to all the Research and Tools that have helped me make Trace in the 'Info' section.",
-				"A changelog and roadmap for Trace is available <a href='https://absolutedouble.co.uk/trace/information.html' title='Trace RoadMap/Changelog'>here</a>.",
+				"A changelog and roadmap for Trace is available <a href='https://absolutedouble.co.uk/trace/information.html' rel='noreferrer' title='Trace RoadMap/Changelog'>here</a>.",
 				"To contact the Trace Developer check the 'Info' section for details.",
+				"If you want to see a feature in Trace, you can create an issue on <a href='https://github.com/jake-cryptic/AbsoluteDoubleTrace/' rel='noreferrer' title='Trace Source'>GitHub</a> or email absolutedouble@gmail.com",
+				"The source code for Trace is available on <a href='https://github.com/jake-cryptic/AbsoluteDoubleTrace/' rel='noreferrer' title='Trace Source'>GitHub</a>",
 				"You can enable protections for only certain sites by moving a protection to the 'Run on only some pages' list in 'Where Protections Run' under Settings and then creating a rule in the Whitelist section.",
+				"You can whitelist sites from the Trace report panel",
 				"Trace can function as a web filter by adding rules in the 'Whitelist' section and then choosing to block the site.",
 				"You can backup and restore your Trace settings in 'Trace Options' under the settings section."
 			];
@@ -454,21 +457,33 @@ var TraceOpt = {
 		AskFeedback:function(){
 			$("#user_tip_title").html("&nbsp;Trace Feedback");
 			$("#user_tip").empty().append(
-				$("<span/>").text("Hi there! It would really help me out if you could leave a review (if not, no big deal, I'll not bother you again). Thanks!"),
+				$("<span/>").text("Hi there! Would you like to leave feedback on Trace? (if not, no big deal, I'll not bother you again). Reviews and user-feedback really motivates me to make Trace even better. Thanks!"),
 				$("<br />"),$("<br />"),
-				$("<button/>").text("Leave Feedback"),
-				$("<button/>").text("Dismiss"),
+				$("<button/>").text("Contact Developer").on("click enter",function(){
+					var openUrl = "mailto:absolutedouble@gmail.com";
+					window.open(openUrl,"_blank");
+					TraceOpt.Store("hasAskedForFeedback",true);
+				}),
+				$("<span/>").text(" "),
+				$("<button/>").text("Leave Feedback").on("click enter",function(){
+					var openUrl = "https://addons.mozilla.org/en-GB/firefox/addon/absolutedouble-trace/reviews/";
+					if (!/Firefox/.test(navigator.userAgent)) openUrl = "https://chrome.google.com/webstore/detail/trace-online-tracking-pro/njkmjblmcfiobddjgebnoeldkjcplfjb/reviews";
+					window.open(openUrl,"_blank");
+					TraceOpt.Store("hasAskedForFeedback",true);
+				}),
+				$("<span/>").text(" "),
+				$("<button/>").text("Dismiss").on("click enter",function(){
+					TraceOpt.Store("hasAskedForFeedback",true);
+				})
 			);
 		},
 		NavigateFromHash:function(){
 			if (!window.location.hash) return;
 			if (!window.location.hash.includes("=")) return;
 
-
 			var spl = window.location.hash.split("=");
 			if (spl[0] !== "#view") return;
 
-			console.log(spl);
 			var allowed = ["home","statistics","settings","requests","whitelist","information"];
 			if (allowed.indexOf(spl[1]) === -1) return;
 

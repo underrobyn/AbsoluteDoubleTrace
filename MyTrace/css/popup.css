@@ -119,6 +119,7 @@ a{
 	margin-bottom:2%;
 }
 .home_section{
+	margin-top:1em;
 	text-align:center;
 	width:100%;
 }
@@ -146,7 +147,7 @@ a{
 	text-align: center;
 }
 .home_sect_r{
-	width:auto;
+	width:46.5%;
 	background-color:rgba(0,0,0,0.3);
 	font-size:1.45em;
 	height:1em;
@@ -187,7 +188,7 @@ a{
 }
 
 #current_section{
-	margin:5% 0 0 0;
+	margin:5.5% 0 0 0;
 	padding:2% 0 0 0;
 	width:100%;
 }

@@ -1427,6 +1427,7 @@ var Trace = {
 				if (Trace.p.Current.Main_Trace.ProtectionStats.enabled === true){
 					Trace.s.LogStat(request.type);
 					Trace.t.LogRequest(request.tabId,request.type);
+					//Trace.t.LogUri(request.tabId,request.url);
 				}
 
 				if (redirectToBlocked){
@@ -2150,6 +2151,7 @@ var Trace = {
 			"window":0
 		},
 		DataTemplate:{
+			blockedUris:[],
 			webRequests:{
 				webpage:0,
 				code:0,
@@ -2164,7 +2166,7 @@ var Trace = {
 				google:0,
 				useragent:0,
 				proxyip:0
-			},
+			}/*,
 			javascript:{
 				canvas:false,
 				audio:false,
@@ -2176,7 +2178,7 @@ var Trace = {
 				screenres:false,
 				netinfo:0,
 				sendbeacon:0
-			}
+			}*/
 		},
 
 		Init:function(){
@@ -2302,6 +2304,14 @@ var Trace = {
 			Trace.t.List.GetTabId(tabId,function(){
 				//if (Trace.DEBUG) console.log("[tabmd]-> Logged stat for tab",tabId,Trace.s.TypeNames[type]);
 				Trace.t.TabList[tabId].data.webRequests[Trace.s.TypeNames[type]] = Trace.t.TabList[tabId].data.webRequests[Trace.s.TypeNames[type]] + 1;
+			});
+		},
+
+		LogUri:function(tabId,url){
+			// Check if the tab is in the list, if not add it
+			Trace.t.List.GetTabId(tabId,function(){
+				//if (Trace.DEBUG) console.log("[tabmd]-> Logged stat for tab",tabId,Trace.s.TypeNames[type]);
+				Trace.t.TabList[tabId].data.blockedUris.push(url);
 			});
 		},
 
