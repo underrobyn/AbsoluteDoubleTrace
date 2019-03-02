@@ -191,6 +191,12 @@ var Trace = {
 		blocklistFallback:"https://raw.githubusercontent.com/jake-cryptic/hmfp_lists/master/fallback.json",
 		blocklistOffline:(chrome.hasOwnProperty("extension") ? chrome.runtime.getURL("data/blocklist.json") : browser.extension.getURL("data/blocklist.json")),
 		blocklistBase:"https://absolutedouble.co.uk/trace/app/weblist.php?p=",
+		serverNames:{
+			0:"main",
+			1:"GitHub",
+			2:"local",
+			3:"cache"
+		},
 
 		// Notification constant
 		notifIcon:"icons/trace_256.png",
@@ -226,6 +232,7 @@ var Trace = {
 			},
 			"wb":{
 				"chrome":{
+					"74":"AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3717.0 Safari/537.36",
 					"72":"AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.81 Safari/537.36",
 					"71":"AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 Safari/537.36",
 					"70":"AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.77 Safari/537.36",
@@ -670,60 +677,64 @@ var Trace = {
 			return installCodes;
 		},
 		BlocklistLoader:function(bypassCache){
-			if (!bypassCache && Trace.p.Current.Main_Trace.DomainCache.enabled === true){
-				var installCodes = Trace.b.GetInstallCodes();
-
-				var url = Trace.v.blocklistURL;
-				url += "?r=" + (typeof(Trace.v.Premium) !== "string" || Trace.v.Premium === "" ? "rv" : "pv");
-				url += "&a=cache";
-				url += "&v=" + Trace.n.listCompat;
-				url += "&c=" + btoa(installCodes);
-
-				$.ajax({
-					url:url,
-					dataType:"text",
-					cache:false,
-					method:"GET",
-					timeout:50000,
-					beforeSend:function(){
-						if (Trace.DEBUG) console.log("[cachd]-> Checking blocklist version against main server");
-					},
-					success:function(version){
-						if (Trace.DEBUG) console.log("[cachd]-> Got version from server, server version is",version);
-
-						try{
-							var vInfo = JSON.parse(version);
-						} catch(e){
-							console.error(e);
-							Trace.b.GetBlockList(0,0);
-							return;
-						}
-
-						Trace.v.s.get([
-							"WebCache_Version"
-						],function(v){
-							if (typeof(v.WebCache_Version) !== "number"){
-								Trace.b.GetBlockList(0,0);
-							} else if (v.WebCache_Version !== vInfo.db_version){
-								Trace.b.GetBlockList(0,0);
-							} else {
-								Trace.b.BlocklistCache([v.WebCache_Version,vInfo.db_version]);
-							}
-						});
-					},
-					error:function(e){
-						if (navigator.onLine){
-							if (Trace.DEBUG) console.error(e);
-						}
-
-						Trace.b.GetBlockList(0,0);
-					}
-				});
-			} else {
+			// Check if we are going to make a cache check
+			if (bypassCache || Trace.p.Current.Main_Trace.DomainCache.enabled !== true){
 				Trace.b.GetBlockList(0,0);
+				return;
 			}
+
+			var installCodes = Trace.b.GetInstallCodes();
+
+			var url = Trace.v.blocklistURL;
+			url += "?r=" + (typeof(Trace.v.Premium) !== "string" || Trace.v.Premium === "" ? "rv" : "pv");
+			url += "&a=cache";
+			url += "&v=" + Trace.n.listCompat;
+			url += "&c=" + btoa(installCodes);
+
+			$.ajax({
+				url:url,
+				dataType:"text",
+				cache:false,
+				method:"GET",
+				timeout:50000,
+				beforeSend:function(){
+					if (Trace.DEBUG) console.log("[cachd]-> Checking blocklist version against main server");
+				},
+				success:function(version){
+					if (Trace.DEBUG) console.log("[cachd]-> Got version from server, server version is",version);
+
+					try{
+						var vInfo = JSON.parse(version);
+					} catch(e){
+						console.error(e);
+						Trace.b.GetBlockList(0,0);
+						return;
+					}
+
+					Trace.v.s.get([
+						"WebCache_Version"
+					],function(v){
+						if (typeof(v.WebCache_Version) !== "number"){
+							Trace.b.GetBlockList(0,0);
+						} else if (v.WebCache_Version !== vInfo.db_version){
+							Trace.b.GetBlockList(0,0);
+						} else {
+							Trace.b.BlocklistCache([v.WebCache_Version,vInfo.db_version]);
+						}
+					});
+				},
+				error:function(e){
+					if (navigator.onLine){
+						if (Trace.DEBUG) console.error(e);
+					}
+
+					Trace.b.GetBlockList(0,0);
+				}
+			});
 		},
 		BlocklistURL:function(attempt,server){
+			if (server === 2) return Trace.v.blocklistOffline;
+
 			var url;
 			var installCodes = Trace.b.GetInstallCodes();
 
@@ -754,12 +765,18 @@ var Trace = {
 		},
 		GetBlockList:function(attempt,server){
 			// Check if user is online
-			if (!navigator.onLine) {
-				Trace.Notify("Couldn't download blocklist because you don't seem to be connected to the internet.", "protd");
-				return false;
+			if (!navigator.onLine || attempt > 3) {
+				// Use local blocklist if we can
+				if (Trace.p.Current.Pref_WebController.useLocal.enabled === true){
+					Trace.Notify("You don't seem to be connected to the internet. Will use built in blocklist.", "protd");
+					server = 2;
+				} else {
+					Trace.Notify("You don't seem to be connected to the internet.", "protd");
+					return false;
+				}
 			}
 
-			if (attempt > 4){
+			if (attempt > 5){
 				Trace.Notify("Error downloading blocklist! Unable to download blocklist for unknown reasons. Domain protection will not function.","protd");
 				return false;
 			}
@@ -773,24 +790,24 @@ var Trace = {
 			xhr.timeout = 50000;
 			xhr.open("get",url,true);
 
-			if (Trace.DEBUG) console.info("[protd]-> Loading from: " + (server === 0 ? "main" : "secondary") + " server");
+			if (Trace.DEBUG) console.info("[protd]-> Loading from: " + Trace.v.serverNames[server] + " server");
 
 			// Notify blocklist download progress if user allows notifications
-			if (Trace.v.bNotifications === true){
+			if (Trace.v.bNotifications === true && server !== 2){
 				xhr.onprogress = function(evt){
-					if (evt.lengthComputable){
-						var percentComplete = Math.round(((evt.loaded / evt.total) * 100));
-						try {
-							chrome.notifications.create("notification",{
-								"type":"progress",
-								"title":"Trace",
-								"message":"Updating Blocklist...",
-								"iconUrl":Trace.v.notifIcon,
-								"progress":percentComplete
-							});
-						} catch(e){
-							console.log("[protd]-> Notifications aren't allowed.");
-						}
+					if (!evt.lengthComputable) return;
+
+					var percentComplete = Math.round(((evt.loaded / evt.total) * 100));
+					try {
+						chrome.notifications.create("notification",{
+							"type":"progress",
+							"title":"Trace",
+							"message":"Updating Blocklist...",
+							"iconUrl":Trace.v.notifIcon,
+							"progress":percentComplete
+						});
+					} catch(e){
+						console.log("[protd]-> Notifications aren't allowed.");
 					}
 				};
 			}
@@ -801,7 +818,7 @@ var Trace = {
 				}
 
 				var status = xhr.status,
-					sName = (server === 0 ? "main" : "secondary"),
+					sName = Trace.v.serverNames[server],
 					data;
 
 				if (status === 200){
@@ -817,7 +834,7 @@ var Trace = {
 
 					// Apply list
 					Trace.Notify("Got blocklist from " + sName + " server","protd");
-					Trace.b.ApplyWebBlocklist(data,false);
+					Trace.b.ApplyWebBlocklist(data,server);
 					return true;
 				}
 
@@ -852,12 +869,12 @@ var Trace = {
 
 				// Retry blocklist download
 				if (server === 0){
-					Trace.Notify("Failed to load blocklist from main server, trying secondary server","protd");
+					Trace.Notify("Failed to load blocklist from main server, trying from a different server..","protd");
 					setTimeout(function(){
 						Trace.b.GetBlockList(attempt,1);
 					},attempt*1000);
 				} else {
-					Trace.Notify("Failed to load blocklist from secondary server, trying again. Attempt " + attempt + " of 5","protd");
+					Trace.Notify("Failed to load blocklist from server, trying again. Attempt " + attempt + " of 6","protd");
 					setTimeout(function(){
 						Trace.b.GetBlockList(attempt,server);
 					},attempt*1000);
@@ -880,7 +897,7 @@ var Trace = {
 					data:r.WebCache_Data
 				};
 
-				Trace.b.ApplyWebBlocklist(data,true);
+				Trace.b.ApplyWebBlocklist(data,3);
 			});
 		},
 		CacheTheList:function(db){
@@ -918,20 +935,23 @@ var Trace = {
 				if (Trace.DEBUG) console.info("[cachd]-> Cleared cache");
 			});
 		},
-		ApplyWebBlocklist:function(db,fromCache){
+		ApplyWebBlocklist:function(db,fromServer){
 			// No point caching the list if it's already cached
-			if (fromCache === false){
+			if (fromServer === 3){
 				Trace.b.CacheTheList(db);
 			}
 
+			// Log where list came from
+			if (Trace.DEBUG) console.log("[protd]-> Loaded blocklist from",Trace.v.serverNames[fromServer]);
+
 			// Load web domain database into program
-			Trace.d.meta.fromCache = fromCache;
+			Trace.d.meta.fromServer = fromServer;
 			Trace.d.meta.listTypeName = db.list_type;
 			Trace.d.meta.listVersion = db.list_version;
 
 			// Get data from source into program
 			if (typeof db.data !== "object"){
-				if (fromCache) Trace.b.ClearDomainCache();
+				if (fromServer === 3) Trace.b.ClearDomainCache();
 				db.data = {};
 			}
 			Trace.d.blocked.domain = db.data.domain || [];
@@ -1009,12 +1029,16 @@ var Trace = {
 			"Pref_WebRTC":true,
 			"Pref_WebGLFingerprint":true
 		},
+
+		tempWhitelist:{},
+
 		storedWhitelist:{},
 		decodedWhitelist:{
 			"keys":[],
 			"values":[]
 		},
 		wlEnabled:true,
+
 		NewWhitelistFormat:function(old){
 			console.log("Saved new whitelist format");
 			var trNewWl = {};
@@ -2469,7 +2493,7 @@ var Trace = {
 						Trace.d.blocked.url.length,
 						Trace.d.blocked.file.length
 					];
-					d = [Trace.d.meta.listTypeName,Trace.d.meta.listVersion,recordData,Trace.d.meta.fromCache];
+					d = [Trace.d.meta.listTypeName,Trace.d.meta.listVersion,recordData,Trace.d.meta.fromServer];
 				}
 				cb(installDate,Trace.s.Main,d);
 			});
@@ -2481,6 +2505,9 @@ var Trace = {
 		Defaults:{
 			"Pref_WebController":{
 				"enabled":true,
+				"useLocal":{
+					"enabled":true
+				},
 				"showBlocked":{
 					"enabled":true
 				},
@@ -2504,6 +2531,8 @@ var Trace = {
 						"faith":true,
 						"gdn":true,
 						"gq":true,
+						"icu":false,
+						"jetzt":true,
 						"kim":true,
 						"link":true,
 						"loan":false,
@@ -2525,6 +2554,7 @@ var Trace = {
 						"top":true,
 						"trade":false,
 						"vip":false,
+						"wang":true,
 						"webcam":true,
 						"win":true,
 						"work":true,

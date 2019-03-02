@@ -353,7 +353,7 @@ var TraceOpt = {
 			count++;
 			TraceOpt.Store("userStatOptionsOpenCount",count);
 
-			if (count > 10 && (count % 3 === 0) && count < 20 && askedFeedback === "false"){
+			if (count > 10 && (count % 3 === 0) && askedFeedback === "false"){
 				TraceOpt.Interface.AskFeedback();
 			}
 		}
@@ -419,23 +419,26 @@ var TraceOpt = {
 			chrome.runtime.getBackgroundPage(function(bg){
 				bg.Trace.s.MainText(function(i,t,d){
 					var text = "<br />Trace has been protecting you since <span>" + i + "</span>";
+
 					if (neatNumber(t["total"]).toString() !== "0"){
-						text += ",<br />Since then, there have been a total of <span>" + neatNumber(t["total"]) + "</span>" +
-							" requests blocked. That includes, <span>" + neatNumber(t["webpage"]) + "</span> page load" + (t["webpage"] === 1 ? "" : "s") + ", " +
-							"<span>" + neatNumber(t["media"]) + "</span> media request" + (t["media"] === 1 ? "" : "s") + " (tracking pixels, page ads), also, Trace blocked " +
-							"<span>" + neatNumber(t["code"]) + "</span> code request" + (t["code"] === 1 ? "" : "s") + " (3rd party scripts, ping requests), and finally " +
-							"<span>" + neatNumber(t["other"]) + "</span> miscellaneous requests to tracking servers.";
+						text += "<br />Since then, there have been a total of <span>" + neatNumber(t["total"]) + "</span> requests blocked.";
+						text += " That includes, <span>" + neatNumber(t["webpage"]) + "</span> page load" + (t["webpage"] === 1 ? "" : "s") + ", ";
+						text += "<span>" + neatNumber(t["media"]) + "</span> media request" + (t["media"] === 1 ? "" : "s") + " (tracking pixels, page ads), also, Trace blocked ";
+						text += "<span>" + neatNumber(t["code"]) + "</span> code request" + (t["code"] === 1 ? "" : "s") + " (3rd party scripts, ping requests), and finally ";
+						text += "<span>" + neatNumber(t["other"]) + "</span> miscellaneous requests to tracking servers.";
 					}
 
 					if (d.length === 4){
 						var totalBlocked = d[2][0] + d[2][1] + d[2][2] + d[2][3] + d[2][4];
+
 						if (neatNumber(d[1]) === "0"){
 							if (neatNumber(d[2]) !== "0"){
 								text += "<br /><br />Trace is currently blocking <span>" + neatNumber(totalBlocked) + "</span> records.";
 							}
 						} else {
 							if (neatNumber(d[2]) !== "0"){
-								text += "<br /><br />Trace is currently blocking <span>" + neatNumber(totalBlocked) + "</span> records from the " + (d[3] === true ? "cached " : "uncached ") + d[0] + " blocklist. <br />";
+								text += "<br /><br />Trace is currently blocking <span>" + neatNumber(totalBlocked) + "</span> records from the " + (d[3] === 3 ? "cached " : "uncached ") + d[0] + " blocklist. <br />";
+
 								try{
 									text += "The list contains: ";
 									text += (d[2][0] !== 0 ? neatNumber(d[2][0]) + " domains, " : "");
@@ -444,6 +447,7 @@ var TraceOpt = {
 									text += (d[2][3] !== 0 ? neatNumber(d[2][3]) + " URLs and " : "");
 									text += (d[2][4] !== 0 ? neatNumber(d[2][4]) + " tracking scripts." : "");
 								} catch(e){}
+
 								text += "<br />WebController List Version: " + d[1] + ".";
 							} else {
 								text += "<br /><br />Domain blocking is enabled.";
@@ -457,7 +461,7 @@ var TraceOpt = {
 		AskFeedback:function(){
 			$("#user_tip_title").html("&nbsp;Trace Feedback");
 			$("#user_tip").empty().append(
-				$("<span/>").text("Hi there! Would you like to leave feedback on Trace? (if not, no big deal, I'll not bother you again). Reviews and user-feedback really motivates me to make Trace even better. Thanks!"),
+				$("<span/>").text("Hi there! Would you like to leave feedback on Trace? (if not, no big deal, I'll not bother you again). Reviews and user-feedback really motivate me to make Trace even better. Thanks!"),
 				$("<br />"),$("<br />"),
 				$("<button/>").text("Contact Developer").on("click enter",function(){
 					var openUrl = "mailto:absolutedouble@gmail.com";
@@ -474,6 +478,8 @@ var TraceOpt = {
 				$("<span/>").text(" "),
 				$("<button/>").text("Dismiss").on("click enter",function(){
 					TraceOpt.Store("hasAskedForFeedback",true);
+					$(this).text("Done!");
+					_UserCrashReportService({"UserDismissedFeedback":true});
 				})
 			);
 		},
@@ -3259,9 +3265,9 @@ var TraceOpt = {
 	BadTopLevelBlock:{
 		tldPresets:{
 			all:["accountant", "date", "diet", "loan", "mom", "online", "om", "racing", "ren", "stream", "study", "top", "xin", "yokohama"],
-			extended:["asia", "cc", "cf", "christmas", "cricket", "party", "pro", "review", "systems", "trade", "vip", "zip"],
-			most:["ads", "club", "link", "market", "kim", "top", "science", "space", "webcam", "men", "win", "work"],
-			few:["bid","click","country","download","faith","gdn","gq"]
+			extended:["asia", "cc", "cf", "christmas", "cricket", "party", "pro", "review", "systems", "trade", "vip", "wang", "zip"],
+			most:["ads", "club", "icu", "link", "market", "jetzt", "kim", "top", "science", "space", "webcam", "men", "win", "work"],
+			few:["bid", "click", "country", "download", "faith", "gdn", "gq"]
 		},
 		AssignEvents:function(){
 			$("#adv_settingstld").click(TraceOpt.BadTopLevelBlock.SelectProtectionUI);
@@ -3302,6 +3308,8 @@ var TraceOpt = {
 				"date":false, "diet":false, "download":false,
 				"faith":false,
 				"gdn":false, "gq":false,
+				"icu":false,
+				"jetzt":false,
 				"kim":false,
 				"link":false, "loan":false,
 				"market":false, "men":false, "mom":false,
@@ -3311,7 +3319,7 @@ var TraceOpt = {
 				"science":false, "space":false, "stream":false, "study":false, "systems":false,
 				"top":false, "trade":false,
 				"vip":false,
-				"webcam":false, "win":false, "work":false,
+				"wang":false, "webcam":false, "win":false, "work":false,
 				"xin":false,
 				"yokohama":false,
 				"zip":false
