@@ -187,10 +187,10 @@ var Trace = {
 		s:(/Edge/.test(navigator.userAgent) ? browser.storage.local : chrome.storage.local),
 
 		// Blocklist URLs
-		blocklistURL:"https://absolutedouble.co.uk/trace/app/weblist.php",
+		blocklistURL:"https://trace-extension.absolutedouble.co.uk/app/weblist.php",
 		blocklistFallback:"https://raw.githubusercontent.com/jake-cryptic/hmfp_lists/master/fallback.json",
 		blocklistOffline:(chrome.hasOwnProperty("extension") ? chrome.runtime.getURL("data/blocklist.json") : browser.extension.getURL("data/blocklist.json")),
-		blocklistBase:"https://absolutedouble.co.uk/trace/app/weblist.php?p=",
+		blocklistBase:"https://trace-extension.absolutedouble.co.uk/app/weblist.php?p=",
 		serverNames:{
 			0:"main",
 			1:"GitHub",
@@ -694,7 +694,6 @@ var Trace = {
 			$.ajax({
 				url:url,
 				dataType:"text",
-				cache:false,
 				method:"GET",
 				timeout:50000,
 				beforeSend:function(){
@@ -2505,6 +2504,7 @@ var Trace = {
 		Defaults:{
 			"Pref_WebController":{
 				"enabled":true,
+				"lastRequest":1551633680,
 				"useLocal":{
 					"enabled":true
 				},

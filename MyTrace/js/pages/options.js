@@ -913,7 +913,7 @@ var TraceOpt = {
 				return;
 			}
 
-			var u = "https://absolutedouble.co.uk/trace/app/weblist.php?p=";
+			var u = "https://trace-extension.absolutedouble.co.uk/app/weblist.php?p=";
 			u += btoa(eden);
 			u += "&s=" + btoa(lost);
 			u += "&d=" + btoa((Math.round((new Date()).getTime()/1000))*2);
@@ -2557,7 +2557,7 @@ var TraceOpt = {
 			};
 
 			$.ajax({
-				url:"https://absolutedouble.co.uk/trace/app/weblist.php?v=210&a=list",
+				url:"https://trace-extension.absolutedouble.co.uk/app/weblist.php?v=210&a=list",
 				dataType:"text",
 				cache:false,
 				method:"GET",
