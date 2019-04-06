@@ -22,6 +22,9 @@ var TraceTool = {
 		TraceTool.reloadInt = setInterval(function(){TraceTool.loadThisTab("update");},1000);
 
 		chrome.runtime.getBackgroundPage(function(bg){
+			if (typeof bg === "undefined") {
+				chrome.runtime.reload();
+			}
 			TraceTool.DEBUG = bg.Trace.DEBUG;
 		});
 

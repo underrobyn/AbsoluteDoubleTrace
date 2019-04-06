@@ -6,15 +6,13 @@ html, body {
 	font-weight:100;
 	box-sizing: border-box;
 	overflow:hidden;
-	width:100%;
-	height:100%;
+	width:570px;
+	min-width:570px;
+	height:440px;
+	min-height:440px;
 }
 body {
 	text-align:center;
-	width:570px;
-	height:440px;
-	min-width:570px;
-	min-height:440px;
 	background:#8719ff;
 	background:-webkit-linear-gradient(to top, #FFAF7B, #d88f93, #8719ff);
 	background:linear-gradient(to top, #c66a57, #bb7783, #6607cd);
@@ -216,4 +214,15 @@ a{
 }
 .smsg{
 	font-size:1.4em;
+}
+
+@media screen and (max-width: 350px){
+	body,html{
+		max-width:350px;
+		width:350px;
+	}
+	#ux{
+		width:61%;
+		font-size:0.9em;
+	}
 }
