@@ -24,8 +24,6 @@ if (!chrome.hasOwnProperty("extension") || typeof chrome.extension.getBackground
 	showErr("Extension failed to connect to background page. Please try reloading the page.");
 }
 
-window.URL = window.URL || window.webkitURL;
-
 var TraceOpt = {
 	s:"M2ysyaSd58sqt4zVGicIfbMYac8dqhtrk5yyA8tiG31gZ",
 	homeRefresh:null,
@@ -34,11 +32,6 @@ var TraceOpt = {
 	storage:(typeof Storage !== "undefined" && typeof localStorage !== "undefined" && localStorage !== null),
 	debug:false,
 
-	// Thanks to: https://stackoverflow.com/a/4900484/
-	getChromeVersion:function() {
-		var raw = navigator.userAgent.match(/Chrom(e|ium)\/([0-9]+)\./);
-		return raw ? parseInt(raw[2], 10) : false;
-	},
 	makeRandomID:function(r){
 		for(var n="",t="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789",a=0;r > a;a++){
 			n += t.charAt(Math.floor(Math.random()*t.length));

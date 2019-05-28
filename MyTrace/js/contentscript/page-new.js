@@ -10,7 +10,6 @@ if (typeof window.chrome === "undefined" || !window.chrome.hasOwnProperty("exten
 
 var TPage = {
 	debug:2,
-	done:false,
 	Prefs:{
 		BlockPing:{enabled:true,sendBeacon:{enabled:true}},
 		BlockPlugin:{enabled:true},
@@ -25,14 +24,15 @@ var TPage = {
 		ClientRects:{enabled:true},
 		WebGL:{enabled:true},
 		NativeFunctions:{enabled:false, windowOpen:{enabled:true}},
-		Hardware:{enabled:true,hardware:{enabled:true,hardwareConcurrency:{enabled:true,value:4},deviceMemory:{enabled:true,value:4}}}
+		Hardware:{enabled:false,hardware:{enabled:true,hardwareConcurrency:{enabled:true,value:4},deviceMemory:{enabled:true,value:4}}}
 	},
 	protections:{},
 	css:"font-size:1em;line-height:1.5em;color:#fff;background-color:#1a1a1a;border:.1em solid #00af00;",
 
 	startTracePage:function(){
-		// https://bugs.chromium.org/p/chromium/issues/detail?id=54257
-		chrome.runtime.sendMessage({msg: "checkList", url:location.href},TPage.init);
+		chrome.runtime.sendMessage({msg: "checkList", url:location.href},function(response) {
+			TPage.init(response);
+		});
 	},
 
 	sendBackgroundMessage:function(data,cb){
@@ -51,47 +51,68 @@ var TPage = {
 	/* Load information about settings from extension storage */
 	init:function(data){
 		console.log(data);
-
 		if (data.tracePaused === true){
 			console.log("%c Trace Paused.",TPage.css);
 			return;
 		}
 
 		TPage.protections = data.data;
-		TPage.Prefs = {
-			BlockPing:data.prefs.Pref_PingBlock,
-			BlockPlugin:data.prefs.Pref_PluginHide,
-			BlockBattery:data.prefs.Pref_BatteryApi,
-			BlockScreenRes:data.prefs.Pref_ScreenRes,
-			RandUserAgent:data.prefs.Pref_UserAgent,
-			BlockNetInfo:data.prefs.Pref_NetworkInformation,
-			BlockWebRTC:data.prefs.Pref_WebRTC,
-			BlockAudioFinger:data.prefs.Pref_AudioFingerprint,
-			BlockCanvasFinger:data.prefs.Pref_CanvasFingerprint,
-			BlockReferHeader:data.prefs.Pref_ReferHeader,
-			ClientRects:data.prefs.Pref_ClientRects,
-			Hardware:data.prefs.Pref_HardwareSpoof,
-			NativeFunctions:data.prefs.Pref_NativeFunctions,
-			WebGL:data.prefs.Pref_WebGLFingerprint
-		};
 
-		TPage.runProtections();
+		// In future version this will be received via content messaging system
+		chrome.storage.local.get(
+			[
+				"Main_Trace",
+				"Pref_PingBlock",
+				"Pref_PluginHide",
+				"Pref_BatteryApi",
+				"Pref_ScreenRes",
+				"Pref_UserAgent",
+				"Pref_NetworkInformation",
+				"Pref_WebRTC",
+				"Pref_AudioFingerprint",
+				"Pref_CanvasFingerprint",
+				"Pref_ReferHeader",
+				"Pref_ClientRects",
+				"Pref_WebGLFingerprint",
+				"Pref_NativeFunctions",
+				"Pref_HardwareSpoof"
+			],function(prefs){
+				TPage.Prefs = {
+					BlockPing:prefs.Pref_PingBlock,
+					BlockPlugin:prefs.Pref_PluginHide,
+					BlockBattery:prefs.Pref_BatteryApi,
+					BlockScreenRes:prefs.Pref_ScreenRes,
+					RandUserAgent:prefs.Pref_UserAgent,
+					BlockNetInfo:prefs.Pref_NetworkInformation,
+					BlockWebRTC:prefs.Pref_WebRTC,
+					BlockAudioFinger:prefs.Pref_AudioFingerprint,
+					BlockCanvasFinger:prefs.Pref_CanvasFingerprint,
+					BlockReferHeader:prefs.Pref_ReferHeader,
+					ClientRects:prefs.Pref_ClientRects,
+					Hardware:prefs.Pref_HardwareSpoof,
+					NativeFunctions:prefs.Pref_NativeFunctions,
+					WebGL:prefs.Pref_WebGLFingerprint
+				};
+
+				TPage.runProtections();
+			}
+		)
 	},
 
 	/* Depending on what is enabled - run some protections */
 	runProtections:function(){
+		if (Object.keys(TPage.Prefs).length === 0){
+			return;
+		}
+
 		//TPage.protectCommonTracking();
-
-		if (TPage.Prefs.BlockCanvasFinger.enabled === true && TPage.canExec("Pref_CanvasFingerprint")){
-			TPage.protectCanvasFinger();
-		}
-
-		if (TPage.Prefs.Hardware.enabled === true && TPage.canExec("Pref_HardwareSpoof")){
-			TPage.protectDeviceHardware();
-		}
 
 		if (TPage.Prefs.ClientRects.enabled === true && TPage.canExec("Pref_ClientRects")){
 			TPage.protectClientRects();
+		}
+
+		if (TPage.Prefs.BlockCanvasFinger.enabled === true && TPage.canExec("Pref_CanvasFingerprint")){
+			TPage.protectCanvasFinger();
 		}
 
 		if (TPage.Prefs.BlockAudioFinger.enabled === true && TPage.canExec("Pref_AudioFingerprint")){
@@ -127,6 +148,10 @@ var TPage = {
 			TPage.protectScreenRes();
 		}
 
+		if (TPage.Prefs.Hardware.enabled === true && TPage.canExec("Pref_HardwareSpoof")){
+			TPage.protectDeviceHardware();
+		}
+
 		if (TPage.Prefs.WebGL.enabled === true && TPage.canExec("Pref_WebGLFingerprint")){
 			TPage.protectWebGL();
 		}
@@ -140,8 +165,6 @@ var TPage = {
 				TPage.protectUserAgent(response);
 			});
 		}
-
-		TPage.done = true;
 	},
 
 	/* Function to inject javascript code into pages */
@@ -961,18 +984,18 @@ var TPage = {
 			TPage.Prefs.Hardware.hardware.deviceMemory.value
 		];
 
-		TPage.codePreInject(function(opts){
+		TPage.codePostInject(function(opts){
 			opts = JSON.parse(opts);
 
 			if (opts[0] === true){
-				Object.defineProperty(window.navigator, "hardwareConcurrency",{
+				Object.defineProperty(navigator, "hardwareConcurrency",{
 					enumerable:true,
 					configurable:false,
 					value:opts[1] || 4
 				});
 			}
 			if (opts[2] === true){
-				Object.defineProperty(window.navigator, "deviceMemory",{
+				Object.defineProperty(navigator, "deviceMemory",{
 					enumerable:true,
 					configurable:false,
 					value:opts[3] || 6
@@ -1338,37 +1361,27 @@ var TPage = {
 			function or change header to allow the code to be injected.
 		*/
 
-		var opts = {
-			"rgba":[0,0,0,0],
-			"extra":false
-		};
+		var opts = [0,0,0,0];
 
 		if (TPage.Prefs.BlockCanvasFinger.customRGBA.enabled === true){
-			opts = {
-				"rgba":TPage.Prefs.BlockCanvasFinger.customRGBA.rgba,
-				"extra":false
-			};
+			opts = TPage.Prefs.BlockCanvasFinger.customRGBA.rgba;
 		} else {
 			var rn = function(a,b){
 				return (10-Math.floor(Math.random()*(b-a)+a));
 			};
 
-			opts = {
-				"rgba": [
-					rn(0, 20),
-					rn(0, 20),
-					rn(0, 20),
-					rn(0, 20),
-				],
-				"extra":false
-			};
+			opts = [
+				rn(0, 20),
+				rn(0, 20),
+				rn(0, 20),
+				rn(0, 20)
+			];
 		}
 
-		TPage.codePreInject(function(opts){
-			var opts = JSON.parse(opts);
-			var t = opts["rgba"];
+		TPage.codePreInject(function(t){
+			var t = JSON.parse(t);
 
-			function TraceCanvas(r,g,b,a,scriptId,extra){
+			function TraceCanvas(r,g,b,a,scriptId){
 				var injectedEl = document.getElementById(scriptId);
 
 				var TCInject = function(el){
@@ -1468,38 +1481,6 @@ var TPage = {
 				TCRender(CanvasRenderingContext2D);
 				TCDocument(Document);
 
-				if (extra === true){
-					var wind = HTMLIFrameElement.prototype.__lookupGetter__('contentWindow'),
-						cont = HTMLIFrameElement.prototype.__lookupGetter__('contentDocument');
-
-					Object.defineProperties(HTMLIFrameElement.prototype,{
-						contentWindow:{
-							get:function(){
-								var frame = wind.apply(this);
-								if (this.src && this.src.indexOf('//') !== -1 && location.host !== this.src.split('/')[2]) return frame;
-								try {frame.HTMLCanvasElement;}catch(e){}
-								if (frame === null) return null;
-
-								TCExtract(frame.HTMLCanvasElement);
-
-								return frame;
-							}
-						},
-						contentDocument:{
-							get:function(){
-								if (this.src && this.src.indexOf('//') !== -1 && location.host !== this.src.split('/')[2]) return cont.apply(this);
-								var frame = wind.apply(this);
-								try {frame.HTMLCanvasElement} catch(e){}
-								if (frame === null) return null;
-
-								TCExtract(frame.HTMLCanvasElement);
-
-								return cont.apply(this);
-							}
-						}
-					});
-				}
-
 				injectedEl.parentNode.removeChild(injectedEl);
 			}
 
@@ -1516,7 +1497,7 @@ var TPage = {
 			script.id = makeRandomStr();
 			script.type = "text/javascript";
 
-			var newChild = document.createTextNode('try{(' + TraceCanvas + ')(' + t[0] + ',' + t[1] + ',' + t[2] + ',' + t[3] + ',"' + script.id + '",' + opts["extra"] + ');}catch (e){console.error(e);}');
+			var newChild = document.createTextNode('try{(' + TraceCanvas + ')(' + t[0] + ',' + t[1] + ',' + t[2] + ',' + t[3] + ',"' + script.id + '");}catch (e){console.error(e);}');
 			script.appendChild(newChild);
 
 			var node = (document.documentElement || document.head || document.body);

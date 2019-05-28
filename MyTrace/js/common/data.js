@@ -38,7 +38,7 @@ var _UserCrashReportService = function(d,o){
 	// Check for premium override
 	if (o === false){
 		// Check for user consent
-		report = chrome.extension.getBackgroundPage().Trace.v.eReporting;
+		report = chrome.extension.getBackgroundPage().Vars.eReporting;
 		if (typeof report !== "boolean" || report !== true){
 			return false;
 		}
