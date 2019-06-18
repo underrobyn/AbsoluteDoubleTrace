@@ -190,6 +190,26 @@ var Prefs = {
 				"enabled":true
 			}
 		},
+		"Pref_CommonTracking":{
+			"enabled":false,
+			"settings":{
+				"piwik":{
+					"enabled":false
+				},
+				"google":{
+					"enabled":true
+				},
+				"segment":{
+					"enabled":false
+				},
+				"countly":{
+					"enabled":false
+				},
+				"fbevents":{
+					"enabled":true
+				}
+			}
+		},
 		"Pref_HardwareSpoof":{
 			"enabled":true,
 			"hardware":{
@@ -318,7 +338,8 @@ var Prefs = {
 				"resolutions":[]
 			},
 			"modifyDepths":{
-				"enabled":false
+				"enabled":false,
+				"values":[16,24,32]
 			},
 			"modifyPixelRatio":{
 				"enabled":false
@@ -413,6 +434,9 @@ var Prefs = {
 			}
 		},
 		"Main_Trace":{
+			"AdvancedUi":{
+				"enabled":false
+			},
 			"DebugApp":{
 				"enabled":false
 			},

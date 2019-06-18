@@ -203,15 +203,13 @@ var Web = {
 			// Retry blocklist download
 			if (server === 0){
 				Trace.Notify("Failed to load blocklist from main server, trying from a different server..","protd");
-				setTimeout(function(){
-					Web.GetBlockList(attempt,1);
-				},attempt*1000);
+				server = 1;
 			} else {
 				Trace.Notify("Failed to load blocklist from server, trying again. Attempt " + attempt + " of 6","protd");
-				setTimeout(function(){
-					Web.GetBlockList(attempt,server);
-				},attempt*1000);
 			}
+			setTimeout(function(){
+				Web.GetBlockList(attempt,server);
+			},attempt*1000);
 		};
 
 		// Send XHR Request

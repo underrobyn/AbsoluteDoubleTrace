@@ -74,76 +74,75 @@ var Trace = {
 			}
 		},
 		ContentTalk:function(request, sender, sendResponse){
-			if (request.msg === "uaReq"){
-				sendResponse({
-					userAgentString:Vars.useragent,
-					osCPUString:Vars.oscpu,
-					platformString:Vars.platform
-				});
-			} else if (request.msg === "checkList"){
+			switch (request.msg) {
+				case "uaReq":
+					sendResponse({
+						userAgentString:Vars.useragent,
+						osCPUString:Vars.oscpu,
+						platformString:Vars.platform
+					});
+					break;
+				case "checkList":
+					// See if the whitelist can sort this one out for us
+					if (Whitelist.wlEnabled === true){
+						var reqUrl = request.url;
 
-				// See if the whitelist can sort this one out for us
-				if (Whitelist.wlEnabled === true){
-					var reqUrl = request.url;
-
-					var wl = Whitelist.GetWhitelist();
-					for (var i = 0, l = wl.keys.length;i<l;i++){
-						if (wl.keys[i].test(reqUrl)){
-							var send = wl.values[i].Protections;
-							sendResponse({
-								"prefs":Prefs.Current,
-								"tracePaused":Vars.paused,
-								"runProtection":true,
-								"data":send
-							});
-							return;
+						var wl = Whitelist.GetWhitelist();
+						for (var i = 0, l = wl.keys.length;i<l;i++){
+							if (wl.keys[i].test(reqUrl)){
+								var send = wl.values[i].Protections;
+								sendResponse({
+									"prefs":Prefs.Current,
+									"tracePaused":Vars.paused,
+									"runProtection":true,
+									"data":send
+								});
+								return;
+							}
 						}
 					}
-				}
 
-				// Okay so the whitelist couldn't...
-				var protections = Whitelist.whitelistDefaults;
-				var keys = Object.keys(protections);
-				for (var l = keys.length, i = 0;i<l;i++){
-					protections[keys[i]] = Prefs.Current.Main_ExecutionOrder.PerPage.indexOf(keys[i]) === -1;
-				}
-				sendResponse({
-					"prefs":Prefs.Current,
-					"tracePaused":Vars.paused,
-					"runProtection":false,
-					"data":protections
-				});
-
-			} else if (request.msg === "getsetting"){
-
-				if (request.setting) {
+					// Okay so the whitelist couldn't...
+					var protections = Whitelist.whitelistDefaults;
+					var keys = Object.keys(protections);
+					for (var l = keys.length, i = 0;i<l;i++){
+						protections[keys[i]] = Prefs.Current.Main_ExecutionOrder.PerPage.indexOf(keys[i]) === -1;
+					}
 					sendResponse({
-						"data":Prefs.Current[request.setting]
+						"prefs":Prefs.Current,
+						"tracePaused":Vars.paused,
+						"runProtection":false,
+						"data":protections
 					});
-				} else {
-					sendResponse(Prefs.Current);
-				}
+					break;
+				case "getsetting":
+					if (request.setting) {
+						sendResponse({
+							"data":Prefs.Current[request.setting]
+						});
+					} else {
+						sendResponse(Prefs.Current);
+					}
+					break;
+				case "getLoadedSettings":
+					sendResponse({
+						"pingAttr":Prefs.Current.Pref_PingBlock.removePingAttr.enabled,
+						"relOpener":Prefs.Current.Pref_NativeFunctions.windowOpen.enabled
+					});
+					break;
+				case "protectionUpdate":
+					if (Trace.DEBUG) console.log("[TracePage] " + sender.tab ? "from a content script:" + sender.tab.url : "from the extension");
+					//console.log(request);
 
-			} else if (request.msg === "getLoadedSettings"){
-
-				sendResponse({
-					"pingAttr":Prefs.Current.Pref_PingBlock.removePingAttr.enabled,
-					"relOpener":Prefs.Current.Pref_NativeFunctions.windowOpen.enabled
-				});
-
-			} else if (request.msg === "protectionUpdate"){
-
-				if (Trace.DEBUG) console.log("[TracePage] " + sender.tab ? "from a content script:" + sender.tab.url : "from the extension");
-				//console.log(request);
-
-				sendResponse({
-					"pingAttr":Prefs.Current.Pref_PingBlock.removePingAttr.enabled,
-					"relOpener":Prefs.Current.Pref_NativeFunctions.windowOpen.enabled
-				});
-
-			} else {
-				console.error("Invalid message recieved");
-				console.warn(request);
+					sendResponse({
+						"pingAttr":Prefs.Current.Pref_PingBlock.removePingAttr.enabled,
+						"relOpener":Prefs.Current.Pref_NativeFunctions.windowOpen.enabled
+					});
+					break;
+				default:
+					console.error("Invalid message recieved");
+					console.warn(request);
+					break;
 			}
 		}
 	},

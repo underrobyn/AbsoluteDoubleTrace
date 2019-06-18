@@ -119,6 +119,12 @@ a{
 	color:#f9f9f9;
 	font-size:1.4em;
 }
+#home_title div:hover {
+	color: #fff;
+	background-color: rgba(0,0,0,0.5);
+	border-bottom: .1em solid #000;
+	transition:.2s ease-in-out color, .2s ease-in-out background-color;
+}
 #page_form{
 	width:95%;
 	padding:0 2% 0 1.5%;
