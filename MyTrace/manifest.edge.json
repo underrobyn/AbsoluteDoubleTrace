@@ -6,7 +6,7 @@
   	"author":"AbsoluteDouble",
 	"description":"Browse online without leaving a Trace, because who wants to be tracked?",
 	"minimum_edge_version":"42.17134.1.0",
-	"version":"2.2.7",
+	"version":"2.3.0",
   	"homepage_url":"https://absolutedouble.co.uk/trace/",
   	"options_page":"html/options.html",
 	"options_ui": {
@@ -24,7 +24,8 @@
 		 	"256": "icons/trace_256.png"
 		},
 		"default_title": "Trace | Tracking Protection",
-		"default_popup": "html/page_report.html"
+		"default_popup": "html/page_report.html",
+		"browser_style": false
 	},
 	"commands": {
 		"ToggleTraceWeb":{

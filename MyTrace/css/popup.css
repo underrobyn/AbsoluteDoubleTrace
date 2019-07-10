@@ -38,8 +38,10 @@ body {
 	transition:background-color 0.2s ease-in-out;
 }
 #home_title div{
-	width:50%;
+	width:100%;
 	float:left;
+	cursor:pointer;
+	user-select: none;
 }
 
 .msg {

@@ -28,7 +28,7 @@ var Trace = {
 		AssignRuntime:function(){
 			var uninstallUrl = "https://absolutedouble.co.uk/trace/extension-uninstall?e=";
 
-			if (/Chrome/.test(navigator.userAgent) && !(/Edge/.test(navigator.userAgent))) {
+			if (/Chrome/.test(navigator.userAgent)) {
 				chrome.runtime.onSuspend.addListener(Trace.a.SuspendSave);
 
 				// Set uninstall URL
