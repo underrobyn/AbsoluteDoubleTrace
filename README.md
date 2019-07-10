@@ -3,7 +3,7 @@ This will have the source code of every major release.
 [Changelog](https://absolutedouble.co.uk/trace/information.html) | [FAQ](https://absolutedouble.co.uk/trace/faq.html) | [Privacy Policy](https://absolutedouble.co.uk/trace/privacy.html)
 
 ## Information (Please read)
-Currently I am sitting exams and so I am not able to update Trace, I am still reading emails however will not be replying to them until after my exams are over. Development of Trace will continue though, I am not abandoning this project! Trace 2.3 will be released in/around July 2019 with lots of bug fixes and hopefully some useful new features. Thank you all for understanding.
+Work on Trace has started again, updates will be coming out in the next few weeks fixing issues and adding new features to Trace. Thank you for your patience.
 
 ## Trace Protects you against...
  - Canvas Fingerprinting
