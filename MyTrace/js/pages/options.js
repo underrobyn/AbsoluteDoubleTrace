@@ -17,14 +17,18 @@ if (typeof window.JSON !== "object"){
 	showErr("JSON Library failed to load.");
 }
 
-// A general fix for browser that use window.browser instead of window.chrome
-if (typeof window.chrome === "undefined" || !window.chrome.hasOwnProperty("extension")) window.chrome = (function (){ return window.msBrowser || window.browser || window.chrome; })();
-
 if (!chrome.hasOwnProperty("extension") || typeof chrome.extension.getBackgroundPage !== "function"){
 	showErr("Extension failed to connect to background page. Please try reloading the page.");
 }
 
-window.URL = window.URL || window.webkitURL;
+var TraceBg = chrome.runtime.getBackgroundPage;
+
+// UI event to trigger a click handle on "enter" key press
+var EnterTriggerClick = function(e) {
+	if(e.which === 13) {
+		$(this).trigger('enter');
+	}
+};
 
 var TraceOpt = {
 	homeRefresh:null,
@@ -195,8 +199,8 @@ var TraceOpt = {
 		},
 		SelectProtection:function(level){
 			if (level === 0){
-				chrome.runtime.getBackgroundPage(function(bg){
-					bg.Trace.p.SetMultiple({
+				TraceBg(function(bg){
+					bg.Prefs.SetMultiple({
 						"Pref_ETagTrack.enabled":true,
 						"Pref_ClientRects.enabled":true
 					});
@@ -204,8 +208,8 @@ var TraceOpt = {
 			}
 
 			if(level === 1){
-				chrome.runtime.getBackgroundPage(function(bg){
-					bg.Trace.p.SetMultiple({
+				TraceBg(function(bg){
+					bg.Prefs.SetMultiple({
 						"Pref_GoogleHeader.enabled":true,
 						"Pref_AudioFingerprint.enabled":true
 					});
@@ -213,8 +217,8 @@ var TraceOpt = {
 			}
 
 			if (level === 2){
-				chrome.runtime.getBackgroundPage(function(bg){
-					bg.Trace.p.SetMultiple({
+				TraceBg(function(bg){
+					bg.Prefs.SetMultiple({
 						"Pref_WebController.urlCleaner.enabled":true,
 						"Pref_ReferHeader.enabled":true
 					});
@@ -361,11 +365,11 @@ var TraceOpt = {
 		// Assign click events to stats page
 		TraceOpt.Stats.AssignGraphOptions();
 
-		chrome.runtime.getBackgroundPage(function(bg){
-			TraceOpt.debug = (typeof bg.Trace.p.Current.Main_Trace.DebugApp.enabled !== "undefined" ?
-				(bg.Trace.p.Current.Main_Trace.DebugApp.enabled) : false);
-			TraceOpt.Blocklist.isPremium = (typeof bg.Trace.v.Premium !== "undefined" ?
-				(bg.Trace.v.Premium.length !== 0) : false);
+		TraceBg(function(bg){
+			TraceOpt.debug = (typeof bg.Prefs.Current.Main_Trace.DebugApp.enabled !== "undefined" ?
+				(bg.Prefs.Current.Main_Trace.DebugApp.enabled) : false);
+			TraceOpt.Blocklist.isPremium = (typeof bg.Vars.Premium !== "undefined" ?
+				(bg.Vars.Premium.length !== 0) : false);
 		});
 
 		$("#trace_vernum").text(chrome.runtime.getManifest().version || "?");
@@ -416,8 +420,8 @@ var TraceOpt = {
 				return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 			};
 
-			chrome.runtime.getBackgroundPage(function(bg){
-				bg.Trace.s.MainText(function(i,t,d){
+			TraceBg(function(bg){
+				bg.Stats.MainText(function(i,t,d){
 					var text = "<br />Trace has been protecting you since <span>" + i + "</span>";
 
 					if (neatNumber(t["total"]).toString() !== "0"){
@@ -510,9 +514,7 @@ var TraceOpt = {
 		},false);
 
 		$(".side_el").each(function(){
-			$(this).on("click enter", TraceOpt.LoadPage).on("keypress",function(e) {
-				if(e.which === 13) TraceOpt.LoadPage();
-			});
+			$(this).on("click enter", TraceOpt.LoadPage).on("keypress",EnterTriggerClick);
 		});
 
 		$(".menutoggle").on("click enter",function(){
@@ -582,8 +584,8 @@ var TraceOpt = {
 	},
 	ResetTraceSettings:function(){
 		if (confirm("Reset Trace settings to default? It will also remove your premium code from Trace's storage.")){
-			chrome.runtime.getBackgroundPage(function(bg){
-				bg.Trace.p.SetDefaults(true,function(){
+			TraceBg(function(bg){
+				bg.Prefs.SetDefaults(true,function(){
 					window.location.reload();
 				});
 			});
@@ -605,11 +607,7 @@ var TraceOpt = {
 					TraceOpt.currentSettingTab = "";
 				}
 
-			}).on("keypress",function(e) {
-				if(e.which === 13) {
-					$(this).trigger('enter');
-				}
-			});
+			}).on("keypress",EnterTriggerClick);
 		});
 
 		// Settings info events
@@ -620,36 +618,24 @@ var TraceOpt = {
 				if (isVis === false){
 					$("#" + $(this).data("info")).show();
 				}
-			}).on("keypress",function(e) {
-				if(e.which === 13) {
-					$(this).trigger('enter');
-				}
-			});
+			}).on("keypress",EnterTriggerClick);
 		});
 
 		// Settings toggle events
 		$(".setting_toggle, .trace_toggle").each(function(){
 			$(this).on("click enter", function(e){
 				var that = this;
-				chrome.runtime.getBackgroundPage(function(bg){
-					bg.Trace.p.ToggleSetting($(that).data("toggle"),TraceOpt.GetCurrentSettings);
+				TraceBg(function(bg){
+					bg.Prefs.ToggleSetting($(that).data("toggle"),TraceOpt.GetCurrentSettings);
 				});
-			}).on("keypress",function(e) {
-				if(e.which === 13) {
-					$(this).trigger('enter');
-				}
-			});
+			}).on("keypress",EnterTriggerClick);
 		});
 
 		// Settings configuration events
 		$(".setting_config").each(function(){
 			$(this).on("click enter", function(){
 				TraceOpt.Config.Options($(this).data("config"));
-			}).on("keypress",function(e) {
-				if(e.which === 13) {
-					$(this).trigger('enter');
-				}
-			});
+			}).on("keypress",EnterTriggerClick);
 		});
 
 		// Direct toggle events
@@ -657,11 +643,7 @@ var TraceOpt = {
 			$(this).on("click enter", function(){
 				var name = $(this).data("toggle");
 				TraceOpt.DirectSetting(this,name,true);
-			}).on("keypress",function(e) {
-				if(e.which === 13) {
-					$(this).trigger('enter');
-				}
-			});
+			}).on("keypress",EnterTriggerClick);
 		});
 
 		$("#setting_backuprestore").on("click enter",TraceOpt.Backup.Interface);
@@ -669,8 +651,8 @@ var TraceOpt = {
 	},
 	GetCurrentSettings:function(){
 		// Get current settings
-		chrome.runtime.getBackgroundPage(function(bg){
-			var settingsList = bg.Trace.p.Current;
+		TraceBg(function(bg){
+			var settingsList = bg.Prefs.Current;
 
 			$(".setting_toggle").each(function(){
 				var status = $(this).data("toggle"), e = false;
@@ -712,11 +694,11 @@ var TraceOpt = {
 		});
 	},
 	UpdateBlocklist:function(){
-		chrome.runtime.getBackgroundPage(function(bg){
-			if (bg.Trace.p.Current.Pref_WebController.enabled !== true){
-				bg.Trace.p.Current.Pref_WebController.enabled = true;
+		TraceBg(function(bg){
+			if (bg.Prefs.Current.Pref_WebController.enabled !== true){
+				bg.Prefs.Current.Pref_WebController.enabled = true;
 			}
-			bg.Trace.b.BlocklistLoader(true);
+			bg.Web.BlocklistLoader(true);
 		});
 		$(this).text("Working...");
 	},
@@ -728,8 +710,8 @@ var TraceOpt = {
 			"ERROR:Code_Paused - Please send me an email"
 		],
 		GetStatus:function(){
-			chrome.runtime.getBackgroundPage(function(bg){
-				var code = bg.Trace.v.Premium;
+			TraceBg(function(bg){
+				var code = bg.Vars.Premium;
 
 				if (typeof(code) !== "string" || code === ""){
 					$("#trace_premstatus").show();
@@ -757,7 +739,7 @@ var TraceOpt = {
 					$("<button/>").text("Disable Premium").click(TraceOpt.Premium.RemoveCode),
 					$("<span/>").text(" "),
 					$("<button/>").text(
-						(bg.Trace.p.Current.Pref_WebController.enabled === true ? "Force Blocklist Update" : "Enable Web Request Controller")
+						(bg.Prefs.Current.Pref_WebController.enabled === true ? "Force Blocklist Update" : "Enable Web Request Controller")
 					).on("click enter",TraceOpt.UpdateBlocklist),
 					$("<span/>").text(" "),
 					$("<button/>").on("click enter",function(){
@@ -768,23 +750,23 @@ var TraceOpt = {
 			});
 		},
 		RemoveCode:function(){
-			chrome.runtime.getBackgroundPage(function(bg){
-				if (!confirm("Are you sure you wish to remove your premium code from Trace?\nThis will not delete your code from our servers.\n\nYour code:\n" + bg.Trace.v.Premium)) return;
+			TraceBg(function(bg){
+				if (!confirm("Are you sure you wish to remove your premium code from Trace?\nThis will not delete your code from our servers.\n\nYour code:\n" + bg.Vars.Premium)) return;
 
 				// Update settings
-				bg.Trace.p.Set("Main_Trace.PremiumCode","");
+				bg.Prefs.Set("Main_Trace.PremiumCode","");
 				TraceOpt.Blocklist.InstallList("a00000001",false);
 				TraceOpt.Blocklist.InstallList("a00000003",false);
 
-				bg.Trace.b.ClearDomainCache();
+				bg.Web.ClearDomainCache();
 
 				$(".premium_inner").empty().html("<h1>Please wait...</h1>");
 
 				TraceOpt.Interface.GetMainPage();
 				TraceOpt.Premium.GetStatus();
 				setTimeout(function(){
-					TraceOpt.Blocklist.isPremium = (typeof bg.Trace.v.Premium !== "undefined" ?
-						(bg.Trace.v.Premium.length !== 0) : false);
+					TraceOpt.Blocklist.isPremium = (typeof bg.Vars.Premium !== "undefined" ?
+						(bg.Vars.Premium.length !== 0) : false);
 				},1500);
 			});
 		},
@@ -904,7 +886,7 @@ var TraceOpt = {
 			var eden = $("#premium_code_box").val();
 			var lost = "M2ysyaSd58sqt4zVGicIfbMYac8dqhtrk5yyA8tiG31gZ";
 
-			chrome.runtime.getBackgroundPage(function(bg){
+			TraceBg(function(bg){
 				bg._UserCrashReportService({"PremiumTrace":"TryCode","CodeAttempt":eden},true);
 			});
 
@@ -918,10 +900,10 @@ var TraceOpt = {
 			u += "&s=" + btoa(lost);
 			u += "&d=" + btoa((Math.round((new Date()).getTime()/1000))*2);
 			u += "&j=M&a=premium_x";
-			u += "&c=" + TraceOpt.makeRandomID(5);
+			u += "&c=" + makeRandomID(5);
 
 			function bgNotify(msg,sect){
-				chrome.runtime.getBackgroundPage(function(bg){
+				TraceBg(function(bg){
 					bg.Trace.Notify(msg,sect);
 				});
 			}
@@ -944,8 +926,8 @@ var TraceOpt = {
 
 					pt.text("Applying Code...");
 
-					chrome.runtime.getBackgroundPage(function(bg){
-						bg.Trace.p.Set("Main_Trace.PremiumCode", eden);
+					TraceBg(function(bg){
+						bg.Prefs.Set("Main_Trace.PremiumCode", eden);
 						bg._UserCrashReportService({
 							"PremiumTrace": "AcceptedCode",
 							"CodeUsed": eden
@@ -963,17 +945,17 @@ var TraceOpt = {
 
 					pt.text("Please wait... Initialising Premium :)");
 
-					if (chrome.extension.getBackgroundPage().Trace.p.Current.Pref_WebController.enabled === true){
+					if (chrome.extension.getBackgroundPage().Prefs.Current.Pref_WebController.enabled === true){
 						pt.text("Premium blocklist will be used when domain blocking is enabled in setttings.");
 						return;
 					}
 
-					chrome.runtime.getBackgroundPage(function(bg){
-						bg.Trace.b.BlocklistLoader(true);
+					TraceBg(function(bg){
+						bg.Web.BlocklistLoader(true);
 
 						setTimeout(function(){
-							TraceOpt.Blocklist.isPremium = (typeof bg.Trace.v.Premium !== "undefined" ?
-								(bg.Trace.v.Premium.length !== 0) : false);
+							TraceOpt.Blocklist.isPremium = (typeof bg.Vars.Premium !== "undefined" ?
+								(bg.Vars.Premium.length !== 0) : false);
 						},1500);
 
 						TraceOpt.Interface.GetMainPage();
@@ -1004,9 +986,7 @@ var TraceOpt = {
 		if (!chrome.privacy) {
 			$("#settings_sbrowserfeature").empty().append(
 				$("<tr/>").append(
-					$("<td/>",{
-						"colspan":"3"
-					}).text("Your browser doesn't yet support these settings")
+					$("<td/>",{"colspan":"3"}).text("Your browser doesn't yet support these settings")
 				)
 			);
 			return;
@@ -1151,8 +1131,8 @@ var TraceOpt = {
 			TraceOpt.AssignCloseOverlay(true);
 		},
 		Create:function(){
-			chrome.runtime.getBackgroundPage(function(bg){
-				bg.Trace.p.CreateBackup(function(raw){
+			TraceBg(function(bg){
+				bg.Prefs.CreateBackup(function(raw){
 					TraceOpt.MakeDownload("TraceSettings",JSON.stringify(raw,null,4));
 				});
 			});
@@ -1236,8 +1216,8 @@ var TraceOpt = {
 			var data = {};
 			data = TraceOpt.Backup.Data.data;
 
-			chrome.runtime.getBackgroundPage(function(bg){
-				bg.Trace.v.s.set(data,function(){
+			TraceBg(function(bg){
+				bg.Vars.s.set(data,function(){
 					bg.window.location.reload();
 					window.location.href = "#backupRestored";
 					window.location.reload(true);
@@ -1245,8 +1225,8 @@ var TraceOpt = {
 			});
 		},
 		ClearRestore:function(){
-			chrome.runtime.getBackgroundPage(function(bg){
-				bg.Trace.p.ClearStorage();
+			TraceBg(function(bg){
+				bg.Prefs.ClearStorage();
 				TraceOpt.Backup.NormalRestore();
 			});
 		}
@@ -1273,20 +1253,18 @@ var TraceOpt = {
 			"Pref_WebRTC":"WebRTC Protection"
 		},
 		ReloadInterface:function(){
-			chrome.runtime.getBackgroundPage(function(bg){
+			TraceBg(function(bg){
 				bg.Trace.f.ReturnExecOrder(TraceOpt.ExecutionOrder.CreateInterface);
 			});
 		},
 		CreateInterface:function(p){
 			var allpage = $("#settings_protallpage");
 			var perpage = $("#settings_protperpage");
-			var disallowed = ["Pref_CookieEater","Pref_ReferHeader","Pref_GoogleHeader","Pref_ETagTrack","Pref_UserAgent","Pref_IPSpoof"];
 
 			allpage.empty();
 			perpage.empty();
 
 			for (var si = 0, sl = p.AllPage.length;si<sl;si++){
-				//if (disallowed.indexOf(p.AllPage[si]) !== -1) continue;
 				allpage.append(
 					$("<a/>",{
 						"class":"settings_execorder",
@@ -1299,7 +1277,6 @@ var TraceOpt = {
 			}
 
 			for (var i = 0, l = p.PerPage.length;i<l;i++){
-				//if (disallowed.indexOf(p.PerPage[i]) !== -1) continue;
 				perpage.append(
 					$("<a/>",{
 						"class":"settings_execorder",
@@ -1313,7 +1290,7 @@ var TraceOpt = {
 		},
 		SwapProtection:function(){
 			var that = $(this).data("pref");
-			chrome.runtime.getBackgroundPage(function(bg){
+			TraceBg(function(bg){
 				bg.Trace.f.ChangeExecOrder(that,TraceOpt.ExecutionOrder.ReloadInterface);
 			});
 		}
@@ -1344,13 +1321,13 @@ var TraceOpt = {
 		},
 		Options:function(setting){
 			TraceOpt.Config.SelectedOption = setting;
-			chrome.runtime.getBackgroundPage(function(bg){
-				//Trace.Config.CurrentSettings = bg.Trace.p.GetSetting();
-				TraceOpt.Config.CurrentSel = bg.Trace.p.GetSetting(TraceOpt.Config.SelectedOption);
+			TraceBg(function(bg){
+				//Trace.Config.CurrentSettings = bg.Prefs.GetSetting();
+				TraceOpt.Config.CurrentSel = bg.Prefs.GetSetting(TraceOpt.Config.SelectedOption);
 
 				var enabled = false;
 				if (TraceOpt.Config.SelectedOption.includes(".")){
-					enabled = bg.Trace.p.GetSetting(TraceOpt.Config.SelectedOption).enabled;
+					enabled = bg.Prefs.GetSetting(TraceOpt.Config.SelectedOption).enabled;
 				} else {
 					enabled = TraceOpt.Config.CurrentSel.enabled;
 				}
@@ -1426,8 +1403,8 @@ var TraceOpt = {
 			if ($(a).is(":checked")){
 				v = true;
 			}
-			chrome.runtime.getBackgroundPage(function(bg){
-				bg.Trace.p.Set(s,v);
+			TraceBg(function(bg){
+				bg.Prefs.Set(s,v);
 			});
 		},
 		GetConf:function(){
@@ -1446,7 +1423,7 @@ var TraceOpt = {
 
 					var opts = {
 						"type":"checkbox",
-						"id":"c_opt_"+TraceOpt.makeRandomID(16),
+						"id":"c_opt_"+makeRandomID(16),
 						"data-conf":TraceOpt.Config.SelectedOption + "." + i + ".enabled"
 					};
 					if (TraceOpt.Config.CurrentSel[i].enabled === true){
@@ -1560,7 +1537,7 @@ var TraceOpt = {
 			return /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(ip)
 		},
 		UpdateIPText:function(){
-			chrome.runtime.getBackgroundPage(function(bg){
+			TraceBg(function(bg){
 				$("#pipspoof_currentip").html("<strong>Current IP:</strong> " + bg.Trace.i.CurrentFakeIP || "No IP Set");
 			});
 		},
@@ -1583,8 +1560,8 @@ var TraceOpt = {
 				if (TraceOpt.PIPSpoof.IPSaveTimeout) clearTimeout(TraceOpt.PIPSpoof.IPSaveTimeout);
 
 				TraceOpt.PIPSpoof.IPSaveTimeout = setTimeout(function(){
-					chrome.runtime.getBackgroundPage(function(bg){
-						bg.Trace.p.Set("Pref_IPSpoof.traceIP.user_set",potential);
+					TraceBg(function(bg){
+						bg.Prefs.Set("Pref_IPSpoof.traceIP.user_set",potential);
 					});
 					$("#" + elID).css({
 						"background":"#70ff71",
@@ -1611,8 +1588,8 @@ var TraceOpt = {
 				if (TraceOpt.PIPSpoof.ViaSaveTimeout) clearTimeout(TraceOpt.PIPSpoof.ViaSaveTimeout);
 
 				TraceOpt.PIPSpoof.ViaSaveTimeout = setTimeout(function(){
-					chrome.runtime.getBackgroundPage(function(bg){
-						bg.Trace.p.Set("Pref_IPSpoof.traceVia.value",potential);
+					TraceBg(function(bg){
+						bg.Prefs.Set("Pref_IPSpoof.traceVia.value",potential);
 					});
 					$("#" + elID).css({
 						"background":"#70ff71",
@@ -1637,7 +1614,7 @@ var TraceOpt = {
 			for (var i = 0, l = configOpts.length;i<l;i++){
 				var opts = {
 					"type":"checkbox",
-					"id":"c_opt_"+TraceOpt.makeRandomID(16),
+					"id":"c_opt_"+makeRandomID(16),
 					"data-conf":TraceOpt.Config.SelectedOption + "." + configOpts[i] + ".enabled",
 					"data-special":configOpts[i]
 				};
@@ -1737,8 +1714,8 @@ var TraceOpt = {
 			});
 		},
 		GetStatsData:function(cb){
-			chrome.runtime.getBackgroundPage(function(bg){
-				bg.Trace.s.Data(function(d){
+			TraceBg(function(bg){
+				bg.Stats.Data(function(d){
 					TraceOpt.Stats.GraphData = d;
 					if (cb) cb(d);
 				});
@@ -1776,11 +1753,11 @@ var TraceOpt = {
 
 			if (dLen === 0){
 				$("#graph_controls").hide();
-				if (typeof chrome.extension.getBackgroundPage().Trace.p.Current.Main_Trace === "undefined"){
+				if (typeof chrome.extension.getBackgroundPage().Prefs.Current.Main_Trace === "undefined"){
 					$("#graph_container").html("Error.<br /><br />Please try restarting your browser.<br />").css("height","auto");
 					return;
 				}
-				if (chrome.extension.getBackgroundPage().Trace.p.Current.Main_Trace.ProtectionStats.enabled === true){
+				if (chrome.extension.getBackgroundPage().Prefs.Current.Main_Trace.ProtectionStats.enabled === true){
 					$("#graph_container").html("Statistics are enabled, but there is no data available yet.<br /><br />Try browsing the web a bit and then check back here!<br />").css("height","auto");
 				} else {
 					TraceOpt.Stats.ShowDisabled(dLen);
@@ -1788,7 +1765,7 @@ var TraceOpt = {
 				return;
 			}
 
-			if (chrome.extension.getBackgroundPage().Trace.p.Current.Main_Trace.ProtectionStats.enabled === false){
+			if (chrome.extension.getBackgroundPage().Prefs.Current.Main_Trace.ProtectionStats.enabled === false){
 				$("#graph_controls").hide();
 				TraceOpt.Stats.ShowDisabled(dLen);
 			}
@@ -1965,8 +1942,8 @@ var TraceOpt = {
 			}
 			var date, returnd;
 
-			chrome.runtime.getBackgroundPage(function(bg){
-				bg.Trace.s.Data(function(d) {
+			TraceBg(function(bg){
+				bg.Stats.Data(function(d) {
 					if (file === "csv" || file === "tsv") {
 						var s = ",";
 						if (file === "tsv") s = "\t";
@@ -2076,11 +2053,11 @@ var TraceOpt = {
 				});
 			};
 
-			chrome.runtime.getBackgroundPage(function(bg){
+			TraceBg(function(bg){
 				if (a === "7"){
-					bg.Trace.s.DeleteAmount("all",cb);
+					bg.Stats.DeleteAmount("all",cb);
 				} else {
-					bg.Trace.s.DeleteAmount(parseInt(a)+1,cb);
+					bg.Stats.DeleteAmount(parseInt(a)+1,cb);
 				}
 			});
 		}
@@ -2139,8 +2116,8 @@ var TraceOpt = {
 			TraceOpt.AssignCloseOverlay(true);
 		},
 		SaveParameters:function(){
-			chrome.runtime.getBackgroundPage(function(bg){
-				bg.Trace.p.SetMultiple({
+			TraceBg(function(bg){
+				bg.Prefs.SetMultiple({
 					"Pref_HardwareSpoof.hardware.hardwareConcurrency.enabled": $("#hwspoof_use_fakecpu").is(":checked"),
 					"Pref_HardwareSpoof.hardware.deviceMemory.enabled": $("#hwspoof_use_fakeram").is(":checked"),
 					"Pref_HardwareSpoof.hardware.hardwareConcurrency.value": $("#hwspoof_val_fakecpu").val(),
@@ -2193,7 +2170,7 @@ var TraceOpt = {
 
 					var opts = {
 						"type":"checkbox",
-						"id":"c_opt_"+TraceOpt.makeRandomID(16),
+						"id":"c_opt_"+makeRandomID(16),
 						"data-conf":TraceOpt.Config.SelectedOption + "." + i + "." + j + ".enabled"
 					};
 					if (TraceOpt.Config.CurrentSel[i][j].enabled === true) opts["checked"] = "checked";
@@ -2279,15 +2256,15 @@ var TraceOpt = {
 			$(this).text("Changing...");
 
 			if (TraceOpt.Config.CurrentSel.randomOpts.enabled === true){
-				chrome.runtime.getBackgroundPage(function(bg){
-					bg.Trace.p.SetMultiple({
+				TraceBg(function(bg){
+					bg.Prefs.SetMultiple({
 						"Pref_ScreenRes.randomOpts.enabled":false,
 						"Pref_ScreenRes.commonResolutions.enabled":true
 					});
 				});
 			} else {
-				chrome.runtime.getBackgroundPage(function(bg){
-					bg.Trace.p.SetMultiple({
+				TraceBg(function(bg){
+					bg.Prefs.SetMultiple({
 						"Pref_ScreenRes.randomOpts.enabled":true,
 						"Pref_ScreenRes.commonResolutions.enabled":false
 					});
@@ -2322,8 +2299,8 @@ var TraceOpt = {
 			for (var res in common){
 				TraceOpt.Config.CurrentSel.commonResolutions.resolutions.push([parseInt(common[res][0]),parseInt(common[res][1])]);
 			}
-			chrome.runtime.getBackgroundPage(function(bg){
-				bg.Trace.p.Set("Pref_ScreenRes.commonResolutions.resolutions",TraceOpt.Config.CurrentSel.commonResolutions.resolutions);
+			TraceBg(function(bg){
+				bg.Prefs.Set("Pref_ScreenRes.commonResolutions.resolutions",TraceOpt.Config.CurrentSel.commonResolutions.resolutions);
 			});
 			TraceOpt.ScreenRes.UpdateResolutions();
 		},
@@ -2348,8 +2325,8 @@ var TraceOpt = {
 		RemoveResolution:function(){
 			var id = $(this).data("listid");
 			TraceOpt.Config.CurrentSel.commonResolutions.resolutions.splice(id,1);
-			chrome.runtime.getBackgroundPage(function(bg){
-				bg.Trace.p.Set("Pref_ScreenRes.commonResolutions.resolutions",TraceOpt.Config.CurrentSel.commonResolutions.resolutions);
+			TraceBg(function(bg){
+				bg.Prefs.Set("Pref_ScreenRes.commonResolutions.resolutions",TraceOpt.Config.CurrentSel.commonResolutions.resolutions);
 			});
 			TraceOpt.ScreenRes.UpdateResolutions();
 		},
@@ -2369,8 +2346,8 @@ var TraceOpt = {
 			}
 
 			TraceOpt.Config.CurrentSel.commonResolutions.resolutions.push([parseInt(res[0]),parseInt(res[1])]);
-			chrome.runtime.getBackgroundPage(function(bg){
-				bg.Trace.p.Set("Pref_ScreenRes.commonResolutions.resolutions",TraceOpt.Config.CurrentSel.commonResolutions.resolutions);
+			TraceBg(function(bg){
+				bg.Prefs.Set("Pref_ScreenRes.commonResolutions.resolutions",TraceOpt.Config.CurrentSel.commonResolutions.resolutions);
 			});
 			TraceOpt.ScreenRes.UpdateResolutions();
 		},
@@ -2379,8 +2356,8 @@ var TraceOpt = {
 				min = parseInt($("#sr_offsetminval").val());
 			TraceOpt.Config.CurrentSel.randomOpts.values = [min,max];
 
-			chrome.runtime.getBackgroundPage(function(bg){
-				bg.Trace.p.Set("Pref_ScreenRes.randomOpts.values",TraceOpt.Config.CurrentSel.randomOpts.values);
+			TraceBg(function(bg){
+				bg.Prefs.Set("Pref_ScreenRes.randomOpts.values",TraceOpt.Config.CurrentSel.randomOpts.values);
 				TraceOpt.ScreenRes.UpdateOffsets();
 			});
 
@@ -2395,9 +2372,9 @@ var TraceOpt = {
 		isPremium:false,
 		updatedList:false,
 		OpenDialog:function(){
-			chrome.runtime.getBackgroundPage(function(bg){
-				TraceOpt.Blocklist.isPremium = (typeof bg.Trace.v.Premium !== "undefined" ?
-					(bg.Trace.v.Premium.length !== 0) : false);
+			TraceBg(function(bg){
+				TraceOpt.Blocklist.isPremium = (typeof bg.Vars.Premium !== "undefined" ?
+					(bg.Vars.Premium.length !== 0) : false);
 			});
 
 			$("#overlay_cont").addClass("blc_parent");
@@ -2438,8 +2415,8 @@ var TraceOpt = {
 			function updateLists(){
 				if (TraceOpt.Blocklist.updatedList) {
 					unbindClick();
-					chrome.runtime.getBackgroundPage(function(bg){
-						bg.Trace.b.BlocklistLoader(true);
+					TraceBg(function(bg){
+						bg.Web.BlocklistLoader(true);
 					});
 				}
 
@@ -2487,7 +2464,7 @@ var TraceOpt = {
 				} else {
 					for (var i = 0,l = TraceOpt.Blocklist.ListConfig.lists.length;i<l;i++){
 						var currentItem = TraceOpt.Blocklist.ListConfig.lists[i];
-						var currentItemId = TraceOpt.makeRandomID(7);
+						var currentItemId = makeRandomID(7);
 
 						var control = $("<div/>",{
 							"class":"setting_conf_opt"
@@ -2549,7 +2526,7 @@ var TraceOpt = {
 			var checkEnabledItems = function(){
 				$(".blc_installListCheck").each(function(){
 					var installCode = $(this).data("install");
-					var isInstalled = chrome.extension.getBackgroundPage().Trace.p.Current.Pref_WebController.installCodes[installCode];
+					var isInstalled = chrome.extension.getBackgroundPage().Prefs.Current.Pref_WebController.installCodes[installCode];
 					if (isInstalled){
 						$(this).attr("checked","checked");
 					}
@@ -2609,8 +2586,8 @@ var TraceOpt = {
 				return;
 			}
 
-			chrome.runtime.getBackgroundPage(function(bg){
-				var currentCodes = bg.Trace.p.Current.Pref_WebController.installCodes;
+			TraceBg(function(bg){
+				var currentCodes = bg.Prefs.Current.Pref_WebController.installCodes;
 				if (typeof currentCodes !== "object") {
 					currentCodes = {
 						"a00000002":true,
@@ -2629,37 +2606,13 @@ var TraceOpt = {
 				TraceOpt.Blocklist.updatedList = true;
 				$("#blc_updAlert").show();
 
-				bg.Trace.p.Set("Pref_WebController.installCodes",currentCodes);
+				bg.Prefs.Set("Pref_WebController.installCodes",currentCodes);
 			});
 		}
 	},
 	Scope:{
 		CurrentList:[],
 		CurrentSelect:null,
-		ProtectionTemplate:{
-			SiteBlocked:false,
-			InitRequests:true,
-			Protections:{
-				Pref_AudioFingerprint:true,
-				Pref_BatteryApi:true,
-				Pref_CanvasFingerprint: true,
-				Pref_ClientRects:true,
-				Pref_CookieEater:true,
-				Pref_ETagTrack:true,
-				Pref_GoogleHeader:true,
-				Pref_IPSpoof:true,
-				Pref_NativeFunctions:true,
-				Pref_NetworkInformation:true,
-				Pref_HardwareSpoof:true,
-				Pref_PingBlock:true,
-				Pref_PluginHide:true,
-				Pref_ReferHeader:true,
-				Pref_ScreenRes:true,
-				Pref_UserAgent:true,
-				Pref_WebRTC:true,
-				Pref_WebGLFingerprint:true
-			}
-		},
 		Title:$("#scope .sect_header"),
 		Init:function(){
 			TraceOpt.Scope.AssignEvents();
@@ -2678,8 +2631,8 @@ var TraceOpt = {
 		},
 		ClearWhitelist:function(){
 			if (confirm("Are you sure you wish to clear the entire list?")){
-				chrome.runtime.getBackgroundPage(function(bg){
-					bg.Trace.c.EmptyList();
+				TraceBg(function(bg){
+					bg.Whitelist.EmptyList();
 					TraceOpt.Scope.ReloadList();
 				});
 			}
@@ -2708,7 +2661,7 @@ var TraceOpt = {
 							"tabindex":"1",
 							"data-itmkey":keys[pos],
 							"data-pos":added,
-							"id":"wle_id_" + TraceOpt.makeRandomID(7)
+							"id":"wle_id_" + makeRandomID(7)
 						}).text(keys[pos]).on("keyup",TraceOpt.Scope.AlterSelect).click(TraceOpt.Scope.SelectDomain)
 					);
 					added++;
@@ -2766,12 +2719,12 @@ var TraceOpt = {
 				$("<br/>"),$("<br/>")
 			);
 			TraceOpt.AssignCloseOverlay(true);
-			chrome.runtime.getBackgroundPage(TraceOpt.Scope.AddExecs);
+			TraceBg(TraceOpt.Scope.AddExecs);
 		},
 		AddExecs:function(bg){
-			var enableStatus = bg.Trace.c.whitelistDefaults;
-			var dpAllPage = bg.Trace.p.Current.Main_ExecutionOrder.AllPage || [];
-			var dpPerPage = bg.Trace.p.Current.Main_ExecutionOrder.PerPage || [];
+			var enableStatus = bg.Whitelist.whitelistDefaults;
+			var dpAllPage = bg.Prefs.Current.Main_ExecutionOrder.AllPage || [];
+			var dpPerPage = bg.Prefs.Current.Main_ExecutionOrder.PerPage || [];
 			var allPage = $("#s_add_allpage"),
 				perPage = $("#s_add_perpage");
 
@@ -2820,29 +2773,11 @@ var TraceOpt = {
 			if (allPage.children().length === 0) allPage.text("No protections in this category");
 			if (perPage.children().length === 0) perPage.text("No protections in this category");
 		},
-		CleanDomain:function(url){
-			var hostname;
-
-			if (url.indexOf("://") > -1) {
-				hostname = url.split('/')[2];
-			} else {
-				hostname = url.split('/')[0];
-			}
-
-			if ((hostname.match(new RegExp(":","g")) || []).length > 1){
-				return false;
-			}
-
-			hostname = hostname.split(':')[0];
-			hostname = hostname.split('?')[0];
-
-			return hostname;
-		},
 		AddValidation:function(domain,e){
 			$(e).text("Updating...");
 
 			// Default protection template
-			var scopeData = TraceOpt.Scope.ProtectionTemplate;
+			var scopeData = ProtectionTemplate(true);
 
 			// Update 2 main controllers
 			scopeData["SiteBlocked"] = $("#s_prot_blocksite").is(":checked");
@@ -2854,8 +2789,8 @@ var TraceOpt = {
 				console.log($(this).data("controls"),"set to",$(this).is(":checked"));
 			});
 
-			chrome.runtime.getBackgroundPage(function(bg){
-				bg.Trace.c.AddItem(domain,scopeData,function(){
+			TraceBg(function(bg){
+				bg.Whitelist.AddItem(domain,scopeData,function(){
 					TraceOpt.Scope.ReloadList();
 					TraceOpt.CloseOverlay();
 				});
@@ -2868,7 +2803,7 @@ var TraceOpt = {
 
 			$("#drop_message").empty().append(
 				$("<h1/>").text("Edit whitelist domain"),
-				$("<h3/>").html("Edit the wildcard pattern, site request permissions and modify protections that can run."),
+				$("<h3/>").text("Edit the wildcard pattern, site request permissions and modify protections that can run."),
 				$("<input/>",{
 					"type":"text",
 					"placeholder":"Wildcard Pattern (e.g. *badtracker.co.nz*)",
@@ -2909,11 +2844,11 @@ var TraceOpt = {
 				$("<br/>"),$("<br/>")
 			);
 			TraceOpt.AssignCloseOverlay(true);
-			chrome.runtime.getBackgroundPage(TraceOpt.Scope.AddExecs);
-			chrome.runtime.getBackgroundPage(TraceOpt.Scope.UpdateExecs);
+			TraceBg(TraceOpt.Scope.AddExecs);
+			TraceBg(TraceOpt.Scope.UpdateExecs);
 		},
 		UpdateExecs:function(bg){
-			var currData = bg.Trace.c.storedWhitelist[TraceOpt.Scope.CurrentSelect.data("itmkey")];
+			var currData = bg.Whitelist.storedWhitelist[TraceOpt.Scope.CurrentSelect.data("itmkey")];
 
 			if (typeof currData.Protections === "undefined"){
 				console.error(currData);
@@ -2938,7 +2873,7 @@ var TraceOpt = {
 			var addItem = $("#wle_domainadd").val();
 
 			// Default protection template
-			var scopeData = TraceOpt.Scope.ProtectionTemplate;
+			var scopeData = ProtectionTemplate(true);
 
 			// Update 2 main controllers
 			scopeData["SiteBlocked"] = $("#s_prot_blocksite").is(":checked");
@@ -2949,8 +2884,8 @@ var TraceOpt = {
 				scopeData["Protections"][$(this).data("controls")] = $(this).is(":checked");
 			});
 
-			chrome.runtime.getBackgroundPage(function(bg){
-				bg.Trace.c.EditItem(removeItem,addItem,scopeData,function(){
+			TraceBg(function(bg){
+				bg.Whitelist.EditItem(removeItem,addItem,scopeData,function(){
 					TraceOpt.Scope.ReloadList();
 				});
 			});
@@ -2960,8 +2895,8 @@ var TraceOpt = {
 				return false;
 			}
 			var item = TraceOpt.Scope.CurrentSelect.data("itmkey");
-			chrome.runtime.getBackgroundPage(function(bg){
-				bg.Trace.c.RemoveItem(item,function(){
+			TraceBg(function(bg){
+				bg.Whitelist.RemoveItem(item,function(){
 					TraceOpt.Scope.ReloadList();
 				});
 			});
@@ -3048,7 +2983,7 @@ var TraceOpt = {
 						"tabindex":"0",
 						"data-itmkey":keys[pos],
 						"data-pos":pos,
-						"id":"wle_id_" + TraceOpt.makeRandomID(7)
+						"id":"wle_id_" + makeRandomID(7)
 					}).html(parseEntry(keys[pos])).on("keyup",TraceOpt.Scope.AlterSelect).click(TraceOpt.Scope.SelectDomain)
 				);
 			}
@@ -3057,8 +2992,8 @@ var TraceOpt = {
 		},
 		PopulateList:function(cb){
 			$("#wl_biglist").empty();
-			chrome.runtime.getBackgroundPage(function(bg){
-				bg.Trace.c.ReturnWhitelist(function(list){
+			TraceBg(function(bg){
+				bg.Whitelist.ReturnWhitelist(function(list){
 					if (Object.keys(list).length === 0){
 						TraceOpt.Scope.EmptyList();
 					} else {
@@ -3077,8 +3012,8 @@ var TraceOpt = {
 				cont.empty();
 
 				function doTheWhitelistParse(bg){
-					var currWl = bg.Trace.c.GetWhitelist();
-					var storWl = Object.keys(bg.Trace.c.storedWhitelist);
+					var currWl = bg.Whitelist.GetWhitelist();
+					var storWl = Object.keys(bg.Whitelist.storedWhitelist);
 
 					// Get result if there is one
 					for (var i = 0, l = currWl.keys.length;i<l;i++){
@@ -3102,7 +3037,7 @@ var TraceOpt = {
 					}
 				}
 
-				chrome.runtime.getBackgroundPage(doTheWhitelistParse);
+				TraceBg(doTheWhitelistParse);
 			}
 
 			$("#drop_message").empty().append(
@@ -3164,8 +3099,8 @@ var TraceOpt = {
 				TraceOpt.AssignCloseOverlay(true);
 			},
 			Download:function(){
-				chrome.runtime.getBackgroundPage(function(bg){
-					bg.Trace.c.WhitelistExport(function(raw){
+				TraceBg(function(bg){
+					bg.Whitelist.WhitelistExport(function(raw){
 						TraceOpt.MakeDownload("TraceWhitelistExport",JSON.stringify(raw,null,4));
 					});
 				});
@@ -3245,9 +3180,9 @@ var TraceOpt = {
 				data = TraceOpt.Scope.Export.Data.entries;
 
 				//window.location.href = "#whitelistImported";
-				chrome.runtime.getBackgroundPage(function(bg){
-					bg.Trace.c.WhitelistImport(data,function(){
-						bg.Trace.c.SaveWhitelist(function(){
+				TraceBg(function(bg){
+					bg.Whitelist.WhitelistImport(data,function(){
+						bg.Whitelist.SaveWhitelist(function(){
 							TraceOpt.Scope.Export.ImportedListUI();
 							bg.window.location.reload();
 						});
@@ -3255,8 +3190,8 @@ var TraceOpt = {
 				});
 			},
 			ClearImportList:function(){
-				chrome.runtime.getBackgroundPage(function(bg){
-					bg.Trace.c.EmptyList();
+				TraceBg(function(bg){
+					bg.Whitelist.EmptyList();
 					TraceOpt.Scope.Export.ImportList();
 				});
 			}
@@ -3289,8 +3224,8 @@ var TraceOpt = {
 			);
 			TraceOpt.AssignCloseOverlay(true);
 
-			chrome.runtime.getBackgroundPage(function(bg){
-				if (bg.Trace.p.Current.Pref_WebController.tld.enabled !== true){
+			TraceBg(function(bg){
+				if (bg.Prefs.Current.Pref_WebController.tld.enabled !== true){
 					$("#drop_message").prepend(
 						$("<h1/>",{"class":"setting_disabled"}).text("This setting isn't currently enabled")
 					);
@@ -3334,14 +3269,14 @@ var TraceOpt = {
 				newList[enableList[tld]] = true;
 			}
 
-			chrome.runtime.getBackgroundPage(function(bg){
-				bg.Trace.p.Set("Pref_WebController.tld.settings",newList);
+			TraceBg(function(bg){
+				bg.Prefs.Set("Pref_WebController.tld.settings",newList);
 			});
 			TraceOpt.BadTopLevelBlock.LoadTLDs();
 		},
 		LoadTLDs:function(){
-			chrome.runtime.getBackgroundPage(function(bg){
-				var s = bg.Trace.p.Current.Pref_WebController.tld.settings;
+			TraceBg(function(bg){
+				var s = bg.Prefs.Current.Pref_WebController.tld.settings;
 				var k = Object.keys(s);
 				var r = $("<div/>",{"id":"adv_tldlist"});
 				for (var i = 0,l = k.length;i<l;i++){
@@ -3361,17 +3296,17 @@ var TraceOpt = {
 		SaveSelection:function(){
 			var newVal = $(this).data("current") !== true;
 			var tldId = $(this).data("tldid");
-			chrome.runtime.getBackgroundPage(function(bg){
-				bg.Trace.p.Set("Pref_WebController.tld.settings."+tldId,newVal);
+			TraceBg(function(bg){
+				bg.Prefs.Set("Pref_WebController.tld.settings."+tldId,newVal);
 				TraceOpt.BadTopLevelBlock.LoadTLDs();
 			});
 		}
 	},
 	UserInterfaceCustomiser:{
 		OptionsInterface:function(){
-			chrome.runtime.getBackgroundPage(function(bg){
-				TraceOpt.Blocklist.isPremium = (typeof bg.Trace.v.Premium !== "undefined" ?
-					(bg.Trace.v.Premium.length !== 0) : false);
+			TraceBg(function(bg){
+				TraceOpt.Blocklist.isPremium = (typeof bg.Vars.Premium !== "undefined" ?
+					(bg.Vars.Premium.length !== 0) : false);
 			});
 
 			if (!TraceOpt.Blocklist.isPremium){
@@ -3397,8 +3332,8 @@ var TraceOpt = {
 				).on("change",function (){
 					var thatVal = $(this).val();
 					_UserCrashReportService({"UserChoseTheme":thatVal});
-					chrome.runtime.getBackgroundPage(function(bg){
-						bg.Trace.p.Set("Main_Interface.Theme.name",thatVal);
+					TraceBg(function(bg){
+						bg.Prefs.Set("Main_Interface.Theme.name",thatVal);
 						reloadTheme();
 					});
 				}),
@@ -3409,8 +3344,8 @@ var TraceOpt = {
 					$("<option>",{"value":"nav_right"}).text("Right")
 				).on("change",function () {
 					var thatVal = $(this).val();
-					chrome.runtime.getBackgroundPage(function(bg){
-						bg.Trace.p.Set("Main_Interface.Theme.navPlacement",thatVal);
+					TraceBg(function(bg){
+						bg.Prefs.Set("Main_Interface.Theme.navPlacement",thatVal);
 						reloadTheme();
 					});
 				}),
@@ -3421,8 +3356,8 @@ var TraceOpt = {
 					}).text("Enable time-based alterations").append(
 						$("<input/>",opts).on("click enter",function(){
 							var thatVal = $(this).is(":checked");
-							chrome.runtime.getBackgroundPage(function(bg){
-								bg.Trace.p.Set("Main_Interface.Theme.timeAlterations",thatVal);
+							TraceBg(function(bg){
+								bg.Prefs.Set("Main_Interface.Theme.timeAlterations",thatVal);
 								reloadTheme();
 							});
 						}),
@@ -3496,14 +3431,14 @@ var TraceOpt = {
 			TraceOpt.AssignCloseOverlay(true);
 			TraceOpt.URLCleaner.LoadParams();
 
-			chrome.runtime.getBackgroundPage(function(bg){
+			TraceBg(function(bg){
 				function getName(type){
-					return bg.Trace.p.Current.Pref_WebController.urlCleaner.queryString[type].method;
+					return bg.Prefs.Current.Pref_WebController.urlCleaner.queryString[type].method;
 				}
 				$("#afr_urlc_pmethod option[value='" + getName("main_frame") + "']").prop("selected", true);
 				//$("#ars_urlc_pmethod option[value='" + getName("resources") + "']").prop("selected", true);
 
-				if (bg.Trace.p.Current.Pref_WebController.urlCleaner.enabled !== true) {
+				if (bg.Prefs.Current.Pref_WebController.urlCleaner.enabled !== true) {
 					$("#drop_message").prepend(
 						$("<h1/>",{"class":"setting_disabled"}).text("This setting isn't currently enabled")
 					);
@@ -3539,14 +3474,14 @@ var TraceOpt = {
 				newList[enableList[param]] = true;
 			}
 
-			chrome.runtime.getBackgroundPage(function(bg){
-				bg.Trace.p.Set("Pref_WebController.urlCleaner.queryString.params",newList);
+			TraceBg(function(bg){
+				bg.Prefs.Set("Pref_WebController.urlCleaner.queryString.params",newList);
 			});
 			TraceOpt.URLCleaner.LoadParams();
 		},
 		LoadParams:function(){
-			chrome.runtime.getBackgroundPage(function(bg){
-				var s = bg.Trace.p.Current.Pref_WebController.urlCleaner.queryString.params || {};
+			TraceBg(function(bg){
+				var s = bg.Prefs.Current.Pref_WebController.urlCleaner.queryString.params || {};
 				var k = Object.keys(s);
 				var r = $("<div/>",{"id":"adv_urlparams"});
 				for (var i = 0,l = k.length;i<l;i++){
@@ -3571,17 +3506,17 @@ var TraceOpt = {
 		SaveParams:function(){
 			var newVal = ($(this).data("current") == true ? false : true);
 			var theTld = $(this).data("tldid");
-			chrome.runtime.getBackgroundPage(function(bg){
-				bg.Trace.p.Set("Pref_WebController.urlCleaner.queryString.params."+theTld,newVal);
+			TraceBg(function(bg){
+				bg.Prefs.Set("Pref_WebController.urlCleaner.queryString.params."+theTld,newVal);
 			});
 			TraceOpt.URLCleaner.LoadParams();
 		},
 		SaveSelection:function (){
 			var frameMethod = $("#afr_urlc_pmethod").val();
 			//var resMethod = $("#ars_urlc_pmethod").val();
-			chrome.runtime.getBackgroundPage(function(bg){
-				bg.Trace.p.Set("Pref_WebController.urlCleaner.queryString.main_frame.method", frameMethod);
-				// bg.Trace.p.Set("Pref_WebController.urlCleaner.queryString.resources.method", resMethod);
+			TraceBg(function(bg){
+				bg.Prefs.Set("Pref_WebController.urlCleaner.queryString.main_frame.method", frameMethod);
+				// bg.Prefs.Set("Pref_WebController.urlCleaner.queryString.resources.method", resMethod);
 			});
 		}
 	},
@@ -3646,8 +3581,8 @@ var TraceOpt = {
 				parseInt($("#trcanv_custa").val())
 			];
 			var custRgba = $("#trcanv_custrgba").is(":checked");
-			chrome.runtime.getBackgroundPage(function(bg){
-				bg.Trace.p.SetMultiple({
+			TraceBg(function(bg){
+				bg.Prefs.SetMultiple({
 					"Pref_CanvasFingerprint.customRGBA.rgba":rgba,
 					"Pref_CanvasFingerprint.customRGBA.enabled":custRgba
 				});
@@ -3749,8 +3684,8 @@ var TraceOpt = {
 			var sc_ena = $("#ce_sett_setcookieheadmod").is(":checked");
 			var sc_fpm = $("#ce_sett_fpsetcookiehead").val();
 			var sc_tpm = $("#ce_sett_tpsetcookiehead").val();
-			chrome.runtime.getBackgroundPage(function(bg){
-				bg.Trace.p.SetMultiple({
+			TraceBg(function(bg){
+				bg.Prefs.SetMultiple({
 					"Pref_CookieEater.settings.cookie.enabled":rc_ena,
 					"Pref_CookieEater.settings.setcookie.enabled":sc_ena,
 					"Pref_CookieEater.settings.cookie.fp_method":rc_fpm,
@@ -3776,8 +3711,8 @@ var TraceOpt = {
 				TraceOpt.CookieEaterUI.List.LoadCookies();
 			},
 			LoadCookies:function(){
-				chrome.runtime.getBackgroundPage(function(bg){
-					var s = bg.Trace.p.Current.Pref_CookieEater.list;
+				TraceBg(function(bg){
+					var s = bg.Prefs.Current.Pref_CookieEater.list;
 					var k = Object.keys(s);
 					var r = $("<div/>",{"id":"adv_tldlist"});
 					for (var i = 0,l = k.length;i<l;i++){
@@ -3797,8 +3732,8 @@ var TraceOpt = {
 			SaveSelection:function(){
 				var newVal = ($(this).data("current") !== true);
 				var cookieId = $(this).data("cookieid");
-				chrome.runtime.getBackgroundPage(function(bg){
-					bg.Trace.p.Set("Pref_CookieEater.list."+cookieId,newVal);
+				TraceBg(function(bg){
+					bg.Prefs.Set("Pref_CookieEater.list."+cookieId,newVal);
 					TraceOpt.CookieEaterUI.List.LoadCookies();
 				});
 			}
@@ -3928,8 +3863,8 @@ var TraceOpt = {
 			var rf_atp = $("#referhead_atp").is(":checked");
 			var rf_atpu = $("#referhead_atpu").is(":checked");
 			var rf_oso = $("#referhead_oso").is(":checked");
-			chrome.runtime.getBackgroundPage(function(bg){
-				bg.Trace.p.SetMultiple({
+			TraceBg(function(bg){
+				bg.Prefs.SetMultiple({
 					"Pref_ReferHeader.httpHeader.allowSameHost.enabled":rf_ash,
 					"Pref_ReferHeader.httpHeader.allowSameDomain.enabled":rf_asd,
 					"Pref_ReferHeader.httpHeader.allowThirdParty.enabled":rf_atp,
@@ -3944,21 +3879,6 @@ var TraceOpt = {
 		},
 	}
 };
-
-// Polyfill: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/includes#Polyfill
-if (!String.prototype.includes) {
-	String.prototype.includes = function(search, start) {
-		if (typeof start !== 'number') {
-			start = 0;
-		}
-
-		if (start + search.length > this.length) {
-			return false;
-		} else {
-			return this.indexOf(search, start) !== -1;
-		}
-	};
-}
 
 try{
 	$(document).ready(TraceOpt.WindowLoad);

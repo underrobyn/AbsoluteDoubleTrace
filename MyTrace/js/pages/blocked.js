@@ -5,54 +5,10 @@
  * 	https://absolutedouble.co.uk/
  */
 
-// Polyfill: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/includes#Polyfill
-if (!String.prototype.includes) {
-	String.prototype.includes = function(search, start) {
-		if (typeof start !== 'number') {
-			start = 0;
-		}
-
-		if (start + search.length > this.length) {
-			return false;
-		} else {
-			return this.indexOf(search, start) !== -1;
-		}
-	};
-}
-
-window.URL = window.URL || window.webkitURL;
-
-// A general fix for browser that use window.browser instead of window.chrome
-if (typeof window.chrome === "undefined" || !window.chrome.hasOwnProperty("extension")) window.chrome = (function (){ return window.msBrowser || window.browser || window.chrome; })();
-
 var TraceBlock = {
 	blockedURL:"",
 	blockReason:0,
 	whitelistData:{},
-	ProtectionTemplate:{
-		SiteBlocked:false,
-		InitRequests:true,
-		Protections:{
-			Pref_AudioFingerprint:true,
-			Pref_BatteryApi:false,
-			Pref_CanvasFingerprint: true,
-			Pref_ClientRects:true,
-			Pref_CookieEater:false,
-			Pref_ETagTrack:false,
-			Pref_GoogleHeader:false,
-			Pref_IPSpoof:false,
-			Pref_NativeFunctions:false,
-			Pref_NetworkInformation:false,
-			Pref_HardwareSpoof:false,
-			Pref_PingBlock:false,
-			Pref_PluginHide:false,
-			Pref_ReferHeader:false,
-			Pref_ScreenRes:false,
-			Pref_UserAgent:false,
-			Pref_WebRTC:false,
-			Pref_WebGLFingerprint:false
-		}
-	},
 	init:function(){
 		TraceBlock.Auth.Init();
 		TraceBlock.assignButtonEvents();
@@ -108,34 +64,6 @@ var TraceBlock = {
 			TraceBlock.blockedURL = null;
 		}
 	},
-	// Thanks to https://stackoverflow.com/a/23945027/
-	extractHostname:function(url){
-		var hostname;
-
-		if (url.indexOf("://") > -1) {
-			hostname = url.split('/')[2];
-		} else {
-			hostname = url.split('/')[0];
-		}
-
-		hostname = hostname.split(':')[0];
-		hostname = hostname.split('?')[0];
-
-		return hostname;
-	},
-	extractRootDomain:function(url){
-		var domain = TraceBlock.extractHostname(url),
-			splitArr = domain.split('.'),
-			arrLen = splitArr.length;
-
-		if (arrLen > 2) {
-			domain = splitArr[arrLen - 2] + '.' + splitArr[arrLen - 1];
-			if (splitArr[arrLen - 2].length === 2 && splitArr[arrLen - 1].length === 2) {
-				domain = splitArr[arrLen - 3] + '.' + domain;
-			}
-		}
-		return domain;
-	},
 	setBasicContent:function(){
 		var u = $("#url"), r = $("#reason");
 		if (TraceBlock.blockedURL === null){
@@ -162,8 +90,8 @@ var TraceBlock = {
 		var url = new URL(TraceBlock.blockedURL);
 		TraceBlock.whitelistData["origin"] = url.origin + "/*";
 		TraceBlock.whitelistData["path"] = "*" + url + "*";
-		TraceBlock.whitelistData["host"] = "*" + TraceBlock.extractHostname(TraceBlock.blockedURL) + "*";
-		TraceBlock.whitelistData["root"] = "*" + TraceBlock.extractRootDomain(TraceBlock.blockedURL) + "*";
+		TraceBlock.whitelistData["host"] = "*" + extractHostname(TraceBlock.blockedURL) + "*";
+		TraceBlock.whitelistData["root"] = "*" + extractRootDomain(TraceBlock.blockedURL) + "*";
 
 		var el = $("#whitelist_opts");
 
@@ -237,7 +165,7 @@ var TraceBlock = {
 		}
 
 		chrome.runtime.getBackgroundPage(function(bg){
-			bg.Trace.c.AddItem(url,TraceBlock.ProtectionTemplate,function(){
+			bg.Whitelist.AddItem(url,ProtectionTemplate(false),function(){
 				TraceBlock.Auth.SafePost({action:"ReloadWhitelist"});
 				window.location.href = TraceBlock.blockedURL;
 			});

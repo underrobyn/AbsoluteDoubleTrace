@@ -6,7 +6,7 @@
   	"author":"AbsoluteDouble",
 	"description":"Browse online without leaving a Trace, because who wants to be tracked?",
 	"minimum_chrome_version":"32",
-	"version":"2.2.6",
+	"version":"2.3.0",
   	"homepage_url":"https://absolutedouble.co.uk/trace/",
   	"options_page":"html/options.html",
 	"options_ui": {
@@ -62,10 +62,20 @@
 	],
 	"background": {
 		"scripts": [
-		  	"js/libraries/cookieparse.js",
+			"js/libraries/cookieparse.js",
 			"js/libraries/jquery.js",
-		  	"js/pages/background.js",
-		  	"js/common/data.js"
+			"js/common/shared.js",
+			"js/background/background.js",
+			"js/background/headers.js",
+			"js/background/prefs.js",
+			"js/background/stats.js",
+			"js/background/tabs.js",
+			"js/background/utils.js",
+			"js/background/vars.js",
+			"js/background/web.js",
+			"js/background/whitelist.js",
+			"js/background/trace.js",
+			"js/common/data.js"
 		],
 	  	"persistent":true
 	},

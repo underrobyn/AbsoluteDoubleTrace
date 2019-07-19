@@ -17,19 +17,19 @@
 		<script src="../js/common/theme.js"></script>
 
 		<div id="ux">
-			<h1 id="title">Trace</h1>
+			<nav id="sections">
+				<div class="section_toggle active_section" data-opens="home" id="home_text">Home</div>
+				<div class="section_toggle" data-opens="report" id="report_text">Report</div>
+				<div class="section_toggle" data-opens="whitelist" id="whitelist_text">Whitelist</div>
+				<div class="section_toggle" data-opens="settings" id="settings_text">Settings</div>
+			</nav>
 
-			<div id="sections">
-				<div class="section_toggle" data-tracetool="home" id="home_text">Home</div>
-				<div class="section_toggle" data-tracetool="report" id="report_text">Report</div>
-				<div class="section_toggle" data-tracetool="whitelist" id="whitelist_text">Whitelist</div>
-				<div class="section_toggle" data-tracetool="settings" id="settings_text">Settings</div>
-			</div>
 			<div id="current_section"></div>
 		</div>
 
 		<script src="../js/libraries/jquery.js"></script>
 		<script src="../js/common/data.js"></script>
+		<script src="../js/common/shared.js"></script>
 		<script src="../js/pages/report.js" defer></script>
 
 	</body>

@@ -10,7 +10,6 @@ if (typeof window.chrome === "undefined" || !window.chrome.hasOwnProperty("exten
 
 var TPage = {
 	debug:2,
-	done:false,
 	Prefs:{
 		BlockPing:{enabled:true,sendBeacon:{enabled:true}},
 		BlockPlugin:{enabled:true},
@@ -25,21 +24,15 @@ var TPage = {
 		ClientRects:{enabled:true},
 		WebGL:{enabled:true},
 		NativeFunctions:{enabled:false, windowOpen:{enabled:true}},
-		Hardware:{enabled:true,hardware:{enabled:true,hardwareConcurrency:{enabled:true,value:4},deviceMemory:{enabled:true,value:4}}}
+		Hardware:{enabled:false,hardware:{enabled:true,hardwareConcurrency:{enabled:true,value:4},deviceMemory:{enabled:true,value:4}}}
 	},
 	protections:{},
 	css:"font-size:1em;line-height:1.5em;color:#fff;background-color:#1a1a1a;border:.1em solid #00af00;",
 
-	makeRandomID:function(r){
-		for(var n="",t="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",a=0;r > a;a++){
-			n += t.charAt(Math.floor(Math.random()*t.length));
-		}
-		return n;
-	},
-
 	startTracePage:function(){
-		// https://bugs.chromium.org/p/chromium/issues/detail?id=54257
-		chrome.runtime.sendMessage({msg: "checkList", url:location.href},TPage.init);
+		chrome.runtime.sendMessage({msg: "checkList", url:location.href},function(response) {
+			TPage.init(response);
+		});
 	},
 
 	sendBackgroundMessage:function(data,cb){
@@ -58,47 +51,68 @@ var TPage = {
 	/* Load information about settings from extension storage */
 	init:function(data){
 		console.log(data);
-
 		if (data.tracePaused === true){
 			console.log("%c Trace Paused.",TPage.css);
 			return;
 		}
 
 		TPage.protections = data.data;
-		TPage.Prefs = {
-			BlockPing:data.prefs.Pref_PingBlock,
-			BlockPlugin:data.prefs.Pref_PluginHide,
-			BlockBattery:data.prefs.Pref_BatteryApi,
-			BlockScreenRes:data.prefs.Pref_ScreenRes,
-			RandUserAgent:data.prefs.Pref_UserAgent,
-			BlockNetInfo:data.prefs.Pref_NetworkInformation,
-			BlockWebRTC:data.prefs.Pref_WebRTC,
-			BlockAudioFinger:data.prefs.Pref_AudioFingerprint,
-			BlockCanvasFinger:data.prefs.Pref_CanvasFingerprint,
-			BlockReferHeader:data.prefs.Pref_ReferHeader,
-			ClientRects:data.prefs.Pref_ClientRects,
-			Hardware:data.prefs.Pref_HardwareSpoof,
-			NativeFunctions:data.prefs.Pref_NativeFunctions,
-			WebGL:data.prefs.Pref_WebGLFingerprint
-		};
 
-		TPage.runProtections();
+		// In future version this will be received via content messaging system
+		chrome.storage.local.get(
+			[
+				"Main_Trace",
+				"Pref_PingBlock",
+				"Pref_PluginHide",
+				"Pref_BatteryApi",
+				"Pref_ScreenRes",
+				"Pref_UserAgent",
+				"Pref_NetworkInformation",
+				"Pref_WebRTC",
+				"Pref_AudioFingerprint",
+				"Pref_CanvasFingerprint",
+				"Pref_ReferHeader",
+				"Pref_ClientRects",
+				"Pref_WebGLFingerprint",
+				"Pref_NativeFunctions",
+				"Pref_HardwareSpoof"
+			],function(prefs){
+				TPage.Prefs = {
+					BlockPing:prefs.Pref_PingBlock,
+					BlockPlugin:prefs.Pref_PluginHide,
+					BlockBattery:prefs.Pref_BatteryApi,
+					BlockScreenRes:prefs.Pref_ScreenRes,
+					RandUserAgent:prefs.Pref_UserAgent,
+					BlockNetInfo:prefs.Pref_NetworkInformation,
+					BlockWebRTC:prefs.Pref_WebRTC,
+					BlockAudioFinger:prefs.Pref_AudioFingerprint,
+					BlockCanvasFinger:prefs.Pref_CanvasFingerprint,
+					BlockReferHeader:prefs.Pref_ReferHeader,
+					ClientRects:prefs.Pref_ClientRects,
+					Hardware:prefs.Pref_HardwareSpoof,
+					NativeFunctions:prefs.Pref_NativeFunctions,
+					WebGL:prefs.Pref_WebGLFingerprint
+				};
+
+				TPage.runProtections();
+			}
+		)
 	},
 
 	/* Depending on what is enabled - run some protections */
 	runProtections:function(){
+		if (Object.keys(TPage.Prefs).length === 0){
+			return;
+		}
+
 		//TPage.protectCommonTracking();
-
-		if (TPage.Prefs.BlockCanvasFinger.enabled === true && TPage.canExec("Pref_CanvasFingerprint")){
-			TPage.protectCanvasFinger();
-		}
-
-		if (TPage.Prefs.Hardware.enabled === true && TPage.canExec("Pref_HardwareSpoof")){
-			TPage.protectDeviceHardware();
-		}
 
 		if (TPage.Prefs.ClientRects.enabled === true && TPage.canExec("Pref_ClientRects")){
 			TPage.protectClientRects();
+		}
+
+		if (TPage.Prefs.BlockCanvasFinger.enabled === true && TPage.canExec("Pref_CanvasFingerprint")){
+			TPage.protectCanvasFinger();
 		}
 
 		if (TPage.Prefs.BlockAudioFinger.enabled === true && TPage.canExec("Pref_AudioFingerprint")){
@@ -134,6 +148,10 @@ var TPage = {
 			TPage.protectScreenRes();
 		}
 
+		if (TPage.Prefs.Hardware.enabled === true && TPage.canExec("Pref_HardwareSpoof")){
+			TPage.protectDeviceHardware();
+		}
+
 		if (TPage.Prefs.WebGL.enabled === true && TPage.canExec("Pref_WebGLFingerprint")){
 			TPage.protectWebGL();
 		}
@@ -147,8 +165,6 @@ var TPage = {
 				TPage.protectUserAgent(response);
 			});
 		}
-
-		TPage.done = true;
 	},
 
 	/* Function to inject javascript code into pages */
@@ -160,76 +176,6 @@ var TPage = {
 		return s;
 	},
 
-	/* Function to inject javascript code into pages */
-	codeNewInject:function(setupCode,webCode,webData,frames = true){
-		var randName = "tr_" + TPage.makeRandomID(16);
-
-		var protectFrame = function(opts,frames,funcName){
-			self[funcName](window,opts);
-
-			if (frames !== true) return;
-
-			var wind = HTMLIFrameElement.prototype.__lookupGetter__('contentWindow'),
-				cont = HTMLIFrameElement.prototype.__lookupGetter__('contentDocument');
-
-			Object.defineProperties(HTMLIFrameElement.prototype,{
-				contentWindow:{
-					get:function(){
-						if (this.src && this.src.indexOf('//') !== -1 && location.host !== this.src.split('/')[2]) return frame;
-
-						var frame = wind.apply(this);
-						if (frame !== null) {
-							try {frame.HTMLCanvasElement;}catch(e){}
-							self[funcName](frame,opts);
-						}
-
-						return frame;
-					}
-				},
-				contentDocument:{
-					get:function(){
-						if (this.src && this.src.indexOf('//') !== -1 && location.host !== this.src.split('/')[2]) return cont.apply(this);
-
-						var frame = cont.apply(this);
-						if (frame !== null) {
-							try {frame.HTMLCanvasElement;}catch(e){}
-							self[funcName](frame,opts);
-						}
-
-						return frame;
-					}
-				}
-			});
-		};
-
-		var s = document.createElement("script");
-		webCode = webCode || '';
-		s.type = "text/javascript";
-
-		var sCode = 'self.'+randName+' = function(frame,opts){(' + webCode + ')(frame,opts)}; ';
-		sCode += ' (' + protectFrame + ')(';
-		if (setupCode === null){
-			sCode += 'null,';
-		} else {
-			sCode += '(' + setupCode + ')(' + webData + '),';
-		}
-		sCode += frames + ',"' + randName + '");';
-
-		s.textContent = sCode;
-
-		return s;
-	},
-
-	codeNewPreInject:function(setupCode,code,func,frames){
-		try {
-			var node = (document.documentElement || document.head || document.body);
-			node.insertBefore(
-				TPage.codeNewInject(setupCode,code,func,frames),node.firstChild
-			);
-		} catch(e){
-			TPage.codePostInject(code,func);
-		}
-	},
 	codePreInject:function(code,func){
 		try {
 			var node = (document.documentElement || document.head || document.body);
@@ -549,26 +495,7 @@ var TPage = {
 				if (frame === null) return;
 				if (frame.traceDefinedRects === true) return;
 
-				function updatedRect(old){
-					function genOffset(val){
-						return val + Math.floor(Math.random()*100)/100;
-					}
-
-					var temp = new DOMRect();
-
-					temp.top 	= genOffset(old.top);
-					temp.right	= genOffset(old.right);
-					temp.bottom = genOffset(old.bottom);
-					temp.left 	= genOffset(old.left);
-					temp.width 	= genOffset(old.width);
-					temp.height = genOffset(old.height);
-					temp.x 		= genOffset(old.x);
-					temp.y 		= genOffset(old.y);
-
-					return temp;
-				}
-
-				// getClientRects
+				// Add support for getBoundingClientRects()
 				var clientRects = frame.HTMLElement.prototype.getClientRects;
 
 				Object.defineProperty(frame.HTMLElement.prototype,"getClientRects",{
@@ -576,12 +503,24 @@ var TPage = {
 						var rects = clientRects.apply(this,arguments);
 						var krect = Object.keys(rects);
 
+						function genOffset(){
+							return Math.floor(Math.random()*100)/100;
+						}
+
 						var DOMRectList = function(){};
 						var list = new DOMRectList();
 						list.length = krect.length;
 						for (var i = 0;i<list.length;i++){
 							if (krect[i] === "length") continue;
-							list[i] = updatedRect(rects[krect[i]]);
+							list[i] 		= new DOMRect();
+							list[i].top 	= rects[krect[i]].top + genOffset();
+							list[i].right	= rects[krect[i]].right + genOffset();
+							list[i].bottom 	= rects[krect[i]].bottom + genOffset();
+							list[i].left 	= rects[krect[i]].left + genOffset();
+							list[i].width 	= rects[krect[i]].width + genOffset();
+							list[i].height 	= rects[krect[i]].height + genOffset();
+							list[i].x 		= rects[krect[i]].x + genOffset();
+							list[i].y 		= rects[krect[i]].y + genOffset();
 						}
 
 						return list;
@@ -592,22 +531,6 @@ var TPage = {
 						return "getClientRects() { [native code] }";
 					}
 				});
-
-				// getBoundingClientRect
-				var boundingRects = frame.HTMLElement.prototype.getBoundingClientRect;
-
-				Object.defineProperty(frame.HTMLElement.prototype,"getBoundingClientRect",{
-					value:function(){
-						var rect = boundingRects.apply(this,arguments);
-						return updatedRect(rect);
-					}
-				});
-				Object.defineProperty(frame.HTMLElement.prototype.getBoundingClientRect, "toString",{
-					value:function(){
-						return "getBoundingClientRect() { [native code] }";
-					}
-				});
-
 				frame.traceDefinedRects = true;
 			}
 
@@ -640,8 +563,9 @@ var TPage = {
 		if (TPage.debug <= 2) console.info("%c[TracePage]->[CR] Disabled getClientRects Tracking.",TPage.css);
 	},
 	protectNavPlugins:function() {
-		TPage.codeNewPreInject(null,
-			function(frame){
+		TPage.codePostInject(function(){
+			function disableFunction(frame){
+				if (frame === null) return;
 				if (frame.traceDefinedPlugins === true) return;
 
 				var PluginArray = function(){
@@ -660,14 +584,37 @@ var TPage = {
 					value:new PluginArray()
 				});
 				Object.defineProperty(frame.navigator.plugins,"toString",{
-					configurable:false,
 					value:function(){
 						return "[object PluginArray]";
 					}
 				});
 
 				frame.traceDefinedPlugins = true;
-			}, null,true);
+			}
+
+			disableFunction(window);
+			var wind = HTMLIFrameElement.prototype.__lookupGetter__('contentWindow'),
+				cont = HTMLIFrameElement.prototype.__lookupGetter__('contentDocument');
+
+			Object.defineProperties(HTMLIFrameElement.prototype,{
+				contentWindow:{
+					get:function(){
+						var frame = wind.apply(this);
+						if (this.src && this.src.indexOf('//') !== -1 && location.host !== this.src.split('/')[2]) return frame;
+						disableFunction(frame);
+						return frame;
+					}
+				},
+				contentDocument:{
+					get:function(){
+						if (this.src && this.src.indexOf('//') !== -1 && location.host !== this.src.split('/')[2]) return cont.apply(this);
+						var frame = wind.apply(this);
+						disableFunction(frame);
+						return cont.apply(this);
+					}
+				}
+			});
+		});
 
 		if (TPage.debug <= 2) console.info("%c[TracePage]->[NP] Disabled Plugin Tracking.",TPage.css);
 	},
@@ -943,12 +890,40 @@ var TPage = {
 		};
 
 		// Set user-agent variables
-		TPage.codeNewPreInject(
-			function(opts){
-				return opts;
-			},
-			function(frame,opts){
-				opts = JSON.parse(opts);
+		TPage.codePreInject(function(opts){
+			opts = JSON.parse(opts);
+
+			Object.defineProperty(navigator, "userAgent",{
+				enumerable:true,
+				configurable:true,
+				value:opts.ua || ""
+			});
+			if (opts.ua){
+				var appVer = opts.ua.substring(8);
+				Object.defineProperty(navigator, "appVersion",{
+					enumerable:true,
+					configurable:true,
+					value:appVer || ""
+				});
+			}
+			Object.defineProperties(navigator, {
+				"oscpu":{
+					enumerable:true,
+					configurable:true,
+					value:opts.os || ""
+				},
+				"platform":{
+					enumerable:true,
+					configurable:true,
+					value:opts.plat || ""
+				}
+			});
+		},"'" + JSON.stringify(opts) + "'");
+
+		// Remove browser specific variables
+		TPage.codePostInject(function(){
+			function disableFunction(frame){
+				if (frame === null) return;
 
 				if (frame.traceDefinedBrowserIdentity === true) return;
 
@@ -970,34 +945,34 @@ var TPage = {
 					}
 				});
 
-				Object.defineProperty(frame.navigator, "userAgent",{
-					enumerable:true,
-					configurable:true,
-					value:opts.ua || ""
-				});
-				if (opts.ua){
-					var appVer = opts.ua.substring(8);
-					Object.defineProperty(frame.navigator, "appVersion",{
-						enumerable:true,
-						configurable:true,
-						value:appVer || ""
-					});
-				}
-				Object.defineProperties(frame.navigator, {
-					"oscpu":{
-						enumerable:true,
-						configurable:true,
-						value:opts.os || ""
-					},
-					"platform":{
-						enumerable:true,
-						configurable:true,
-						value:opts.plat || ""
-					}
-				});
-
 				frame.traceDefinedBrowserIdentity = true;
-			},"'" + JSON.stringify(opts) + "'",true);
+			}
+
+			disableFunction(window);
+			var wind = HTMLIFrameElement.prototype.__lookupGetter__('contentWindow'),
+				cont = HTMLIFrameElement.prototype.__lookupGetter__('contentDocument');
+
+			Object.defineProperties(HTMLIFrameElement.prototype,{
+				contentWindow:{
+					get:function(){
+						var frame = wind.apply(this);
+						if (this.src && this.src.indexOf('//') !== -1 && location.host !== this.src.split('/')[2]) return frame;
+						try {frame.HTMLCanvasElement;}catch(e){}
+						disableFunction(frame);
+						return frame;
+					}
+				},
+				contentDocument:{
+					get:function(){
+						if (this.src && this.src.indexOf('//') !== -1 && location.host !== this.src.split('/')[2]) return cont.apply(this);
+						var frame = wind.apply(this);
+						try {frame.HTMLCanvasElement} catch(e){}
+						disableFunction(frame);
+						return cont.apply(this);
+					}
+				}
+			});
+		});
 
 		if (TPage.debug <= 2) console.info("%c[TracePage]->[UA] Disabled User Agent Tracking.",TPage.css);
 	},
@@ -1009,37 +984,31 @@ var TPage = {
 			TPage.Prefs.Hardware.hardware.deviceMemory.value
 		];
 
-		TPage.codeNewPreInject(
-			function(opts){
-				return opts;
-			},
-			function(frame,opts){
-				opts = JSON.parse(opts);
-				if (frame.traceDefinedHardwareId === true) return;
+		TPage.codePostInject(function(opts){
+			opts = JSON.parse(opts);
 
-				if (opts[0] === true){
-					Object.defineProperty(frame.navigator, "hardwareConcurrency",{
-						enumerable:true,
-						configurable:false,
-						value:opts[1] || 4
-					});
-				}
-				if (opts[2] === true){
-					Object.defineProperty(frame.navigator, "deviceMemory",{
-						enumerable:true,
-						configurable:false,
-						value:opts[3] || 6
-					});
-				}
-
-				frame.traceDefinedHardwareId = true;
-			},"'" + JSON.stringify(opts) + "'",true);
+			if (opts[0] === true){
+				Object.defineProperty(navigator, "hardwareConcurrency",{
+					enumerable:true,
+					configurable:false,
+					value:opts[1] || 4
+				});
+			}
+			if (opts[2] === true){
+				Object.defineProperty(navigator, "deviceMemory",{
+					enumerable:true,
+					configurable:false,
+					value:opts[3] || 6
+				});
+			}
+		},"'" + JSON.stringify(opts) + "'");
 
 		if (TPage.debug <= 2) console.info("%c[TracePage]->[HW] Modified hardware information.",TPage.css);
 	},
 	protectCommonTracking:function(){
-		TPage.codeNewPreInject(null,
-			function(frame){
+		TPage.codePreInject(function(){
+			function disableFunction(frame){
+				if (frame === null) return;
 				if (frame.traceDefinedCommon === true) return;
 
 				frame.traceTrackBlock = function(data){
@@ -1145,7 +1114,33 @@ var TPage = {
 				});
 
 				frame.traceDefinedCommon = true;
-			},null,true);
+			}
+
+			disableFunction(window);
+			var wind = HTMLIFrameElement.prototype.__lookupGetter__('contentWindow'),
+				cont = HTMLIFrameElement.prototype.__lookupGetter__('contentDocument');
+
+			Object.defineProperties(HTMLIFrameElement.prototype,{
+				contentWindow:{
+					get:function(){
+						var frame = wind.apply(this);
+						if (this.src && this.src.indexOf('//') !== -1 && location.host !== this.src.split('/')[2]) return frame;
+						try {frame.HTMLCanvasElement;}catch(e){}
+						disableFunction(frame);
+						return frame;
+					}
+				},
+				contentDocument:{
+					get:function(){
+						if (this.src && this.src.indexOf('//') !== -1 && location.host !== this.src.split('/')[2]) return cont.apply(this);
+						var frame = wind.apply(this);
+						try {frame.HTMLCanvasElement} catch(e){}
+						disableFunction(frame);
+						return cont.apply(this);
+					}
+				}
+			});
+		});
 	},
 	protectWebGL:function(){
 		var gpuDirect2 = ' Direct3D9Ex vs_0_0 ps_2_0';
@@ -1251,7 +1246,7 @@ var TPage = {
 
 		var pickedGpu = gpuModels[Math.floor(Math.random() * gpuModels.length)];
 
-		TPage.codeNewPreInject(function(optGpu){
+		TPage.codePostInject(function(optGpu){
 			var rand = function(min,max){
 				return Math.floor(Math.random() * (max - min) + min);
 			};
@@ -1285,52 +1280,78 @@ var TPage = {
 			objsGL2[7938] = "WebGL 2.0 (OpenGL ES 3.0 Chromium)";
 			objsGL2[35724] = "WebGL GLSL ES 3.00 (OpenGL ES GLSL ES 3.0 Chromium)";
 
-			return [objsGL1,objsGL2];
-		},function (frame,opts) {
-			if (frame.traceDefinedWebGL === true) return;
+			function disableFunction(frame,obj){
+				if (frame === null) return;
+				if (frame.traceDefinedWebGL === true) return;
 
-			//var bd = frame.WebGL2RenderingContext.prototype.bufferData;
-			frame.WebGL2RenderingContext.prototype.bufferData = function(){ /* Do not apply buffer data */ };
+				//var bd = frame.WebGL2RenderingContext.prototype.bufferData;
+				frame.WebGL2RenderingContext.prototype.bufferData = function(){ /* Do not apply buffer data */ };
 
-			var glCreateProgram = frame.WebGL2RenderingContext.prototype.createProgram;
-			frame.WebGL2RenderingContext.prototype.createProgram = function(){
-				var rData = glCreateProgram.apply(this,arguments);
-				Object.defineProperty(rData,"vertexPosAttrib",{
-					configurable:false,
-					writable:false,
-					value:Math.floor(Math.random()*2)
+				var glCreateProgram = frame.WebGL2RenderingContext.prototype.createProgram;
+				frame.WebGL2RenderingContext.prototype.createProgram = function(){
+					var rData = glCreateProgram.apply(this,arguments);
+					Object.defineProperty(rData,"vertexPosAttrib",{
+						configurable:false,
+						writable:false,
+						value:Math.floor(Math.random()*2)
+					});
+
+					return rData;
+				};
+
+				var glGetUniformLocation = frame.WebGL2RenderingContext.prototype.getUniformLocation;
+				frame.WebGL2RenderingContext.prototype.getUniformLocation = function(){return glGetUniformLocation.apply(this,arguments);};
+
+				var webgl1 = frame.WebGLRenderingContext.prototype.getParameter,
+					webgl2 = frame.WebGL2RenderingContext.prototype.getParameter;
+
+				// WebGL1
+				frame.WebGLRenderingContext.prototype.getParameter = function(param){
+					if (obj[0][param]) return obj[0][param];
+					return webgl1.apply(this,arguments);
+				};
+
+				// WebGL2
+				Object.defineProperties(frame.WebGL2RenderingContext.prototype,{
+					"getParameter":{
+						enumerable:true,
+						writeable:false,
+						configurable:false,
+						value:function(param){
+							if (obj[1][param]) return obj[1][param];
+							return webgl2.apply(this,arguments);
+						}
+					}
 				});
 
-				return rData;
-			};
+				frame.traceDefinedWebGL = true;
+			}
 
-			var glGetUniformLocation = frame.WebGL2RenderingContext.prototype.getUniformLocation;
-			frame.WebGL2RenderingContext.prototype.getUniformLocation = function(){return glGetUniformLocation.apply(this,arguments);};
+			disableFunction(window,[objsGL1,objsGL2]);
+			var wind = HTMLIFrameElement.prototype.__lookupGetter__('contentWindow'),
+				cont = HTMLIFrameElement.prototype.__lookupGetter__('contentDocument');
 
-			var webgl1 = frame.WebGLRenderingContext.prototype.getParameter,
-				webgl2 = frame.WebGL2RenderingContext.prototype.getParameter;
-
-			// WebGL1
-			frame.WebGLRenderingContext.prototype.getParameter = function(param){
-				if (opts[0][param]) return opts[0][param];
-				return webgl1.apply(this,arguments);
-			};
-
-			// WebGL2
-			Object.defineProperties(frame.WebGL2RenderingContext.prototype,{
-				"getParameter":{
-					enumerable:true,
-					writeable:false,
-					configurable:false,
-					value:function(param){
-						if (opts[1][param]) return opts[1][param];
-						return webgl2.apply(this,arguments);
+			Object.defineProperties(HTMLIFrameElement.prototype,{
+				contentWindow:{
+					get:function(){
+						var frame = wind.apply(this);
+						if (this.src && this.src.indexOf('//') !== -1 && location.host !== this.src.split('/')[2]) return frame;
+						try {frame.HTMLCanvasElement;}catch(e){}
+						disableFunction(frame,[objsGL1,objsGL2]);
+						return frame;
+					}
+				},
+				contentDocument:{
+					get:function(){
+						if (this.src && this.src.indexOf('//') !== -1 && location.host !== this.src.split('/')[2]) return cont.apply(this);
+						var frame = wind.apply(this);
+						try {frame.HTMLCanvasElement} catch(e){}
+						disableFunction(frame,[objsGL1,objsGL2]);
+						return cont.apply(this);
 					}
 				}
 			});
-
-			frame.traceDefinedWebGL = true;
-		},"'" + pickedGpu + "'",true);
+		},"'" + pickedGpu + "'");
 
 		if (TPage.debug <= 2) console.info("%c[TracePage]->[GL] Modified WebGL Information.",TPage.css);
 	},
@@ -1340,37 +1361,27 @@ var TPage = {
 			function or change header to allow the code to be injected.
 		*/
 
-		var opts = {
-			"rgba":[0,0,0,0],
-			"extra":false
-		};
+		var opts = [0,0,0,0];
 
 		if (TPage.Prefs.BlockCanvasFinger.customRGBA.enabled === true){
-			opts = {
-				"rgba":TPage.Prefs.BlockCanvasFinger.customRGBA.rgba,
-				"extra":false
-			};
+			opts = TPage.Prefs.BlockCanvasFinger.customRGBA.rgba;
 		} else {
 			var rn = function(a,b){
 				return (10-Math.floor(Math.random()*(b-a)+a));
 			};
 
-			opts = {
-				"rgba": [
-					rn(0, 20),
-					rn(0, 20),
-					rn(0, 20),
-					rn(0, 20),
-				],
-				"extra":false
-			};
+			opts = [
+				rn(0, 20),
+				rn(0, 20),
+				rn(0, 20),
+				rn(0, 20)
+			];
 		}
 
-		TPage.codePreInject(function(opts){
-			var opts = JSON.parse(opts);
-			var t = opts["rgba"];
+		TPage.codePreInject(function(t){
+			var t = JSON.parse(t);
 
-			function TraceCanvas(r,g,b,a,scriptId,extra){
+			function TraceCanvas(r,g,b,a,scriptId){
 				var injectedEl = document.getElementById(scriptId);
 
 				var TCInject = function(el){
@@ -1470,38 +1481,6 @@ var TPage = {
 				TCRender(CanvasRenderingContext2D);
 				TCDocument(Document);
 
-				if (extra === true){
-					var wind = HTMLIFrameElement.prototype.__lookupGetter__('contentWindow'),
-						cont = HTMLIFrameElement.prototype.__lookupGetter__('contentDocument');
-
-					Object.defineProperties(HTMLIFrameElement.prototype,{
-						contentWindow:{
-							get:function(){
-								var frame = wind.apply(this);
-								if (this.src && this.src.indexOf('//') !== -1 && location.host !== this.src.split('/')[2]) return frame;
-								try {frame.HTMLCanvasElement;}catch(e){}
-								if (frame === null) return null;
-
-								TCExtract(frame.HTMLCanvasElement);
-
-								return frame;
-							}
-						},
-						contentDocument:{
-							get:function(){
-								if (this.src && this.src.indexOf('//') !== -1 && location.host !== this.src.split('/')[2]) return cont.apply(this);
-								var frame = wind.apply(this);
-								try {frame.HTMLCanvasElement} catch(e){}
-								if (frame === null) return null;
-
-								TCExtract(frame.HTMLCanvasElement);
-
-								return cont.apply(this);
-							}
-						}
-					});
-				}
-
 				injectedEl.parentNode.removeChild(injectedEl);
 			}
 
@@ -1518,7 +1497,7 @@ var TPage = {
 			script.id = makeRandomStr();
 			script.type = "text/javascript";
 
-			var newChild = document.createTextNode('try{(' + TraceCanvas + ')(' + t[0] + ',' + t[1] + ',' + t[2] + ',' + t[3] + ',"' + script.id + '",' + opts["extra"] + ');}catch (e){console.error(e);}');
+			var newChild = document.createTextNode('try{(' + TraceCanvas + ')(' + t[0] + ',' + t[1] + ',' + t[2] + ',' + t[3] + ',"' + script.id + '");}catch (e){console.error(e);}');
 			script.appendChild(newChild);
 
 			var node = (document.documentElement || document.head || document.body);
