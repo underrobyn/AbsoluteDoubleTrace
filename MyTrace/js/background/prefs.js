@@ -748,6 +748,11 @@ var Prefs = {
 			}
 		}
 
+		// Toggle user-agent randomiser background task
+		if (setting === "Pref_WebGLFingerprint"){
+			Trace.f.ToggleGPURandomiser(false);
+		}
+
 		if (setting === "Pref_PingBlock.pingRequest.enabled" || setting === "Pref_PingBlock"){
 			Web.ToggleBlockPings();
 		}

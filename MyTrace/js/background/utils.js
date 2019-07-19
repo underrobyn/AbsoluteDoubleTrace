@@ -9,11 +9,6 @@ var Utils = {
 
 	// Thanks to https://github.com/Olical/binary-search/blob/master/src/binarySearch.js
 	arraySearch:function(list,item){
-		if (!list || !item) {
-			console.error("No param");
-			return -1;
-		}
-
 		var min = 0, max = list.length - 1, guess;
 
 		var bitwise = (max <= 2147483647);

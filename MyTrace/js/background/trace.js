@@ -82,6 +82,11 @@ var Trace = {
 						platformString:Vars.platform
 					});
 					break;
+				case "gpuReq":
+					sendResponse({
+						gpuChose:Vars.gpuChose
+					});
+					break;
 				case "checkList":
 					// See if the whitelist can sort this one out for us
 					if (Whitelist.wlEnabled === true){
@@ -229,14 +234,14 @@ var Trace = {
 			// Alarm events to change UserAgent
 			Trace.f.StartAlarmEvent();
 
-			// Toggle User-Agent protection (background task)
+			// Toggle alarms
 			Trace.f.ToggleUserAgentRandomiser(true);
+			Trace.f.ToggleGPURandomiser(true);
+			Trace.i.ToggleIPSpoof(true);
 
 			// Toggle WebRTC protection
 			Trace.f.ToggleWebRtc();
 
-			// Toggle IPSpoof
-			Trace.i.ToggleIPSpoof(true);
 
 			// Tell the user that we're done!
 			Trace.Notify("Finished setting up.","initd");
@@ -329,11 +334,30 @@ var Trace = {
 				}
 			}
 		},
-		ChooseUserAgent:function(){
-			var rA = function(a){
-				return a[Math.floor(Math.random() * a.length)];
-			};
+		ToggleGPURandomiser:function(onlyStart){
+			if (Prefs.Current.Pref_WebGLFingerprint.enabled === true){
+				// Create random user agent
+				Trace.f.ChooseGPU();
 
+				// Assign browser event
+				chrome.alarms.create("GPURefresh",{periodInMinutes: Vars.GPUInterval});
+			} else {
+				if (!onlyStart){
+					chrome.alarms.clear("GPURefresh",function(success) {
+						if (!success) Trace.Notify("Failed to stop GPU refresh process (It probably wasn't running)","gpupd");
+					});
+				}
+			}
+		},
+
+		ChooseGPU:function(){
+			if (Prefs.Current.Pref_WebGLFingerprint.enabled === false) return;
+
+			Vars.gpuChose = rA(Vars.gpuModels);
+			console.log(Vars.gpuChose);
+		},
+
+		ChooseUserAgent:function(){
 			// If user has enabled custom user agents and set some
 			if (Prefs.Current.Pref_UserAgent.uaCust.enabled === true && Prefs.Current.Pref_UserAgent.uaCust.customUAs.length > 0){
 				return rA(Prefs.Current.Pref_UserAgent.uaCust.customUAs);
@@ -398,6 +422,9 @@ var Trace = {
 				chrome.alarms.onAlarm.addListener(function(a){
 					if (a.name === "UserAgentRefresh" && Prefs.Current.Pref_UserAgent.enabled === true){
 						Trace.f.ChooseUserAgent();
+					}
+					if (a.name === "GPURefresh" && Prefs.Current.Pref_WebGLFingerprint.enabled === true){
+						Trace.f.ChooseGPU();
 					}
 					if (a.name === "StatsDatabaseRefresh" && Prefs.Current.Main_Trace.ProtectionStats.enabled === true){
 						Stats.SaveStats();

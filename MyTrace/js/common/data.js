@@ -8,14 +8,6 @@
 "use strict";
 
 window.onerror = function(o,r,e,c,l) {
-	var stmsg = "";
-	var stck = "";
-	if (l.message){
-		stmsg = l.message;
-	}
-	if (l.stack){
-		stck = l.stack;
-	}
 	var n = {
 		Title:(!document.title ? "" : document.title),
 		Msg:o,
@@ -23,8 +15,8 @@ window.onerror = function(o,r,e,c,l) {
 		Line:e,
 		Column:c,
 		Stack:l,
-		StMsg:stmsg,
-		Stck:stck
+		StMsg:(!l.message ? "" : l.message),
+		Stck:(!l.stack ? "" : l.stack)
 	};
 	_UserCrashReportService(n);
 };
@@ -57,16 +49,7 @@ var _UserCrashReportService = function(d,o){
 		if (usr){
 			useToken(usr);
 		} else {
-			var token = function(){
-				var randomPool = new Uint8Array(32);
-				crypto.getRandomValues(randomPool);
-				var hex = '';
-				for (var i = 0; i < randomPool.length; ++i) {
-					hex += randomPool[i].toString(16);
-				}
-				return hex;
-			};
-			usr = token();
+			usr = getToken();
 			storage_type.set({userid: usr},function(){
 				useToken(usr);
 			});

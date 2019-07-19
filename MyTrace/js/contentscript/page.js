@@ -135,7 +135,9 @@ var TPage = {
 		}
 
 		if (TPage.Prefs.WebGL.enabled === true && TPage.canExec("Pref_WebGLFingerprint")){
-			TPage.protectWebGL();
+			chrome.runtime.sendMessage({msg: "gpuReq"},function(response) {
+				TPage.protectWebGL(response);
+			});
 		}
 
 		if (TPage.Prefs.NativeFunctions.enabled === true && TPage.canExec("Pref_NativeFunctions")){
@@ -848,10 +850,21 @@ var TPage = {
 			function disableFunction(frame,opts,data){
 				if (frame === null) return;
 
-				function defProp(name,val,offset){
-					if (offset) val = window.screen[name] + val;
+				function defScreenProp(name,val,offset){
+					if (offset) val = frame.screen[name] + val;
 
 					Object.defineProperty(frame.screen,name,{
+						enumerable:true,
+						configurable:false,
+						writable:false,
+						value:val
+					});
+				}
+
+				function defProp(name,val,offset){
+					if (offset) val = frame[name] + val;
+
+					Object.defineProperty(frame,name,{
 						enumerable:true,
 						configurable:false,
 						writable:false,
@@ -865,7 +878,7 @@ var TPage = {
 				if (opts["randomOpts"]["enabled"] === true){
 					var screenVars = ["availHeight","availLeft","availTop","availWidth","height","width"];
 					for (var screenVar in screenVars){
-						defProp(
+						defScreenProp(
 							screenVars[screenVar],
 							(Math.floor(Math.random()*parseInt(opts["randomOpts"]["values"][0]))+parseInt(opts["randomOpts"]["values"][1])),
 							true
@@ -874,23 +887,29 @@ var TPage = {
 				}
 
 				if (opts["commonResolutions"]["enabled"] === true){
-					defProp("availHeight",data["scRes"][1],false);
-					defProp("availWidth",data["scRes"][0],false);
-					defProp("height",data["scRes"][1],false);
-					defProp("width",data["scRes"][0],false);
+					defScreenProp("availHeight",data["scRes"][1],false);
+					defScreenProp("availWidth",data["scRes"][0],false);
+					defScreenProp("height",data["scRes"][1],false);
+					defScreenProp("width",data["scRes"][0],false);
 				}
 
 				// Change pixel depths
 				if (opts["modifyDepths"]["enabled"] === true) {
-					defProp("colorDepth", data["colorDepth"], true);
-					defProp("pixelDepth", data["pixelDepth"], true);
+					defScreenProp("colorDepth", data["colorDepth"], true);
+					defScreenProp("pixelDepth", data["pixelDepth"], true);
 				}
 
 				if (opts["modifyPixelRatio"]["enabled"] === true){
 					frame.devicePixelRatio = data["pixelRatio"];
 				}
 
-				if (screen.mozOrientation) defProp("mozOrientation",undefined);
+				if (frame.screen.mozOrientation) defScreenProp("mozOrientation",undefined);
+
+				// Spoof window properties
+				if (frame.innerHeight) 	defProp("innerHeight",data["innerHeight"],true);
+				if (frame.innerWidth) 	defProp("innerWidth",data["innerWidth"],true);
+				if (frame.outerHeight) 	defProp("outerHeight",data["outerHeight"],true);
+				if (frame.outerWidth) 	defProp("outerWidth",data["outerWidth"],true);
 
 				frame.traceDefinedScreen = true;
 			}
@@ -904,7 +923,12 @@ var TPage = {
 				"scRes":opts["commonResolutions"]["resolutions"][rand(opts["commonResolutions"]["resolutions"].length)],
 				"colorDepth":depthOffsets[rand(depthOffsets.length)],
 				"pixelDepth":depthOffsets[rand(depthOffsets.length)],
-				"pixelRatio":rand(4)+1
+				"pixelRatio":rand(4)+1,
+
+				"innerHeight":rand(20),
+				"innerWidth":rand(20),
+				"outerHeight":rand(20),
+				"outerWidth":rand(20)
 			};
 
 			disableFunction(window,opts,data);
@@ -1147,109 +1171,8 @@ var TPage = {
 				frame.traceDefinedCommon = true;
 			},null,true);
 	},
-	protectWebGL:function(){
-		var gpuDirect2 = ' Direct3D9Ex vs_0_0 ps_2_0';
-		var gpuDirect3 = ' Direct3D9Ex vs_3_0 ps_3_0';
-		var gpuDirect5 = ' Direct3D11 vs_5_0 ps_5_0';
-		var gpuModels = [
-			'AMD Radeon HD 6290 Graphics' + gpuDirect3,
-			'AMD Radeon HD 6310 Graphics' + gpuDirect3,
-			'AMD Radeon HD 6320 Graphics' + gpuDirect3,
-			'AMD Radeon HD 6350' + gpuDirect3,
-			'AMD Radeon HD 6450' + gpuDirect3,
-			'AMD Radeon HD 6800 Series' + gpuDirect3,
-			'AMD Radeon HD 7310 Graphics' + gpuDirect3,
-			'AMD Radeon HD 7340 Graphics' + gpuDirect3,
-			'AMD Radeon HD 7520G' + gpuDirect3,
-			'AMD Radeon HD 7640G' + gpuDirect3,
-			'AMD Radeon HD 7700 Series' + gpuDirect3,
-			'AMD Radeon HD 7800 Series' + gpuDirect3,
-			'AMD Radeon HD 8240' + gpuDirect3,
-			'AMD Radeon R7 200 Series' + gpuDirect5,
-			'AMD Radeon R7 300 Series' + gpuDirect5,
-			'AMD Radeon R9 200 Series' + gpuDirect5,
-			'AMD Radeon R9 300 Series' + gpuDirect5,
-			'AMD Radeon(TM) HD 6480G' + gpuDirect3,
-			'AMD Radeon(TM) HD 6520G' + gpuDirect3,
-			'ATI Mobility Radeon HD 4250' + gpuDirect3,
-			'ATI Mobility Radeon HD 5470' + gpuDirect3,
-			'ATI Mobility Radeon HD 5650' + gpuDirect3,
-			'ATI Radeon 3000 Graphics' + gpuDirect3,
-			'ATI Radeon HD 3200 Graphics' + gpuDirect3,
-			'ATI Radeon HD 3800 Series' + gpuDirect3,
-			'ATI Radeon HD 4200' + gpuDirect3,
-			'ATI Radeon HD 4300/4500 Series' + gpuDirect3,
-			'ATI Radeon HD 4600 Series' + gpuDirect3,
-			'ATI Radeon HD 5470' + gpuDirect3,
-			'ATI Radeon HD 5570' + gpuDirect3,
-			'ATI Radeon HD 5670' + gpuDirect3,
-			'Mobile Intel(R) 4 Series Express Chipset Family' + gpuDirect3,
-			'Mobile Intel(R) 965 Express Chipset Family' + gpuDirect3,
-			'Mobile Intel(R) 965 Express Chipset Family',
-			'Intel(R) HD Graphics 3000' + gpuDirect3,
-			'Intel(R) HD Graphics 3000',
-			'Intel(R) HD Graphics 4000' + gpuDirect5,
-			'Intel(R) HD Graphics 4000' + gpuDirect3,
-			'Intel(R) HD Graphics 4000',
-			'Intel(R) HD Graphics 5000' + gpuDirect5,
-			'Intel(R) HD Graphics 5000' + gpuDirect3,
-			'Intel(R) HD Graphics 5000',
-			'Intel(R) HD Graphics 6000' + gpuDirect5,
-			'Intel(R) HD Graphics 6000' + gpuDirect3,
-			'Intel(R) HD Graphics 6000',
-			'Intel(R) HD Graphics' + gpuDirect3,
-			'Intel(R) HD Graphics',
-			'Intel(R) HD Graphics Family' + gpuDirect3,
-			'Intel(R) HD Graphics Family',
-			'Intel(R) Q35 Express Chipset Family' + gpuDirect2,
-			'Intel(R) Q45/Q43 Express Chipset' + gpuDirect3,
-			'Intel(R) Q965/Q963 Express Chipset Family' + gpuDirect2,
-			'Intel(R) 4 Series Internal Chipset' + gpuDirect3,
-			'Intel(R) 82945G Express Chipset Family' + gpuDirect2,
-			'Intel(R) G33/G31 Express Chipset Family' + gpuDirect2,
-			'Intel(R) G33/G31 Express Chipset Family',
-			'Intel(R) G41 Express Chipset' + gpuDirect3,
-			'Intel(R) G41 Express Chipset',
-			'Intel(R) G45/G43 Express Chipset' + gpuDirect3,
-			'Intel(R) Graphics Media Accelerator 3150' + gpuDirect2,
-			'Intel(R) Graphics Media Accelerator 3600 Series' + gpuDirect3,
-			'Intel(R) Graphics Media Accelerator HD' + gpuDirect3,
-			'NVIDIA GeForce 8400 GS' + gpuDirect3,
-			'NVIDIA GeForce 9200' + gpuDirect3,
-			'NVIDIA GeForce 9500 GT' + gpuDirect3,
-			'NVIDIA GeForce 9500 GT',
-			'NVIDIA GeForce 9800 GT' + gpuDirect3,
-			'NVIDIA GeForce G100',
-			'NVIDIA GeForce GT 220' + gpuDirect3,
-			'NVIDIA GeForce GT 240' + gpuDirect3,
-			'NVIDIA GeForce GT 430' + gpuDirect3,
-			'NVIDIA GeForce GT 440' + gpuDirect3,
-			'NVIDIA GeForce GT 610' + gpuDirect3,
-			'NVIDIA GeForce GT 620' + gpuDirect3,
-			'NVIDIA GeForce GT 630' + gpuDirect3,
-			'NVIDIA GeForce GT 640' + gpuDirect3,
-			'NVIDIA GeForce GTX 550 Ti' + gpuDirect3,
-			'NVIDIA GeForce GTX 560' + gpuDirect3,
-			'NVIDIA GeForce GTX 560 Ti' + gpuDirect3,
-			'NVIDIA GeForce GTX 650' + gpuDirect3,
-			'NVIDIA GeForce GTX 660' + gpuDirect3,
-			'NVIDIA GeForce GTX 670' + gpuDirect3,
-			'NVIDIA GeForce GTX 680' + gpuDirect3,
-			'NVIDIA GeForce GTX 760' + gpuDirect5,
-			'NVIDIA Quadro 2000M' + gpuDirect5,
-			'NVIDIA Quadro 2000M' + gpuDirect3,
-			'NVIDIA Quadro K2000M' + gpuDirect5,
-			'NVIDIA Quadro K420' + gpuDirect3,
-			'NVIDIA Quadro NVS 140M',
-			'NVIDIA Quadro NVS 150M',
-			'NVIDIA Quadro NVS 160M' + gpuDirect3,
-			'NVIDIA GeForce GTX 970M' + gpuDirect5,
-			'NVIDIA GeForce GTX 980M' + gpuDirect5,
-			'NVIDIA GeForce GTX 1050M' + gpuDirect5,
-			'NVIDIA GeForce GTX 1060M' + gpuDirect5
-		];
-
-		var pickedGpu = gpuModels[Math.floor(Math.random() * gpuModels.length)];
+	protectWebGL:function(resp){
+		var pickedGpu = resp.gpuChose;
 
 		TPage.codeNewPreInject(function(optGpu){
 			var rand = function(min,max){

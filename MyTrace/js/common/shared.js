@@ -33,6 +33,20 @@ var makeRandomID = function(r){
 	return n;
 };
 
+var rA = function(a){
+	return a[Math.floor(Math.random() * a.length)];
+};
+
+var getToken = function(){
+	var randomPool = new Uint8Array(32);
+	crypto.getRandomValues(randomPool);
+	var hex = '';
+	for (var i = 0; i < randomPool.length; ++i) {
+		hex += randomPool[i].toString(16);
+	}
+	return hex;
+};
+
 // Thanks to https://stackoverflow.com/a/23945027/
 var extractHostname = function(url){
 	var hostname;
