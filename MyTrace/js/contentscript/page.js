@@ -296,22 +296,22 @@ var TPage = {
 				var ae = frame;
 
 				if (opts["audioBuffer"]["enabled"] === true) {
-					ab.prototype.copyFromChannel = function(){console.log("%c [TracePage]Blocked [AF][CF] Audio Tracking ","font-size:1em;line-height:2em;color:#1a1a1a;background-color:#ffffff;border:.2em solid #0f0;");return false;};
-					ab.prototype.getChannelData = function(){console.log("%c [TracePage]Blocked [AF][CD] Audio Tracking ","font-size:1em;line-height:2em;color:#1a1a1a;background-color:#ffffff;border:.2em solid #0f0;");return false;};
+					ab.prototype.copyFromChannel = function(){console.log("%c [Tr]Blocked [AF][CF] Audio Tracking ","font-size:1em;line-height:2em;color:#1a1a1a;background-color:#ffffff;border:.2em solid #0f0;");return false;};
+					ab.prototype.getChannelData = function(){console.log("%c [Tr]Blocked [AF][CD] Audio Tracking ","font-size:1em;line-height:2em;color:#1a1a1a;background-color:#ffffff;border:.2em solid #0f0;");return false;};
 				}
 				if (opts["audioData"]["enabled"] === true){
-					an.prototype.getFloatFrequencyData = function(){console.log("%c [TracePage]Blocked [AF][FF] Audio Tracking ","font-size:1em;line-height:2em;color:#1a1a1a;background-color:#ffffff;border:.2em solid #0f0;"); return false;};
-					an.prototype.getByteFrequencyData = function(){console.log("%c [TracePage]Blocked [AF][BF] Audio Tracking ","font-size:1em;line-height:2em;color:#1a1a1a;background-color:#ffffff;border:.2em solid #0f0;"); return false;};
-					an.prototype.getFloatTimeDomainData = function(){console.log("%c [TracePage]Blocked [AF][TD] Audio Tracking ","font-size:1em;line-height:2em;color:#1a1a1a;background-color:#ffffff;border:.2em solid #0f0;"); return false;};
-					an.prototype.getByteTimeDomainData = function(){console.log("%c [TracePage]Blocked [AF][BT] Audio Tracking ","font-size:1em;line-height:2em;color:#1a1a1a;background-color:#ffffff;border:.2em solid #0f0;"); return false;};
+					an.prototype.getFloatFrequencyData = function(){console.log("%c [Tr]Blocked [AF][FF] Audio Tracking ","font-size:1em;line-height:2em;color:#1a1a1a;background-color:#ffffff;border:.2em solid #0f0;"); return false;};
+					an.prototype.getByteFrequencyData = function(){console.log("%c [Tr]Blocked [AF][BF] Audio Tracking ","font-size:1em;line-height:2em;color:#1a1a1a;background-color:#ffffff;border:.2em solid #0f0;"); return false;};
+					an.prototype.getFloatTimeDomainData = function(){console.log("%c [Tr]Blocked [AF][TD] Audio Tracking ","font-size:1em;line-height:2em;color:#1a1a1a;background-color:#ffffff;border:.2em solid #0f0;"); return false;};
+					an.prototype.getByteTimeDomainData = function(){console.log("%c [Tr]Blocked [AF][BT] Audio Tracking ","font-size:1em;line-height:2em;color:#1a1a1a;background-color:#ffffff;border:.2em solid #0f0;"); return false;};
 				}
 				if (opts["audioOfflineMain"]["enabled"] === true){
-					ae.OfflineAudioContext = function(){console.log("%c [TracePage]Blocked [AF][AO] Audio tracking ","font-size:1em;line-height:2em;color:#1a1a1a;background-color:#ffffff;border:.2em solid #0f0;"); return false;};
-					ae.webkitOfflineAudioContext = function(){console.log("%c [TracePage]Blocked [AF][WO] Audio tracking ","font-size:1em;line-height:2em;color:#1a1a1a;background-color:#ffffff;border:.2em solid #0f0;"); return false;};
+					ae.OfflineAudioContext = function(){console.log("%c [Tr]Blocked [AF][AO] Audio tracking ","font-size:1em;line-height:2em;color:#1a1a1a;background-color:#ffffff;border:.2em solid #0f0;"); return false;};
+					ae.webkitOfflineAudioContext = function(){console.log("%c [Tr]Blocked [AF][WO] Audio tracking ","font-size:1em;line-height:2em;color:#1a1a1a;background-color:#ffffff;border:.2em solid #0f0;"); return false;};
 				}
 				if (opts["audioMain"]["enabled"] === true){
-					ae.AudioContext = function(){console.log("%c [TracePage]Blocked [AF][AC] Audio tracking ","font-size:1em;line-height:2em;color:#1a1a1a;background-color:#ffffff;border:.2em solid #0f0;"); return false;};
-					ae.webkitAudioContext = function(){console.log("%c [TracePage]Blocked [AF][WA] Audio tracking ","font-size:1em;line-height:2em;color:#1a1a1a;background-color:#ffffff;border:.2em solid #0f0;"); return false;};
+					ae.AudioContext = function(){console.log("%c [Tr]Blocked [AF][AC] Audio tracking ","font-size:1em;line-height:2em;color:#1a1a1a;background-color:#ffffff;border:.2em solid #0f0;"); return false;};
+					ae.webkitAudioContext = function(){console.log("%c [Tr]Blocked [AF][WA] Audio tracking ","font-size:1em;line-height:2em;color:#1a1a1a;background-color:#ffffff;border:.2em solid #0f0;"); return false;};
 				}
 			}
 
@@ -339,7 +339,7 @@ var TPage = {
 			});
 		},"'" + JSON.stringify(opts) + "'");
 
-		if (TPage.debug <= 2) console.info("%c[TracePage]->[AF] Disabled Audio Tracking.",TPage.css);
+		if (TPage.debug <= 2) console.info("%c [Tr]->[AF] Disabled Audio Tracking.",TPage.css);
 
 		TPage.sendBackgroundMessage({
 			"method":"protection-enabled",
@@ -478,7 +478,7 @@ var TPage = {
 			});
 		});
 
-		if (TPage.debug <= 2) console.info("%c[TracePage]->[AF] Using smart Audio Fingerprinting Protection",TPage.css);
+		if (TPage.debug <= 2) console.info("%c [Tr]->[AF] Using smart Audio Fingerprinting Protection",TPage.css);
 	},
 	protectBatteryFunction:function() {
 		TPage.codePostInject(function(){
@@ -512,27 +512,29 @@ var TPage = {
 			});
 		});
 
-		if (TPage.debug <= 2) console.info("%c[TracePage]->[BA] Disabled Battery API Tracking.",TPage.css);
+		if (TPage.debug <= 2) console.info("%c [Tr]->[BA] Disabled Battery API Tracking.",TPage.css);
 	},
 	protectSendBeacon:function() {
-		TPage.codePostInject(function(){
-			Object.defineProperty(navigator,"sendBeacon",{
-				enumerable:true,
-				configurable:false,
-				value:function(){
-					//window.top.postMessage("Trace:BlockedTracking:SendBeacon", '*'); Secuirty issue, maybe use CustomEvents
-					console.log("%c [TracePage]->Blocked[SB] ","font-size:1em;line-height:2em;color:#1a1a1a;background-color:#ffffff;border:.2em solid #0f0;");
-					return true;
-				}
-			});
-			Object.defineProperty(navigator.sendBeacon,"toString",{
-				value:function(){
-					return "function sendBeacon() { [native code] }";
-				}
-			});
-		});
+		TPage.codeNewPreInject(null,
+			function(frame){
+				Object.defineProperty(frame.navigator,"sendBeacon",{
+					enumerable:true,
+					configurable:false,
+					value:function(){
+						//window.top.postMessage("Trace:BlockedTracking:SendBeacon", '*'); Secuirty issue, maybe use CustomEvents
+						console.log("%c [Tr]->Blocked[SB] ","font-size:1em;line-height:2em;color:#1a1a1a;background-color:#ffffff;border:.2em solid #0f0;");
+						return true;
+					}
+				});
+				Object.defineProperty(frame.navigator.sendBeacon,"toString",{
+					value:function(){
+						return "function sendBeacon() { [native code] }";
+					}
+				});
+			}, null,true
+		);
 
-		if (TPage.debug <= 2) console.info("%c[TracePage]->[SB] Disabled Ping Tracking.",TPage.css);
+		if (TPage.debug <= 2) console.info("%c [Tr]->[SB] Disabled Ping Tracking.",TPage.css);
 	},
 	protectReferDocument:function() {
 		TPage.codePostInject(function(){
@@ -543,7 +545,7 @@ var TPage = {
 			});
 		});
 
-		if (TPage.debug <= 2) console.info("%c[TracePage]->[RJ] Disabled Referer Tracking.",TPage.css);
+		if (TPage.debug <= 2) console.info("%c [Tr]->[RJ] Disabled Referer Tracking.",TPage.css);
 	},
 	protectClientRects:function(){
 		TPage.codePostInject(function(){
@@ -551,29 +553,30 @@ var TPage = {
 				if (frame === null) return;
 				if (frame.traceDefinedRects === true) return;
 
-				function updatedRect(old){
-					function genOffset(val){
-						return val + Math.floor(Math.random()*100)/100;
+				function updatedRect(old,round,overwrite){
+					function genOffset(round,val){
+						var off = Math.floor(Math.random()*100)/100;
+						return val + (round ? Math.round(off) : off);
 					}
 
-					var temp = new DOMRect();
+					var temp = overwrite === true ? old : new DOMRect();
 
-					temp.top 	= genOffset(old.top);
-					temp.right	= genOffset(old.right);
-					temp.bottom = genOffset(old.bottom);
-					temp.left 	= genOffset(old.left);
-					temp.width 	= genOffset(old.width);
-					temp.height = genOffset(old.height);
-					temp.x 		= genOffset(old.x);
-					temp.y 		= genOffset(old.y);
+					temp.top 	= genOffset(round,old.top);
+					temp.right	= genOffset(round,old.right);
+					temp.bottom = genOffset(round,old.bottom);
+					temp.left 	= genOffset(round,old.left);
+					temp.width 	= genOffset(round,old.width);
+					temp.height = genOffset(round,old.height);
+					temp.x 		= genOffset(round,old.x);
+					temp.y 		= genOffset(round,old.y);
 
 					return temp;
 				}
 
 				// getClientRects
-				var clientRects = frame.HTMLElement.prototype.getClientRects;
+				var clientRects = frame.Element.prototype.getClientRects;
 
-				Object.defineProperty(frame.HTMLElement.prototype,"getClientRects",{
+				Object.defineProperty(frame.Element.prototype,"getClientRects",{
 					value:function(){
 						var rects = clientRects.apply(this,arguments);
 						var krect = Object.keys(rects);
@@ -583,28 +586,32 @@ var TPage = {
 						list.length = krect.length;
 						for (var i = 0;i<list.length;i++){
 							if (krect[i] === "length") continue;
-							list[i] = updatedRect(rects[krect[i]]);
+							list[i] = updatedRect(rects[krect[i]],false,false);
 						}
 
 						return list;
 					}
 				});
-				Object.defineProperty(frame.HTMLElement.prototype.getClientRects, "toString",{
+				Object.defineProperty(frame.Element.prototype.getClientRects, "toString",{
 					value:function(){
 						return "getClientRects() { [native code] }";
 					}
 				});
 
 				// getBoundingClientRect
-				var boundingRects = frame.HTMLElement.prototype.getBoundingClientRect;
+				var boundingRects = frame.Element.prototype.getBoundingClientRect;
 
-				Object.defineProperty(frame.HTMLElement.prototype,"getBoundingClientRect",{
+				Object.defineProperty(frame.Element.prototype,"getBoundingClientRect",{
 					value:function(){
 						var rect = boundingRects.apply(this,arguments);
-						return updatedRect(rect);
+						if (this === undefined || this === null) return rect;
+
+						if (location.host.includes("google")) return rect;
+
+						return updatedRect(rect,true,true);
 					}
 				});
-				Object.defineProperty(frame.HTMLElement.prototype.getBoundingClientRect, "toString",{
+				Object.defineProperty(frame.Element.prototype.getBoundingClientRect, "toString",{
 					value:function(){
 						return "getBoundingClientRect() { [native code] }";
 					}
@@ -639,19 +646,21 @@ var TPage = {
 			});
 		});
 
-		if (TPage.debug <= 2) console.info("%c[TracePage]->[CR] Disabled getClientRects Tracking.",TPage.css);
+		if (TPage.debug <= 2) console.info("%c [Tr]->[CR] Disabled getClientRects Tracking.",TPage.css);
 	},
 	protectNavPlugins:function() {
 		TPage.codeNewPreInject(null,
 			function(frame){
 				if (frame.traceDefinedPlugins === true) return;
 
-				var PluginArray = function(){
+				/*var PluginArray = function(){
+					this.__proto__ = frame.PluginArray;
+					this.length = 0;
 					this.refresh = function(){
-						console.log("%c [TracePage]->Blocked[PR] ","font-size:1em;line-height:2em;color:#1a1a1a;background-color:#ffffff;border:.2em solid #0f0;");
+						console.log("%c [Tr]->Blocked[PR] ","font-size:1em;line-height:2em;color:#1a1a1a;background-color:#ffffff;border:.2em solid #0f0;");
 					};
 					this.item = function(i){
-						console.log("%c [TracePage]->Blocked[PI] ","font-size:1em;line-height:2em;color:#1a1a1a;background-color:#ffffff;border:.2em solid #0f0;");
+						console.log("%c [Tr]->Blocked[PI] ","font-size:1em;line-height:2em;color:#1a1a1a;background-color:#ffffff;border:.2em solid #0f0;");
 						return {};
 					};
 				};
@@ -666,12 +675,13 @@ var TPage = {
 					value:function(){
 						return "[object PluginArray]";
 					}
-				});
+				});*/
 
 				frame.traceDefinedPlugins = true;
-			}, null,true);
+			}, null,true
+		);
 
-		if (TPage.debug <= 2) console.info("%c[TracePage]->[NP] Disabled Plugin Tracking.",TPage.css);
+		if (TPage.debug <= 2) console.info("%c [Tr]->[NP] Disabled Plugin Tracking.",TPage.css);
 	},
 	protectJsVars:function(){
 		TPage.codePostInject(function(){
@@ -733,22 +743,27 @@ var TPage = {
 			ret = TPage.Prefs.BlockNetInfo.customNet.info;
 		}
 
-		TPage.codePostInject(function(ret){
-			var dret = JSON.parse(ret);
-			dret.addEventListener = function(){
-				console.log("%c [TracePage]->Protected[NE] ","font-size:1em;line-height:2em;color:#1a1a1a;background-color:#ffffff;border:.2em solid #0f0;");
-			};
-			Object.defineProperty(navigator,"connection",{
-				enumerable:true,
-				configurable:false,
-				get:function(){
-					console.log("%c [TracePage]->Protected[NI] ","font-size:1em;line-height:2em;color:#1a1a1a;background-color:#ffffff;border:.2em solid #0f0;");
-					return dret;
-				}
-			});
-		},"'" + JSON.stringify(ret) + "'");
+		TPage.codeNewPreInject(
+			function(opts){
+				return opts;
+			},
+			function(frame,opts){
+				var dret = JSON.parse(opts);
+				dret.addEventListener = function(){
+					console.log("%c [Tr]->Protected[NE] ","font-size:1em;line-height:2em;color:#1a1a1a;background-color:#ffffff;border:.2em solid #0f0;");
+				};
+				Object.defineProperty(navigator,"connection",{
+					enumerable:true,
+					configurable:false,
+					get:function(){
+						console.log("%c [Tr]->Protected[NI] ","font-size:1em;line-height:2em;color:#1a1a1a;background-color:#ffffff;border:.2em solid #0f0;");
+						return dret;
+					}
+				});
+			},"'" + JSON.stringify(ret) + "'",true
+		);
 
-		if (TPage.debug <= 2) console.info("%c[TracePage]->[NP] Disabled Plugin Tracking.",TPage.css);
+		if (TPage.debug <= 2) console.info("%c [Tr]->[NP] Disabled Plugin Tracking.",TPage.css);
 	},
 	protectLocalStorage:function() {
 		var opts = {
@@ -760,7 +775,7 @@ var TPage = {
 
 		},"'" + JSON.stringify(opts) + "'");
 
-		if (TPage.debug <= 2) console.info("%c[TracePage]->[NP] Disabled localStorage Tracking.",TPage.css);
+		if (TPage.debug <= 2) console.info("%c [Tr]->[NP] Disabled localStorage Tracking.",TPage.css);
 	},
 	protectWebRTC:function(){
 		var opts = {
@@ -774,49 +789,58 @@ var TPage = {
 			return;
 		}
 
-		TPage.codePostInject(function(opts){
-			var opts = JSON.parse(opts);
+		TPage.codeNewPreInject(
+			function(opts){
+				return opts;
+			},
+			function(frame,opts){
+				opts = JSON.parse(opts);
 
-			if (typeof opts !== "object") {
-				opts = {
-					wrtcPeerConnection:{enabled:true},
-					wrtcDataChannel:{enabled:true},
-					wrtcRtpReceiver:{enabled:false}
-				};
-				console.error("[TracePage]Error [AFPP][0] opts not set");
-			}
+				if (frame.traceDefinedWebRTC === true) return;
 
-			if (opts.wrtcPeerConnection.enabled === true){
-				Object.defineProperties(window, {
-					"RTCPeerConnection":{
+				if (typeof opts !== "object") {
+					opts = {
+						wrtcPeerConnection:{enabled:true},
+						wrtcDataChannel:{enabled:true},
+						wrtcRtpReceiver:{enabled:false}
+					};
+					console.error("[TracePage]Error [WebRTC][0] opts not set");
+				}
+
+				if (opts.wrtcPeerConnection.enabled === true){
+					Object.defineProperties(window, {
+						"RTCPeerConnection":{
+							enumerable:true,
+							configurable:false,
+							value:function(){console.log("%c [Tr]->Protected[RTCPeerConnection] ","font-size:1em;line-height:2em;color:#1a1a1a;background-color:#ffffff;border:.2em solid #0f0;");}
+						},
+						"webkitRTCPeerConnection":{
+							enumerable:true,
+							configurable:false,
+							value:function(){console.log("%c [Tr]->Protected[webkitRTCPeerConnection] ","font-size:1em;line-height:2em;color:#1a1a1a;background-color:#ffffff;border:.2em solid #0f0;");}
+						}
+					});
+				}
+				if (opts.wrtcDataChannel.enabled === true){
+					Object.defineProperty(window, "RTCDataChannel",{
 						enumerable:true,
 						configurable:false,
-						value:function(){console.log("%c [TracePage]->Protected[RTCPeerConnection] ","font-size:1em;line-height:2em;color:#1a1a1a;background-color:#ffffff;border:.2em solid #0f0;");}
-					},
-					"webkitRTCPeerConnection":{
+						value:function(){console.log("%c [Tr]->Protected[RTCDataChannel] ","font-size:1em;line-height:2em;color:#1a1a1a;background-color:#ffffff;border:.2em solid #0f0;");}
+					});
+				}
+				if (opts.wrtcRtpReceiver.enabled === true){
+					Object.defineProperty(window, "RTCRtpReceiver",{
 						enumerable:true,
 						configurable:false,
-						value:function(){console.log("%c [TracePage]->Protected[webkitRTCPeerConnection] ","font-size:1em;line-height:2em;color:#1a1a1a;background-color:#ffffff;border:.2em solid #0f0;");}
-					}
-				});
-			}
-			if (opts.wrtcDataChannel.enabled === true){
-				Object.defineProperty(window, "RTCDataChannel",{
-					enumerable:true,
-					configurable:false,
-					value:function(){console.log("%c [TracePage]->Protected[RTCDataChannel] ","font-size:1em;line-height:2em;color:#1a1a1a;background-color:#ffffff;border:.2em solid #0f0;");}
-				});
-			}
-			if (opts.wrtcRtpReceiver.enabled === true){
-				Object.defineProperty(window, "RTCRtpReceiver",{
-					enumerable:true,
-					configurable:false,
-					value:function(){console.log("%c [TracePage]->Protected[RTCRtpReceiver] ","font-size:1em;line-height:2em;color:#1a1a1a;background-color:#ffffff;border:.2em solid #0f0;");}
-				});
-			}
-		},"'" + JSON.stringify(opts) + "'");
+						value:function(){console.log("%c [Tr]->Protected[RTCRtpReceiver] ","font-size:1em;line-height:2em;color:#1a1a1a;background-color:#ffffff;border:.2em solid #0f0;");}
+					});
+				}
 
-		if (TPage.debug <= 2) console.info("%c[TracePage]->[WR] WebRTC JS Object Tracking.",TPage.css);
+				frame.traceDefinedWebRTC = true;
+			},"'" + JSON.stringify(opts) + "'",true
+		);
+
+		if (TPage.debug <= 2) console.info("%c [Tr]->[WR] WebRTC JS Object Tracking.",TPage.css);
 	},
 	protectScreenRes:function(){
 		var opts = {
@@ -957,7 +981,7 @@ var TPage = {
 			});
 		},"'" + JSON.stringify(opts) + "'");
 
-		if (TPage.debug <= 2) console.info("%c[TracePage]->[SC] Disabled Screen Resolution Tracking.",TPage.css);
+		if (TPage.debug <= 2) console.info("%c [Tr]->[SC] Disabled Screen Resolution Tracking.",TPage.css);
 	},
 	protectUserAgent:function(resp){
 		var opts = {
@@ -1021,9 +1045,10 @@ var TPage = {
 				});
 
 				frame.traceDefinedBrowserIdentity = true;
-			},"'" + JSON.stringify(opts) + "'",true);
+			},"'" + JSON.stringify(opts) + "'",true
+		);
 
-		if (TPage.debug <= 2) console.info("%c[TracePage]->[UA] Disabled User Agent Tracking.",TPage.css);
+		if (TPage.debug <= 2) console.info("%c [Tr]->[UA] Disabled User Agent Tracking.",TPage.css);
 	},
 	protectDeviceHardware:function(){
 		var opts = [
@@ -1059,11 +1084,14 @@ var TPage = {
 				frame.traceDefinedHardwareId = true;
 			},"'" + JSON.stringify(opts) + "'",true);
 
-		if (TPage.debug <= 2) console.info("%c[TracePage]->[HW] Modified hardware information.",TPage.css);
+		if (TPage.debug <= 2) console.info("%c [Tr]->[HW] Modified hardware information.",TPage.css);
 	},
 	protectCommonTracking:function(){
-		TPage.codeNewPreInject(null,
-			function(frame){
+		TPage.codeNewPreInject(
+			function(opts){
+				return opts;
+			},
+			function(frame,opts){
 				if (frame.traceDefinedCommon === true) return;
 
 				frame.traceTrackBlock = function(data){
@@ -1169,7 +1197,8 @@ var TPage = {
 				});
 
 				frame.traceDefinedCommon = true;
-			},null,true);
+			},"'" + JSON.stringify(opts) + "'",true
+		);
 	},
 	protectWebGL:function(resp){
 		var pickedGpu = resp.gpuChose;
@@ -1255,7 +1284,7 @@ var TPage = {
 			frame.traceDefinedWebGL = true;
 		},"'" + pickedGpu + "'",true);
 
-		if (TPage.debug <= 2) console.info("%c[TracePage]->[GL] Modified WebGL Information.",TPage.css);
+		if (TPage.debug <= 2) console.info("%c [Tr]->[GL] Modified WebGL Information.",TPage.css);
 	},
 	protectCanvasFinger:function(){
 		/*
@@ -1301,7 +1330,7 @@ var TPage = {
 						try {
 							var tryFrame = el.contentWindow.HTMLCanvasElement;
 						} catch (e) {
-							console.log("%c [TracePage]->[CF] iFrame Error: " + e,"font-size:1em;line-height:2em;color:#1a1a1a;background-color:#ffffff;border:.2em solid #f00;");
+							console.log("%c [Tr]->[CF] iFrame Error: " + e,"font-size:1em;line-height:2em;color:#1a1a1a;background-color:#ffffff;border:.2em solid #f00;");
 							return;
 						}
 						TCExtract(el.contentWindow.HTMLCanvasElement);
@@ -1451,7 +1480,7 @@ var TPage = {
 			}
 		},"'" + JSON.stringify(opts) + "'");
 
-		if (TPage.debug <= 2) console.info("%c[TracePage]->[CF] Disabled Canvas Tracking.",TPage.css);
+		if (TPage.debug <= 2) console.info("%c [Tr]->[CF] Disabled Canvas Tracking.",TPage.css);
 	}
 };
 

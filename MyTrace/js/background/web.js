@@ -462,6 +462,10 @@ var WebBlocker = {
 		var host = extractHostname(request.url);
 		var domain = extractRootDomain(host);
 
+		//if (Headers.Helpers.isRequestThirdParty(request)){
+		//	console.log(request);
+		//}
+
 		if (Whitelist.wlEnabled === true){
 			var initUrl, reqUrl = request.url;
 			if (typeof request.initiator === "string") initUrl = request.initiator;
@@ -500,35 +504,38 @@ var WebBlocker = {
 			}
 		}
 
-		// Check for Domain block
-		if (WebBlocker.validate.domain === true && blockType === 0) {
-			if (Utils.arraySearch(WebBlocker.blocked.domain, domain) !== -1) {
-				blockType = 2;
+		// Anything other than a TLD block
+		if (blockType === 0){
+			// Check for Domain block
+			if (WebBlocker.validate.domain === true) {
+				if (Utils.arraySearch(WebBlocker.blocked.domain, domain) !== -1) {
+					blockType = 2;
+				}
 			}
-		}
 
-		// Check for Host block
-		if (WebBlocker.validate.host === true && blockType === 0){
-			if (Utils.arraySearch(WebBlocker.blocked.host,host) !== -1) {
-				blockType = 3;
+			// Check for Host block
+			if (WebBlocker.validate.host === true){
+				if (Utils.arraySearch(WebBlocker.blocked.host,host) !== -1) {
+					blockType = 3;
+				}
 			}
-		}
 
-		// Check for URL block
-		var cleanURL = request.url.replace(/#[^#]*$/,"").replace(/\?[^\?]*$/,"");
-		if (WebBlocker.validate.url === true && blockType === 0){
-			var url = cleanURL.split("://")[1];
-			if (Utils.arraySearch(WebBlocker.blocked.url,url) !== -1){
-				blockType = 4;
+			// Check for URL block
+			var cleanURL = request.url.replace(/#[^#]*$/,"").replace(/\?[^\?]*$/,"");
+			if (WebBlocker.validate.url === true){
+				var url = cleanURL.split("://")[1];
+				if (Utils.arraySearch(WebBlocker.blocked.url,url) !== -1){
+					blockType = 4;
+				}
 			}
-		}
 
-		// Check for file block
-		if (WebBlocker.validate.file === true && blockType === 0){
-			var file = cleanURL.split("/").pop();
-			if (file.length !== 0){
-				if (Utils.arraySearch(WebBlocker.blocked.file,file) !== -1){
-					blockType = 5;
+			// Check for file block
+			if (WebBlocker.validate.file === true){
+				var file = cleanURL.split("/").pop();
+				if (file.length !== 0){
+					if (Utils.arraySearch(WebBlocker.blocked.file,file) !== -1){
+						blockType = 5;
+					}
 				}
 			}
 		}

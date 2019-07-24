@@ -53,19 +53,19 @@ html, body {
 }
 #nav{
 	display:block;
-	width:15%;
+	width:12.5%;
 	float:left;
 	position:fixed;
 	height:100vh;
 	background-color:rgba(0,0,0,0.35);
 }
 #main {
-	width:85%;
+	width:87.5%;
 	float:left;
 	position:absolute;
 	height:100vh;
 	overflow-y:scroll;
-	margin:0 0 0 15%;
+	margin:0 0 0 12.5%;
 }
 #overlay_message {
 	display:none;
@@ -393,18 +393,18 @@ table {
 	width:100%;
 	text-align:center;
 	font-size:1.2em;
-	background-color:rgba(0,0,0,0.2);
+	background-color:rgba(0,0,0,0.1);
 }
 table th{
 	background-color:rgba(0,0,0,0.1);
 }
 table tr {
 	border-bottom:.05em #000 solid;
-	height:2.1em;
+	height:2.3em;
 	transition:all .2s ease-in-out;
 }
 table tr:hover, table tr:focus {
-	background-color:rgba(0,0,0,0.2);
+	background-color:rgba(0,0,0,0.3);
 }
 button {
 	background-color:transparent;
@@ -455,7 +455,7 @@ button:hover,button:focus{
 .isetting_toggle:hover,.isetting_toggle:focus,
 .direct_toggle:hover,.direct_toggle:focus,
 .trace_toggle:hover,.trace_toggle:focus{
-	background-color:rgba(0,0,0,0.5);
+	background-color:rgba(0,0,0,0.75);
 	color:#f2f2f2;
 }
 .setting_info:hover,.setting_info:focus{

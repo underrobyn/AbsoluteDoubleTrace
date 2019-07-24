@@ -354,7 +354,6 @@ var Trace = {
 			if (Prefs.Current.Pref_WebGLFingerprint.enabled === false) return;
 
 			Vars.gpuChose = rA(Vars.gpuModels);
-			console.log(Vars.gpuChose);
 		},
 
 		ChooseUserAgent:function(){

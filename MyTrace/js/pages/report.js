@@ -417,12 +417,15 @@ var TPop = {
 			TPop.scope.createOpts();
 		},
 		createEditor:function(bg,entriesApply){
-			var entriesWarning = $("<span/>",{"class":"msg","style":"font-weight:400;"}).text(
+			var entriesWarning = $("<span/>",{
+				"class":"msg",
+				"style":"font-weight:400;background-color:rgba(0,0,0,0.6);padding:3px;display:" + (entriesApply === 1 ? "none" : "block") + ";"
+			}).text(
 				(entriesApply === 1 ? "" : "More than 1 whitelist entry applies to this site!")
-			).append($("<br/>")).prepend($("<br/>"));
+			);
 
 			$("#current_section").empty().append(
-				$("<br/>"),$("<span/>",{"class":"msg","style":"font-weight:400;"}).text("Edit whitelist entry for this site:"),entriesWarning,
+				$("<span/>",{"class":"msg","style":"font-weight:600;padding:3px 0;"}).text("Edit whitelist entry for this site:"),entriesWarning,
 				$("<div/>",{"id":"user_in"}).append(
 					$("<div/>",{"class":"setting_conf_opt"}).append(
 						$("<label/>",{
@@ -519,6 +522,7 @@ var TPop = {
 			var currData = bg.Whitelist.storedWhitelist[TPop.wlData.txtEntry];
 
 			if (typeof currData.Protections === "undefined"){
+				console.error(currData);
 				console.error(currData);
 				alert("Error with Scope entry.");
 			}
