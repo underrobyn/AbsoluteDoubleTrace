@@ -517,6 +517,8 @@ var TPage = {
 	protectSendBeacon:function() {
 		TPage.codeNewPreInject(null,
 			function(frame){
+				if (frame.traceDefinedBeacon === true) return;
+
 				Object.defineProperty(frame.navigator,"sendBeacon",{
 					enumerable:true,
 					configurable:false,
@@ -531,6 +533,8 @@ var TPage = {
 						return "function sendBeacon() { [native code] }";
 					}
 				});
+
+				frame.traceDefinedBeacon = true;
 			}, null,true
 		);
 
@@ -653,7 +657,7 @@ var TPage = {
 			function(frame){
 				if (frame.traceDefinedPlugins === true) return;
 
-				/*var PluginArray = function(){
+				var PluginArray = function(){
 					this.__proto__ = frame.PluginArray;
 					this.length = 0;
 					this.refresh = function(){
@@ -675,7 +679,7 @@ var TPage = {
 					value:function(){
 						return "[object PluginArray]";
 					}
-				});*/
+				});
 
 				frame.traceDefinedPlugins = true;
 			}, null,true
@@ -748,11 +752,13 @@ var TPage = {
 				return opts;
 			},
 			function(frame,opts){
+				if (frame.traceDefinedNet === true) return;
+
 				var dret = JSON.parse(opts);
 				dret.addEventListener = function(){
 					console.log("%c [Tr]->Protected[NE] ","font-size:1em;line-height:2em;color:#1a1a1a;background-color:#ffffff;border:.2em solid #0f0;");
 				};
-				Object.defineProperty(navigator,"connection",{
+				Object.defineProperty(frame.navigator,"connection",{
 					enumerable:true,
 					configurable:false,
 					get:function(){
@@ -760,6 +766,8 @@ var TPage = {
 						return dret;
 					}
 				});
+
+				frame.traceDefinedNet = true;
 			},"'" + JSON.stringify(ret) + "'",true
 		);
 
