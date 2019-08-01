@@ -177,7 +177,7 @@ var TPage = {
 			Object.defineProperties(HTMLIFrameElement.prototype,{
 				contentWindow:{
 					get:function(){
-						if (this.src && this.src.indexOf('//') !== -1 && location.host !== this.src.split('/')[2]) return frame;
+						if (this.src && this.src.indexOf('//') !== -1 && location.host !== this.src.split('/')[2]) return wind.apply(this);
 
 						var frame = wind.apply(this);
 						if (frame !== null) {

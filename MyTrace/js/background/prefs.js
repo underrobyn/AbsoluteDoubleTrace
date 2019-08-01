@@ -464,6 +464,9 @@ var Prefs = {
 			},
 			"PremiumCode":""
 		},
+		"Main_Simple":{
+
+		},
 		"Main_ExecutionOrder":{
 			"AllPage":[
 				"Pref_CanvasFingerprint",
@@ -522,6 +525,7 @@ var Prefs = {
 				"Pref_WebGLFingerprint",
 				"Pref_HardwareSpoof",
 				"Pref_CookieEater",
+				"Pref_CommonTracking",
 				"Pref_ReferHeader",
 				"Pref_GoogleHeader",
 				"Pref_ETagTrack",
