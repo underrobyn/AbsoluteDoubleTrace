@@ -50,7 +50,7 @@ var Headers = {
 		},
 		ModifySend:function(details){
 			// Check if Trace is paused
-			if (Vars.paused === false) return;
+			if (Vars.paused !== false) return;
 
 			// Do a large amount of checks to see if we are gonna edit these cookies
 			if (Prefs.Current.Pref_CookieEater.enabled !== true) return;
@@ -107,7 +107,7 @@ var Headers = {
 		},
 		ModifyRecv:function(details){
 			// Check if Trace is paused
-			if (Vars.paused === false) return;
+			if (Vars.paused !== false) return;
 
 			// Do a large amount of checks to see if we are gonna edit these set-cookies
 			if (Prefs.Current.Pref_CookieEater.enabled !== true) return;
@@ -181,7 +181,7 @@ var Headers = {
 		},
 		Modify:function(details){
 			// Check if Trace is paused
-			if (Vars.paused === false) return;
+			if (Vars.paused !== false) return;
 
 			if (Prefs.Current.Pref_ETagTrack.enabled !== true) return;
 
@@ -225,7 +225,7 @@ var Headers = {
 		},
 		Modify:function(details){
 			// Check if Trace is paused
-			if (Vars.paused === false) return;
+			if (Vars.paused !== false) return;
 
 			var opts = Prefs.Current.Pref_GoogleHeader;
 
@@ -300,7 +300,7 @@ var Headers = {
 		},
 		Modify:function(details){
 			// Check if Trace is paused
-			if (Vars.paused === false) return;
+			if (Vars.paused !== false) return;
 
 			if (Prefs.Current.Pref_IPSpoof.enabled !== true){
 				return {requestHeaders:details.requestHeaders};
@@ -360,7 +360,7 @@ var Headers = {
 		},
 		Modify:function(details){
 			// Check if Trace is paused
-			if (Vars.paused === false) return;
+			if (Vars.paused !== false) return;
 
 			if (Prefs.Current.Pref_ReferHeader.enabled !== true){
 				return {requestHeaders:details.requestHeaders};
@@ -449,7 +449,7 @@ var Headers = {
 		},
 		Modify:function(details){
 			// Check if Trace is paused
-			if (Vars.paused === false) return;
+			if (Vars.paused !== false) return;
 
 			if (Prefs.Current.Pref_UserAgent.enabled 	!== true){
 				return {requestHeaders:details.requestHeaders};

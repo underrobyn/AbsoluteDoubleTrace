@@ -377,7 +377,7 @@ var WebBlocker = {
 	},
 	PingBlocker:function(d){
 		// Check if Trace is paused
-		if (Vars.paused === false) return {cancel:false};
+		if (Vars.paused !== false) return {cancel:false};
 
 		if (d.type === "ping" && d.tabId < 0){
 			Stats.LogStat(d.type);
@@ -454,7 +454,7 @@ var WebBlocker = {
 		}
 
 		// Check if Trace is paused
-		if (Vars.paused === false){
+		if (Vars.paused !== false){
 			return {cancel:false};
 		}
 
