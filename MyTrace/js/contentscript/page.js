@@ -39,15 +39,23 @@ var TPage = {
 
 	startTracePage:function(){
 		// https://bugs.chromium.org/p/chromium/issues/detail?id=54257
-		chrome.runtime.sendMessage({msg: "checkList", url:location.href},TPage.init);
-	},
+		chrome.runtime.sendMessage({msg: "checkList", url:document.location.href},TPage.init);
 
-	sendBackgroundMessage:function(data,cb){
-		chrome.runtime.sendMessage({
-			url:location.href,
-			msg:"protectionUpdate",
-			data:data
-		},cb);
+		window.addEventListener("message", function (e) {
+			if (!e || !e.data || !e.type) return;
+			if (e.data.indexOf("trace-protection::") === -1) return;
+
+			var parts = e.data.split("::");
+			if (parts.length !== 4) return;
+
+			chrome.runtime.sendMessage({
+				msg:"protectionRan",
+				url: document.location.href,
+				update:parts[1],
+				protection:parts[2],
+				part:parts[3]
+			});
+		}, false);
 	},
 
 	/* Function to check if protections are allowed to run */
@@ -180,7 +188,7 @@ var TPage = {
 						if (this.src && this.src.indexOf('//') !== -1 && location.host !== this.src.split('/')[2]) return wind.apply(this);
 
 						var frame = wind.apply(this);
-						if (frame !== null) {
+						if (frame && frame !== null) {
 							try {frame.HTMLCanvasElement;}catch(e){}
 							self[funcName](frame,opts);
 						}
@@ -193,7 +201,7 @@ var TPage = {
 						if (this.src && this.src.indexOf('//') !== -1 && location.host !== this.src.split('/')[2]) return cont.apply(this);
 
 						var frame = cont.apply(this);
-						if (frame !== null) {
+						if (frame && frame !== null) {
 							try {frame.HTMLCanvasElement;}catch(e){}
 							self[funcName](frame,opts);
 						}
@@ -340,13 +348,6 @@ var TPage = {
 		},"'" + JSON.stringify(opts) + "'");
 
 		if (TPage.debug <= 2) console.info("%c [Tr]->[AF] Disabled Audio Tracking.",TPage.css);
-
-		TPage.sendBackgroundMessage({
-			"method":"protection-enabled",
-			"protection":"AudioFingerprinting"
-		},function(){
-			//console.log("Success");
-		});
 	},
 	protectAudioFingerNew:function(){
 		TPage.codePostInject(function(){
@@ -485,6 +486,7 @@ var TPage = {
 			function disableFunction(frame){
 				if (frame === null) return;
 				if (frame.traceDefinedBattery === true) return;
+				if (!frame.navigator) return;
 
 				var BatteryManager = function(){
 					this.charging = true;
@@ -518,12 +520,13 @@ var TPage = {
 		TPage.codeNewPreInject(null,
 			function(frame){
 				if (frame.traceDefinedBeacon === true) return;
+				if (!frame.navigator) return;
 
 				Object.defineProperty(frame.navigator,"sendBeacon",{
 					enumerable:true,
 					configurable:false,
 					value:function(){
-						//window.top.postMessage("Trace:BlockedTracking:SendBeacon", '*'); Secuirty issue, maybe use CustomEvents
+						window.top.postMessage("trace-protection::ran::sendbeacon::main", '*');
 						console.log("%c [Tr]->Blocked[SB] ","font-size:1em;line-height:2em;color:#1a1a1a;background-color:#ffffff;border:.2em solid #0f0;");
 						return true;
 					}
@@ -593,11 +596,13 @@ var TPage = {
 							list[i] = updatedRect(rects[krect[i]],false,false);
 						}
 
+						window.top.postMessage("trace-protection::ran::clientrects::get", '*');
 						return list;
 					}
 				});
 				Object.defineProperty(frame.Element.prototype.getClientRects, "toString",{
 					value:function(){
+						window.top.postMessage("trace-protection::ran::clientrects::getstring", '*');
 						return "getClientRects() { [native code] }";
 					}
 				});
@@ -612,11 +617,15 @@ var TPage = {
 
 						if (location.host.includes("google")) return rect;
 
+
+						window.top.postMessage("trace-protection::ran::clientrectsbounding::get", '*');
+
 						return updatedRect(rect,true,true);
 					}
 				});
 				Object.defineProperty(frame.Element.prototype.getBoundingClientRect, "toString",{
 					value:function(){
+						window.top.postMessage("trace-protection::ran::clientrectsbounding::getstring", '*');
 						return "getBoundingClientRect() { [native code] }";
 					}
 				});
@@ -656,6 +665,7 @@ var TPage = {
 		TPage.codeNewPreInject(null,
 			function(frame){
 				if (frame.traceDefinedPlugins === true) return;
+				if (!frame.navigator) return;
 
 				var PluginArray = function(){
 					this.__proto__ = frame.PluginArray;
@@ -753,6 +763,7 @@ var TPage = {
 			},
 			function(frame,opts){
 				if (frame.traceDefinedNet === true) return;
+				if (!frame.navigator) return;
 
 				var dret = JSON.parse(opts);
 				dret.addEventListener = function(){
@@ -1007,6 +1018,7 @@ var TPage = {
 				opts = JSON.parse(opts);
 
 				if (frame.traceDefinedBrowserIdentity === true) return;
+				if (!frame.navigator) return;
 
 				Object.defineProperties(frame.navigator,{
 					"buildID":{
@@ -1073,6 +1085,7 @@ var TPage = {
 			function(frame,opts){
 				opts = JSON.parse(opts);
 				if (frame.traceDefinedHardwareId === true) return;
+				if (!frame.navigator) return;
 
 				if (opts[0] === true){
 					Object.defineProperty(frame.navigator, "hardwareConcurrency",{
@@ -1249,45 +1262,49 @@ var TPage = {
 		},function (frame,opts) {
 			if (frame.traceDefinedWebGL === true) return;
 
-			//var bd = frame.WebGL2RenderingContext.prototype.bufferData;
-			frame.WebGL2RenderingContext.prototype.bufferData = function(){ /* Do not apply buffer data */ };
-
-			var glCreateProgram = frame.WebGL2RenderingContext.prototype.createProgram;
-			frame.WebGL2RenderingContext.prototype.createProgram = function(){
-				var rData = glCreateProgram.apply(this,arguments);
-				Object.defineProperty(rData,"vertexPosAttrib",{
-					configurable:false,
-					writable:false,
-					value:Math.floor(Math.random()*2)
-				});
-
-				return rData;
-			};
-
-			var glGetUniformLocation = frame.WebGL2RenderingContext.prototype.getUniformLocation;
-			frame.WebGL2RenderingContext.prototype.getUniformLocation = function(){return glGetUniformLocation.apply(this,arguments);};
-
-			var webgl1 = frame.WebGLRenderingContext.prototype.getParameter,
-				webgl2 = frame.WebGL2RenderingContext.prototype.getParameter;
-
-			// WebGL1
-			frame.WebGLRenderingContext.prototype.getParameter = function(param){
-				if (opts[0][param]) return opts[0][param];
-				return webgl1.apply(this,arguments);
-			};
-
 			// WebGL2
-			Object.defineProperties(frame.WebGL2RenderingContext.prototype,{
-				"getParameter":{
-					enumerable:true,
-					writeable:false,
-					configurable:false,
-					value:function(param){
-						if (opts[1][param]) return opts[1][param];
-						return webgl2.apply(this,arguments);
+			if (frame.WebGL2RenderingContext){
+				//var bd = frame.WebGL2RenderingContext.prototype.bufferData;
+				frame.WebGL2RenderingContext.prototype.bufferData = function(){ /* Do not apply buffer data */ };
+
+				var glCreateProgram = frame.WebGL2RenderingContext.prototype.createProgram;
+				frame.WebGL2RenderingContext.prototype.createProgram = function(){
+					var rData = glCreateProgram.apply(this,arguments);
+					Object.defineProperty(rData,"vertexPosAttrib",{
+						configurable:false,
+						writable:false,
+						value:Math.floor(Math.random()*2)
+					});
+
+					return rData;
+				};
+
+				var glGetUniformLocation = frame.WebGL2RenderingContext.prototype.getUniformLocation;
+				frame.WebGL2RenderingContext.prototype.getUniformLocation = function(){return glGetUniformLocation.apply(this,arguments);};
+
+				var webgl2 = frame.WebGL2RenderingContext.prototype.getParameter;
+
+				Object.defineProperties(frame.WebGL2RenderingContext.prototype,{
+					"getParameter":{
+						enumerable:true,
+						writeable:false,
+						configurable:false,
+						value:function(param){
+							if (opts[1][param]) return opts[1][param];
+							return webgl2.apply(this,arguments);
+						}
 					}
-				}
-			});
+				});
+			}
+
+			if (frame.WebGLRenderingContext){
+				var webgl1 = frame.WebGLRenderingContext.prototype.getParameter;
+
+				frame.WebGLRenderingContext.prototype.getParameter = function(param){
+					if (opts[0][param]) return opts[0][param];
+					return webgl1.apply(this,arguments);
+				};
+			}
 
 			frame.traceDefinedWebGL = true;
 		},"'" + pickedGpu + "'",true);

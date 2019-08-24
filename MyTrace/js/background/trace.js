@@ -144,6 +144,9 @@ var Trace = {
 						"relOpener":Prefs.Current.Pref_NativeFunctions.windowOpen.enabled
 					});
 					break;
+				case "protectionRan":
+					Trace.f.HandleCsUpdate(request);
+					break;
 				default:
 					console.error("Invalid message recieved");
 					console.warn(request);
@@ -463,6 +466,24 @@ var Trace = {
 		RemovePremium:function(){
 			Prefs.Set("Main_Trace.PremiumCode","");
 			Prefs.Current.Main_Trace.PremiumCode = "";
+		},
+		HandleCsUpdate:function(req){
+			return;
+			if (req.update !== "ran") return;
+			if (Trace.DEBUG) console.log("[csupd]-> Protection updated");
+
+			switch(req.protection){
+				case "clientrects":
+					Trace.Notify("Client rects protection triggered: " + req.part,"csupd");
+					break;
+				case "clientrectsbounding":
+					Trace.Notify("Client rects protection triggered: " + req.part,"csupd");
+					break;
+				default:
+					console.log("Unsupported message encountered.");
+					console.error(req.protection);
+					break;
+			}
 		}
 	},
 
