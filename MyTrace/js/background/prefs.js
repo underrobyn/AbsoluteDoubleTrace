@@ -349,7 +349,7 @@ var Prefs = {
 			"enabled":false
 		},
 		"Pref_ClientRects":{
-			"enabled":false
+			"enabled":true
 		},
 		"Pref_PluginHide":{
 			"enabled":false
@@ -369,10 +369,10 @@ var Prefs = {
 			},
 			"uaWBConfig":{
 				"AllowChrome":{
-					"enabled":true
+					"enabled":false
 				},
 				"AllowFirefox":{
-					"enabled":false
+					"enabled":true
 				},
 				"AllowVivaldi":{
 					"enabled":true

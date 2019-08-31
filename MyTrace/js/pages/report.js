@@ -177,7 +177,7 @@ var TPop = {
 					"id":"home_title"
 				}).append(
 					$("<div/>",{"id":"pause_trace"}).text("Pause Trace"),
-					$("<div/>",{"id":"temp_whitelist"}).text("Temporarily Whitelist").css("display","none"),
+					$("<div/>",{"id":"temp_whitelist"}).text("Temporarily Whitelist").css("display","none")
 				)
 			);
 

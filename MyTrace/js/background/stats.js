@@ -70,27 +70,17 @@ var Stats = {
 		Vars.s.get(
 			["stats_db", "stats_main"],
 			function(s){
-				// Check for old stats and convert them to the new format
-				var newStatsDB, newStatsMN, forceStatSave = false;
-				if (typeof(s.stats_db) === "string" && typeof(s.stats_main) === "string") {
-					newStatsDB = JSON.parse(s.stats_db);
-					newStatsMN = JSON.parse(s.stats_main);
-					forceStatSave = true;
-					console.log("[statd]-> Changed statistics to new format");
-				} else {
-					newStatsDB = s.stats_db;
-					newStatsMN = s.stats_main;
-				}
+				var forceStatSave = false;
 
 				// Load the current statistics
 				if (typeof(s.stats_db) !== "undefined") {
-					Stats.Current = newStatsDB;
+					Stats.Current = s.stats_db;
 				} else {
 					Stats.Current = {};
 					forceStatSave = true;
 				}
 				if (typeof(s.stats_main) !== "undefined") {
-					Stats.Main = newStatsMN;
+					Stats.Main = s.stats_main;
 				} else {
 					Stats.Main = {
 						"total":0,
@@ -102,7 +92,7 @@ var Stats = {
 					forceStatSave = true;
 				}
 
-				if (forceStatSave){
+				if (forceStatSave === true){
 					Stats.SaveStats();
 				}
 			}

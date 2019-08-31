@@ -37,12 +37,6 @@ var TraceOpt = {
 	storage:(typeof Storage !== "undefined" && typeof localStorage !== "undefined" && localStorage !== null),
 	debug:false,
 
-	makeRandomID:function(r){
-		for(var n="",t="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789",a=0;r > a;a++){
-			n += t.charAt(Math.floor(Math.random()*t.length));
-		}
-		return n;
-	},
 	theDate:function(){
 		var date = new Date();
 		var day = date.getDate();
@@ -85,6 +79,21 @@ var TraceOpt = {
 				_UserCrashReportService(e);
 			}
 		}
+	},
+	Read:function(key){
+		var ret = null;
+		try{
+			ret = localStorage.getItem(key);
+		} catch(e) {
+			if (e.name === 'NS_ERROR_FILE_CORRUPTED'){
+				alert("Your localStorage is corrupt, Trace may not function correctly as a result.");
+				console.error(e);
+			} else {
+				_UserCrashReportService(e);
+			}
+		}
+
+		return ret;
 	},
 	MakeDownload:function(name,data){
 		// File information
@@ -345,11 +354,11 @@ var TraceOpt = {
 		// Update storage counter
 		if (TraceOpt.storage === true) {
 			var count = 1, askedFeedback = true;
-			if (localStorage["userStatOptionsOpenCount"] !== undefined && localStorage["userStatOptionsOpenCount"] !== null){
-				count = parseInt(localStorage["userStatOptionsOpenCount"]);
+			if (TraceOpt.Read("userStatOptionsOpenCount") !== undefined && TraceOpt.Read("userStatOptionsOpenCount") !== null){
+				count = parseInt(TraceOpt.Read("userStatOptionsOpenCount"));
 			}
-			if (localStorage["hasAskedForFeedback"] !== undefined && localStorage["hasAskedForFeedback"] !== null){
-				askedFeedback = localStorage["hasAskedForFeedback"];
+			if (TraceOpt.Read("hasAskedForFeedback") !== undefined && TraceOpt.Read("hasAskedForFeedback") !== null){
+				askedFeedback = TraceOpt.Read("hasAskedForFeedback");
 			} else {
 				TraceOpt.Store("hasAskedForFeedback",false);
 			}
@@ -551,7 +560,7 @@ var TraceOpt = {
 				break;
 			case "settings":
 				if (TraceOpt.storage === true){
-					if (localStorage.getItem("showSettingsTutorial") === null || localStorage["showSettingsTutorial"] === "true"){
+					if (TraceOpt.Read("showSettingsTutorial") === null || TraceOpt.Read("showSettingsTutorial") === "true"){
 						TraceOpt.Tutorial.ShowSettings();
 					}
 				}
@@ -559,7 +568,7 @@ var TraceOpt = {
 				break;
 			case "requests":
 				if (TraceOpt.storage === true){
-					if (localStorage.getItem("showRequestTutorial") === null || localStorage["showRequestTutorial"] === "true"){
+					if (TraceOpt.Read("showRequestTutorial") === null || TraceOpt.Read("showRequestTutorial") === "true"){
 						TraceOpt.Tutorial.ShowRequest();
 					}
 				}
@@ -567,7 +576,7 @@ var TraceOpt = {
 				break;
 			case "whitelist":
 				if (TraceOpt.storage === true){
-					if (localStorage.getItem("showScopeTutorial") === null || localStorage["showScopeTutorial"] === "true"){
+					if (TraceOpt.Read("showScopeTutorial") === null || TraceOpt.Read("showScopeTutorial") === "true"){
 						TraceOpt.Tutorial.ShowScope();
 					}
 				}
@@ -776,9 +785,9 @@ var TraceOpt = {
 			var ntme = Math.round(dto.getTime()/1000);
 
 			if (TraceOpt.storage === true){
-				if (typeof localStorage.getItem("attn") === "string" && typeof localStorage.getItem("atme") === "string"){
-					attn = parseInt(localStorage.getItem("attn"));
-					atme = parseInt(localStorage.getItem("atme"));
+				if (typeof TraceOpt.Read("attn") === "string" && typeof TraceOpt.Read("atme") === "string"){
+					attn = parseInt(TraceOpt.Read("attn"));
+					atme = parseInt(TraceOpt.Read("atme"));
 
 					attn++;
 				}
@@ -786,7 +795,7 @@ var TraceOpt = {
 				TraceOpt.Store("attn",attn);
 				TraceOpt.Store("atme",ntme);
 			} else {
-				alert("Issue with localStorage!");
+				alert("There was an issue with your browser's localStorage!");
 			}
 
 			var uTimeOut = function(t){
@@ -1850,7 +1859,11 @@ var TraceOpt = {
 		},
 		StructureGraph:function(){
 			if (typeof TraceOpt.Stats.GraphElm === "undefined"){
-				TraceOpt.Stats.GraphElm = document.getElementById("graph").getContext("2d");
+				try {
+					TraceOpt.Stats.GraphElm = document.getElementById("graph").getContext("2d");
+				} catch(e) {
+					console.error(e);
+				}
 			}
 			Chart.defaults.global.defaultFontColor = "#fff";
 			TraceOpt.Stats.GraphObj = new Chart(TraceOpt.Stats.GraphElm, {
