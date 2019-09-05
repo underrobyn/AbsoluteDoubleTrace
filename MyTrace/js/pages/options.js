@@ -23,6 +23,12 @@ if (!chrome.hasOwnProperty("extension") || typeof chrome.extension.getBackground
 
 var TraceBg = chrome.runtime.getBackgroundPage;
 
+TraceBg(function(bg){
+	if (bg === null){
+		showErr("Extension failed to connect to background page. This may be caused if you're running Trace in normal and private browsing at the same time.");
+	}
+});
+
 // UI event to trigger a click handle on "enter" key press
 var EnterTriggerClick = function(e) {
 	if(e.which === 13) {

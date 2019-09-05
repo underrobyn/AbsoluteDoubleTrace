@@ -28,7 +28,7 @@ var Stats = {
 
 		if (TraceType === undefined) console.error("Massive type error, unknown type:",type);
 
-		// If data time reference doesn't exist, create an object
+		// If data time reference doesn't exist, create a new object
 		if (Stats.Current[TimeRef[0]] === undefined){
 			Stats.Current[TimeRef[0]] = {
 				"webpage":0,
@@ -79,6 +79,7 @@ var Stats = {
 					Stats.Current = {};
 					forceStatSave = true;
 				}
+
 				if (typeof(s.stats_main) !== "undefined") {
 					Stats.Main = s.stats_main;
 				} else {

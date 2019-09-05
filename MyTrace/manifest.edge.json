@@ -1,12 +1,13 @@
 {
 	"manifest_version":2,
 
-	"name":"Trace - Online Tracking Protection",
+	"name":"__MSG_addon_name__",
 	"short_name":"Trace",
-  	"author":"AbsoluteDouble",
-	"description":"Browse online without leaving a Trace, because who wants to be tracked?",
+	"author":"AbsoluteDouble",
+	"description":"__MSG_addon_description__",
+	"default_locale": "en",
 	"minimum_edge_version":"42.17134.1.0",
-	"version":"2.3.7",
+	"version":"2.3.8",
   	"homepage_url":"https://absolutedouble.co.uk/trace/",
   	"options_page":"html/options.html",
 	"options_ui": {
@@ -65,18 +66,19 @@
 		"scripts": [
 			"js/libraries/cookieparse.js",
 			"js/libraries/jquery.js",
-			"js/common/shared.js",
+		  	"js/common/data.js",
+		  	"js/common/shared.js",
 			"js/background/background.js",
 			"js/background/headers.js",
 			"js/background/prefs.js",
+			"js/background/simple.js",
 			"js/background/stats.js",
 			"js/background/tabs.js",
 			"js/background/utils.js",
 			"js/background/vars.js",
 			"js/background/web.js",
 			"js/background/whitelist.js",
-			"js/background/trace.js",
-			"js/common/data.js"
+			"js/background/trace.js"
 		]
 	},
   	"content_scripts":[

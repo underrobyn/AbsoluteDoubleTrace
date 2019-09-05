@@ -43,6 +43,7 @@ var TPage = {
 
 		window.addEventListener("message", function (e) {
 			if (!e || !e.data || !e.type) return;
+			if (typeof e.data !== "string") return;
 			if (e.data.indexOf("trace-protection::") === -1) return;
 
 			var parts = e.data.split("::");
@@ -179,36 +180,39 @@ var TPage = {
 
 			if (frames !== true) return;
 
-			var wind = HTMLIFrameElement.prototype.__lookupGetter__('contentWindow'),
-				cont = HTMLIFrameElement.prototype.__lookupGetter__('contentDocument');
+			// HTMLFrameElement is an obsolete element however is still implemented in browsers
+			["HTMLIFrameElement","HTMLFrameElement"].forEach(function(el){
+				var wind = self[el].prototype.__lookupGetter__('contentWindow'),
+					cont = self[el].prototype.__lookupGetter__('contentDocument');
 
-			Object.defineProperties(HTMLIFrameElement.prototype,{
-				contentWindow:{
-					get:function(){
-						if (this.src && this.src.indexOf('//') !== -1 && location.host !== this.src.split('/')[2]) return wind.apply(this);
+				Object.defineProperties(self[el].prototype,{
+					contentWindow:{
+						get:function(){
+							if (this.src && this.src.indexOf('//') !== -1 && location.host !== this.src.split('/')[2]) return wind.apply(this);
 
-						var frame = wind.apply(this);
-						if (frame && frame !== null) {
-							try {frame.HTMLCanvasElement;}catch(e){}
-							self[funcName](frame,opts);
+							var frame = wind.apply(this);
+							if (frame && frame !== null) {
+								try {frame.HTMLCanvasElement;}catch(e){}
+								self[funcName](frame,opts);
+							}
+
+							return frame;
 						}
+					},
+					contentDocument:{
+						get:function(){
+							if (this.src && this.src.indexOf('//') !== -1 && location.host !== this.src.split('/')[2]) return cont.apply(this);
 
-						return frame;
-					}
-				},
-				contentDocument:{
-					get:function(){
-						if (this.src && this.src.indexOf('//') !== -1 && location.host !== this.src.split('/')[2]) return cont.apply(this);
+							var frame = cont.apply(this);
+							if (frame && frame !== null) {
+								try {frame.HTMLCanvasElement;}catch(e){}
+								self[funcName](frame,opts);
+							}
 
-						var frame = cont.apply(this);
-						if (frame && frame !== null) {
-							try {frame.HTMLCanvasElement;}catch(e){}
-							self[funcName](frame,opts);
+							return frame;
 						}
-
-						return frame;
 					}
-				}
+				});
 			});
 		};
 
@@ -580,54 +584,55 @@ var TPage = {
 					return temp;
 				}
 
-				// getClientRects
-				var clientRects = frame.Element.prototype.getClientRects;
+				["Element","Range"].forEach(function(el){
+					// getClientRects
+					var clientRects = frame[el].prototype.getClientRects;
 
-				Object.defineProperty(frame.Element.prototype,"getClientRects",{
-					value:function(){
-						var rects = clientRects.apply(this,arguments);
-						var krect = Object.keys(rects);
+					Object.defineProperty(frame[el].prototype,"getClientRects",{
+						value:function(){
+							var rects = clientRects.apply(this,arguments);
+							var krect = Object.keys(rects);
 
-						var DOMRectList = function(){};
-						var list = new DOMRectList();
-						list.length = krect.length;
-						for (var i = 0;i<list.length;i++){
-							if (krect[i] === "length") continue;
-							list[i] = updatedRect(rects[krect[i]],false,false);
+							var DOMRectList = function(){};
+							var list = new DOMRectList();
+							list.length = krect.length;
+							for (var i = 0;i<list.length;i++){
+								if (krect[i] === "length") continue;
+								list[i] = updatedRect(rects[krect[i]],false,false);
+							}
+
+							window.top.postMessage("trace-protection::ran::clientrects::get", '*');
+							return list;
 						}
+					});
+					Object.defineProperty(frame[el].prototype.getClientRects, "toString",{
+						value:function(){
+							window.top.postMessage("trace-protection::ran::clientrects::getstring", '*');
+							return "getClientRects() { [native code] }";
+						}
+					});
 
-						window.top.postMessage("trace-protection::ran::clientrects::get", '*');
-						return list;
-					}
-				});
-				Object.defineProperty(frame.Element.prototype.getClientRects, "toString",{
-					value:function(){
-						window.top.postMessage("trace-protection::ran::clientrects::getstring", '*');
-						return "getClientRects() { [native code] }";
-					}
-				});
+					// getBoundingClientRect
+					var boundingRects = frame[el].prototype.getBoundingClientRect;
 
-				// getBoundingClientRect
-				var boundingRects = frame.Element.prototype.getBoundingClientRect;
+					Object.defineProperty(frame[el].prototype,"getBoundingClientRect",{
+						value:function(){
+							var rect = boundingRects.apply(this,arguments);
+							if (this === undefined || this === null) return rect;
 
-				Object.defineProperty(frame.Element.prototype,"getBoundingClientRect",{
-					value:function(){
-						var rect = boundingRects.apply(this,arguments);
-						if (this === undefined || this === null) return rect;
+							if (location.host.includes("google")) return rect;
 
-						if (location.host.includes("google")) return rect;
+							window.top.postMessage("trace-protection::ran::clientrectsbounding::get", '*');
 
-
-						window.top.postMessage("trace-protection::ran::clientrectsbounding::get", '*');
-
-						return updatedRect(rect,true,true);
-					}
-				});
-				Object.defineProperty(frame.Element.prototype.getBoundingClientRect, "toString",{
-					value:function(){
-						window.top.postMessage("trace-protection::ran::clientrectsbounding::getstring", '*');
-						return "getBoundingClientRect() { [native code] }";
-					}
+							return updatedRect(rect,true,true);
+						}
+					});
+					Object.defineProperty(frame[el].prototype.getBoundingClientRect, "toString",{
+						value:function(){
+							window.top.postMessage("trace-protection::ran::clientrectsbounding::getstring", '*');
+							return "getBoundingClientRect() { [native code] }";
+						}
+					});
 				});
 
 				frame.traceDefinedRects = true;

@@ -245,7 +245,6 @@ var Trace = {
 			// Toggle WebRTC protection
 			Trace.f.ToggleWebRtc();
 
-
 			// Tell the user that we're done!
 			Trace.Notify("Finished setting up.","initd");
 		},

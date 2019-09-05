@@ -20,38 +20,32 @@ if (typeof window.JSON !== "object"){
 // A general fix for browser that use window.browser instead of window.chrome
 if (!window.chrome.hasOwnProperty("extension")) window.chrome = (function (){ return window.msBrowser || window.browser || window.chrome; })();
 
-if (!chrome.hasOwnProperty("extension") || typeof chrome.extension.getBackgroundPage !== "function"){
-	showErr("Extension failed to connect to background page. Please try reloading the page.");
-}
-
 var sTrace = {
-	storage:(typeof Storage !== "undefined" && typeof localStorage !== "undefined" && localStorage !== null),
 	debug:false,
+	port:null,
 
-	FormatNumber:function(x) {
-		if (!x) return "0";
-		return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-	},
-	CloseOverlay:function(){
-		$("#overlay_message").fadeOut(250);
-		$("#ux").removeClass("blurred");
-		setTimeout(function(){
-			$("#overlay_message").removeClass("overlay_fs");
-		},250);
-	},
-	AssignCloseOverlay:function(fs){
-		if (fs) $("#overlay_message").addClass("overlay_fs");
-
-		$("#ux").addClass("blurred");
-		$("#overlay_message").fadeIn(300);
-		$("#overlay_close").click(sTrace.CloseOverlay);
-		$(window).click(function(e){
-			if ($(e.target)[0].id === "overlay_message"){
-				sTrace.CloseOverlay();
-			}
+	start:function(){
+		sTrace.port = chrome.runtime.connect({
+			name:"background-msg"
 		});
+		sTrace.port.onMessage.addListener(sTrace.recieve);
+
+		sTrace.send({
+			"request":"connect"
+		});
+	},
+
+	recieve:function(data){
+		console.log(data);
+	},
+
+	send:function(data){
+		sTrace.port.postMessage(data);
 	}
+
 };
+
+sTrace.start();
 
 try{
 	$(document).ready(sTrace.WindowLoad);

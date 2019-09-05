@@ -28,12 +28,13 @@ html, body {
 #e_msg{
 	display: none;
 	text-align: center;
-	font-size: 1.5em;
+	font-size: 1.6em;
 	position: fixed;
-	margin: 10% 0 0 41%;
 	background-color: #1a1a1a;
 	z-index: 100;
 	padding: 2%;
+	min-width:100vw;
+	min-height:100vh;
 }
 .menutoggle{
 	display:none;
