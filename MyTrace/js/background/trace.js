@@ -137,7 +137,6 @@ var Trace = {
 					break;
 				case "protectionUpdate":
 					if (Trace.DEBUG) console.log("[TracePage] " + sender.tab ? "from a content script:" + sender.tab.url : "from the extension");
-					//console.log(request);
 
 					sendResponse({
 						"pingAttr":Prefs.Current.Pref_PingBlock.removePingAttr.enabled,
@@ -166,9 +165,7 @@ var Trace = {
 			Prefs.Defaults["tracenewprefs"] = true;
 
 			// Load settings from storage
-			Prefs.Load(function(){
-				Trace.f.StartModules();
-			});
+			Prefs.Load(Trace.f.StartModules);
 		},
 		StartModules:function(){
 			// Load some settings into program
@@ -449,7 +446,7 @@ var Trace = {
 			}
 		},
 		ToggleWebRtc:function(){
-			if (!window.chrome.privacy) {
+			if (!chrome.privacy) {
 				Trace.Notify("WebRTC Setting isn't supported in this browser or Trace doesn't have permission to access it.");
 				return false;
 			}

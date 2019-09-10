@@ -91,7 +91,7 @@ var Tabs = {
 			if (!state || !state.hasOwnProperty("status")) return;
 			if (state.status !== "loading") return;
 
-			if (Trace.DEBUG) console.log("[tabmd]-> Updated data template for",tab.id," as URL changed to",tab.url);
+			if (Trace.DEBUG) console.log("[tabmd]-> Updated data template for",tab.id,"as URL changed to",tab.url);
 
 			// Prevent referenced object issue by cloning object instead (same fix in Tabs.List.Add)
 			var template = JSON.parse(JSON.stringify(Tabs.DataTemplate));

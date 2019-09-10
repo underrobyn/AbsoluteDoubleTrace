@@ -36,7 +36,13 @@ var EnterTriggerClick = function(e) {
 	}
 };
 
-var TraceOpt = {
+// Get message for language
+var lang = function(msg){
+	if (!chrome.i18n) return "";
+	return chrome.i18n.getMessage(msg);
+};
+
+var Opts = {
 	homeRefresh:null,
 	searchTimeout:null,
 	currentSettingTab:"settings_stracefeature",
@@ -53,7 +59,7 @@ var TraceOpt = {
 		return [date.getFullYear().toString(),month.toString(),day.toString()];
 	},
 	CloseUI:function(){
-		return $("<button/>",{"title":"Close","class":"float_r"}).text("Close").on("click enter",TraceOpt.CloseOverlay);
+		return $("<button/>",{"title":"Close","class":"float_r"}).text(lang("advOverlayCtrlClose")).on("click enter",Opts.CloseOverlay);
 	},
 	CloseOverlay:function(){
 		$("#overlay_message").fadeOut(250);
@@ -67,10 +73,10 @@ var TraceOpt = {
 
 		$("#ux").addClass("blurred");
 		$("#overlay_message").fadeIn(300);
-		$("#overlay_close").on("click enter",TraceOpt.CloseOverlay);
+		$("#overlay_close").on("click enter",Opts.CloseOverlay);
 		$(window).click(function(e){
 			if ($(e.target)[0].id === "overlay_message"){
-				TraceOpt.CloseOverlay();
+				Opts.CloseOverlay();
 			}
 		});
 	},
@@ -108,7 +114,7 @@ var TraceOpt = {
 		var url = URL.createObjectURL(file);
 
 		// Generate file date
-		var d = TraceOpt.theDate();
+		var d = Opts.theDate();
 		var filedate = (d[0] + "-" + d[1] + "-" + d[2]).toString();
 
 		// Download file
@@ -129,11 +135,11 @@ var TraceOpt = {
 		Init:function(){
 			if ('BroadcastChannel' in self) {
 				// Start Authentication Channel
-				TraceOpt.Auth.Channel = new BroadcastChannel('TraceAuth');
+				Opts.Auth.Channel = new BroadcastChannel('TraceAuth');
 
-				TraceOpt.Auth.Channel.onmessage = function(m){
+				Opts.Auth.Channel.onmessage = function(m){
 					if (m.data.action === "ByeByeTab"){
-						clearInterval(TraceOpt.homeRefresh);
+						clearInterval(Opts.homeRefresh);
 
 						document.title = "Tab Disabled";
 
@@ -150,7 +156,7 @@ var TraceOpt = {
 						},10000);
 					} else if (m.data.action === "ReloadList"){
 
-						TraceOpt.Scope.ReloadList();
+						Opts.Scope.ReloadList();
 
 					} else {
 						console.log("Authenticator: No action taken");
@@ -162,13 +168,13 @@ var TraceOpt = {
 		},
 		SafePost:function(data){
 			if ('BroadcastChannel' in self) {
-				if (typeof TraceOpt.Auth.Channel !== null){
-					TraceOpt.Auth.Channel.postMessage(data);
+				if (typeof Opts.Auth.Channel !== null){
+					Opts.Auth.Channel.postMessage(data);
 				}
 			}
 		},
 		Integrity:function(){
-			TraceOpt.Auth.SafePost({action:"ByeByeTab"});
+			Opts.Auth.SafePost({action:"ByeByeTab"});
 		}
 	},
 
@@ -183,11 +189,11 @@ var TraceOpt = {
 			$("#overlay_message").slideDown(300);
 			$("#overlay_close").on("click enter",freshInstall);
 
-			if (TraceOpt.storage === true){
-				TraceOpt.Store("showSettingsTutorial",true);
-				TraceOpt.Store("showRequestTutorial",true);
-				TraceOpt.Store("showScopeTutorial",true);
-				TraceOpt.Store("hasAskedForFeedback",false);
+			if (Opts.storage === true){
+				Opts.Store("showSettingsTutorial",true);
+				Opts.Store("showRequestTutorial",true);
+				Opts.Store("showScopeTutorial",true);
+				Opts.Store("hasAskedForFeedback",false);
 			}
 
 			$(window).click(function(e){
@@ -200,15 +206,15 @@ var TraceOpt = {
 				$("#newuser_protections").toggle();
 			});
 			$("#prot_sim").on("click enter",function(){
-				TraceOpt.NewInstall.SelectProtection(0);
+				Opts.NewInstall.SelectProtection(0);
 				$(this).text("Applied!").prop("disabled",true);
 			});
 			$("#prot_adv").on("click enter",function(){
-				TraceOpt.NewInstall.SelectProtection(1);
+				Opts.NewInstall.SelectProtection(1);
 				$(this).text("Applied!").prop("disabled",true);
 			});
 			$("#prot_exp").on("click enter",function(){
-				TraceOpt.NewInstall.SelectProtection(2);
+				Opts.NewInstall.SelectProtection(2);
 				$(this).text("Applied!").prop("disabled",true);
 			});
 		},
@@ -251,14 +257,14 @@ var TraceOpt = {
 				$("<br/>"),$("<br/>"),
 				$("<span/>").text("The URL Tracking Cleaner removes information from URLs that is used to track you, it has lots of configuration options and I recommend you enable it at some level to improve your privacy."),
 				$("<br/>"),$("<br/>"),
-				$("<button/>",{"title":"Close"}).text("Okay").click(TraceOpt.CloseOverlay)
+				$("<button/>",{"title":"Close"}).text("Okay").click(Opts.CloseOverlay)
 			);
 
 			$("#ux").addClass("blurred");
 			$("#overlay_message").slideDown(300);
-			$("#overlay_close").click(TraceOpt.CloseOverlay);
+			$("#overlay_close").click(Opts.CloseOverlay);
 
-			if (TraceOpt.storage === true) TraceOpt.Store("showRequestTutorial",false);
+			if (Opts.storage === true) Opts.Store("showRequestTutorial",false);
 		},
 		ShowSettings:function(){
 			$("#drop_message").empty().append(
@@ -272,14 +278,14 @@ var TraceOpt = {
 				$("<span/>").text("You can find settings such as URL Parameter editing and Bad TLD Protection in the 'Requests' section."),
 				$("<br/>"),$("<br/>"),
 				$("<h3/>").html("If you find a bug with anything, especially features marked as 'Beta', please report it to <a class='dark' href='mailto:absolutedouble@gmail.com'>absolutedouble@gmail.com</a>"),
-				$("<button/>",{"title":"Close"}).text("Okay").click(TraceOpt.CloseOverlay)
+				$("<button/>",{"title":"Close"}).text("Okay").click(Opts.CloseOverlay)
 			);
 
 			$("#ux").addClass("blurred");
 			$("#overlay_message").slideDown(300);
-			$("#overlay_close").click(TraceOpt.CloseOverlay);
+			$("#overlay_close").click(Opts.CloseOverlay);
 
-			if (TraceOpt.storage === true) TraceOpt.Store("showSettingsTutorial",false);
+			if (Opts.storage === true) Opts.Store("showSettingsTutorial",false);
 		},
 		ShowScope:function(){
 			$("#drop_message").empty().append(
@@ -288,14 +294,14 @@ var TraceOpt = {
 				$("<br/>"),$("<br/>"),
 				$("<span/>").text("Add entries to the list and use the check boxes to select what protections are allowed to run on that page."),
 				$("<br/>"),$("<br/>"),
-				$("<button/>",{"title":"Close"}).text("Okay").click(TraceOpt.CloseOverlay)
+				$("<button/>",{"title":"Close"}).text("Okay").click(Opts.CloseOverlay)
 			);
 
 			$("#ux").addClass("blurred");
 			$("#overlay_message").slideDown(300);
-			$("#overlay_close").click(TraceOpt.CloseOverlay);
+			$("#overlay_close").click(Opts.CloseOverlay);
 
-			if (TraceOpt.storage === true) TraceOpt.Store("showScopeTutorial",false);
+			if (Opts.storage === true) Opts.Store("showScopeTutorial",false);
 		}
 	},
 
@@ -314,12 +320,12 @@ var TraceOpt = {
 		}
 
 		// Assign click events to nav bar
-		TraceOpt.AssignNavEvents();
-		TraceOpt.Interface.Browsers();
+		Opts.AssignNavEvents();
+		Opts.Interface.Browsers();
 
 		// Start Auth Channel and check integrity
-		TraceOpt.Auth.Init();
-		TraceOpt.Auth.Integrity();
+		Opts.Auth.Init();
+		Opts.Auth.Integrity();
 
 		// Assign storage event
 		window.addEventListener("storage",function (a){
@@ -327,63 +333,63 @@ var TraceOpt = {
 		},false);
 
 		// Get main page text and start update intervals
-		TraceOpt.Premium.GetStatus();
-		TraceOpt.Interface.GetMainPage();
-		TraceOpt.homeRefresh = setInterval(function(){
-			TraceOpt.Interface.GetMainPage();
-			TraceOpt.Premium.GetStatus();
-			TraceOpt.Stats.GetStatsData(function(d){
-				TraceOpt.Stats.MakeData(d,TraceOpt.Stats.MakeGraph);
+		Opts.Premium.GetStatus();
+		Opts.Interface.GetMainPage();
+		Opts.homeRefresh = setInterval(function(){
+			Opts.Interface.GetMainPage();
+			Opts.Premium.GetStatus();
+			Opts.Stats.GetStatsData(function(d){
+				Opts.Stats.MakeData(d,Opts.Stats.MakeGraph);
 			});
 		},5000);
 
 		// Get status of settings
-		TraceOpt.GetCurrentSettings();
-		TraceOpt.ExecutionOrder.ReloadInterface();
+		Opts.GetCurrentSettings();
+		Opts.ExecutionOrder.ReloadInterface();
 
 		// Assign click events to settings table
-		TraceOpt.AssignSettingClickEvents();
+		Opts.AssignSettingClickEvents();
 
 		// Assign click events to advanced settings
-		TraceOpt.Scope.Init();
-		TraceOpt.BadTopLevelBlock.AssignEvents();
-		TraceOpt.URLCleaner.AssignEvents();
+		Opts.Scope.Init();
+		Opts.BadTopLevelBlock.AssignEvents();
+		Opts.URLCleaner.AssignEvents();
 
-		TraceOpt.Interface.GenerateHome();
+		Opts.Interface.GenerateHome();
 
 		// Get statistics loaded and ready
-		TraceOpt.Stats.StructureGraph();
-		TraceOpt.Stats.GetStatsData(function (d) {
-			TraceOpt.Stats.MakeData(d, TraceOpt.Stats.MakeGraph);
+		Opts.Stats.StructureGraph();
+		Opts.Stats.GetStatsData(function (d) {
+			Opts.Stats.MakeData(d, Opts.Stats.MakeGraph);
 		});
 
 		// Update storage counter
-		if (TraceOpt.storage === true) {
+		if (Opts.storage === true) {
 			var count = 1, askedFeedback = true;
-			if (TraceOpt.Read("userStatOptionsOpenCount") !== undefined && TraceOpt.Read("userStatOptionsOpenCount") !== null){
-				count = parseInt(TraceOpt.Read("userStatOptionsOpenCount"));
+			if (Opts.Read("userStatOptionsOpenCount") !== undefined && Opts.Read("userStatOptionsOpenCount") !== null){
+				count = parseInt(Opts.Read("userStatOptionsOpenCount"));
 			}
-			if (TraceOpt.Read("hasAskedForFeedback") !== undefined && TraceOpt.Read("hasAskedForFeedback") !== null){
-				askedFeedback = TraceOpt.Read("hasAskedForFeedback");
+			if (Opts.Read("hasAskedForFeedback") !== undefined && Opts.Read("hasAskedForFeedback") !== null){
+				askedFeedback = Opts.Read("hasAskedForFeedback");
 			} else {
-				TraceOpt.Store("hasAskedForFeedback",false);
+				Opts.Store("hasAskedForFeedback",false);
 			}
 
 			count++;
-			TraceOpt.Store("userStatOptionsOpenCount",count);
+			Opts.Store("userStatOptionsOpenCount",count);
 
 			if (count > 10 && (count % 3 === 0) && askedFeedback === "false"){
-				TraceOpt.Interface.AskFeedback();
+				Opts.Interface.AskFeedback();
 			}
 		}
 
 		// Assign click events to stats page
-		TraceOpt.Stats.AssignGraphOptions();
+		Opts.Stats.AssignGraphOptions();
 
 		TraceBg(function(bg){
-			TraceOpt.debug = (typeof bg.Prefs.Current.Main_Trace.DebugApp.enabled !== "undefined" ?
+			Opts.debug = (typeof bg.Prefs.Current.Main_Trace.DebugApp.enabled !== "undefined" ?
 				(bg.Prefs.Current.Main_Trace.DebugApp.enabled) : false);
-			TraceOpt.Blocklist.isPremium = (typeof bg.Vars.Premium !== "undefined" ?
+			Opts.Blocklist.isPremium = (typeof bg.Vars.Premium !== "undefined" ?
 				(bg.Vars.Premium.length !== 0) : false);
 		});
 
@@ -485,18 +491,18 @@ var TraceOpt = {
 				$("<button/>").text("Contact Developer").on("click enter",function(){
 					var openUrl = "mailto:absolutedouble@gmail.com";
 					window.open(openUrl,"_blank");
-					TraceOpt.Store("hasAskedForFeedback",true);
+					Opts.Store("hasAskedForFeedback",true);
 				}),
 				$("<span/>").text(" "),
 				$("<button/>").text("Leave Feedback").on("click enter",function(){
 					var openUrl = "https://addons.mozilla.org/en-GB/firefox/addon/absolutedouble-trace/reviews/";
 					if (!/Firefox/.test(navigator.userAgent)) openUrl = "https://chrome.google.com/webstore/detail/trace-online-tracking-pro/njkmjblmcfiobddjgebnoeldkjcplfjb/reviews";
 					window.open(openUrl,"_blank");
-					TraceOpt.Store("hasAskedForFeedback",true);
+					Opts.Store("hasAskedForFeedback",true);
 				}),
 				$("<span/>").text(" "),
 				$("<button/>").text("Dismiss").on("click enter",function(){
-					TraceOpt.Store("hasAskedForFeedback",true);
+					Opts.Store("hasAskedForFeedback",true);
 					$(this).text("Done!");
 					_UserCrashReportService({"UserDismissedFeedback":true});
 				})
@@ -512,7 +518,7 @@ var TraceOpt = {
 			var allowed = ["home","statistics","settings","requests","whitelist","information"];
 			if (allowed.indexOf(spl[1]) === -1) return;
 
-			TraceOpt.LoadPage(spl[1]);
+			Opts.LoadPage(spl[1]);
 
 			window.location.hash = "";
 		}
@@ -529,7 +535,7 @@ var TraceOpt = {
 		},false);
 
 		$(".side_el").each(function(){
-			$(this).on("click enter", TraceOpt.LoadPage).on("keypress",EnterTriggerClick);
+			$(this).on("click enter", Opts.LoadPage).on("keypress",EnterTriggerClick);
 		});
 
 		$(".menutoggle").on("click enter",function(){
@@ -554,43 +560,43 @@ var TraceOpt = {
 
 		switch(load){
 			case "home":
-				TraceOpt.Interface.GetMainPage();
-				TraceOpt.Premium.GetStatus();
+				Opts.Interface.GetMainPage();
+				Opts.Premium.GetStatus();
 				document.title = "Trace";
 				break;
 			case "statistics":
-				TraceOpt.Stats.GetStatsData(function(d){
-					TraceOpt.Stats.MakeData(d,TraceOpt.Stats.MakeGraph);
+				Opts.Stats.GetStatsData(function(d){
+					Opts.Stats.MakeData(d,Opts.Stats.MakeGraph);
 				});
 				document.title = "Trace | Statistics";
 				break;
 			case "settings":
-				if (TraceOpt.storage === true){
-					if (TraceOpt.Read("showSettingsTutorial") === null || TraceOpt.Read("showSettingsTutorial") === "true"){
-						TraceOpt.Tutorial.ShowSettings();
+				if (Opts.storage === true){
+					if (Opts.Read("showSettingsTutorial") === null || Opts.Read("showSettingsTutorial") === "true"){
+						Opts.Tutorial.ShowSettings();
 					}
 				}
 				document.title = "Trace | Settings";
 				break;
 			case "requests":
-				if (TraceOpt.storage === true){
-					if (TraceOpt.Read("showRequestTutorial") === null || TraceOpt.Read("showRequestTutorial") === "true"){
-						TraceOpt.Tutorial.ShowRequest();
+				if (Opts.storage === true){
+					if (Opts.Read("showRequestTutorial") === null || Opts.Read("showRequestTutorial") === "true"){
+						Opts.Tutorial.ShowRequest();
 					}
 				}
 				document.title = "Trace | Web Request Settings";
 				break;
 			case "whitelist":
-				if (TraceOpt.storage === true){
-					if (TraceOpt.Read("showScopeTutorial") === null || TraceOpt.Read("showScopeTutorial") === "true"){
-						TraceOpt.Tutorial.ShowScope();
+				if (Opts.storage === true){
+					if (Opts.Read("showScopeTutorial") === null || Opts.Read("showScopeTutorial") === "true"){
+						Opts.Tutorial.ShowScope();
 					}
 				}
 				document.title = "Trace | Whitelist";
 				break;
 			case "information":
 				document.title = "Trace | Information";
-				TraceOpt.Premium.GetStatus();
+				Opts.Premium.GetStatus();
 				break;
 			default:
 				console.error("Unknown page.",load);
@@ -612,14 +618,14 @@ var TraceOpt = {
 			$(this).on("click enter", function(){
 				var newTab = $(this).data("content");
 
-				if (TraceOpt.currentSettingTab !== ""){
-					$("#" + TraceOpt.currentSettingTab).hide().fadeOut(200);
+				if (Opts.currentSettingTab !== ""){
+					$("#" + Opts.currentSettingTab).hide().fadeOut(200);
 				}
-				if (TraceOpt.currentSettingTab !== newTab){
+				if (Opts.currentSettingTab !== newTab){
 					$("#" + newTab).show().fadeIn(200);
-					TraceOpt.currentSettingTab = newTab;
+					Opts.currentSettingTab = newTab;
 				} else {
-					TraceOpt.currentSettingTab = "";
+					Opts.currentSettingTab = "";
 				}
 
 			}).on("keypress",EnterTriggerClick);
@@ -641,7 +647,7 @@ var TraceOpt = {
 			$(this).on("click enter", function(e){
 				var that = this;
 				TraceBg(function(bg){
-					bg.Prefs.ToggleSetting($(that).data("toggle"),TraceOpt.GetCurrentSettings);
+					bg.Prefs.ToggleSetting($(that).data("toggle"),Opts.GetCurrentSettings);
 				});
 			}).on("keypress",EnterTriggerClick);
 		});
@@ -649,7 +655,7 @@ var TraceOpt = {
 		// Settings configuration events
 		$(".setting_config").each(function(){
 			$(this).on("click enter", function(){
-				TraceOpt.Config.Options($(this).data("config"));
+				Opts.Config.Options($(this).data("config"));
 			}).on("keypress",EnterTriggerClick);
 		});
 
@@ -657,12 +663,12 @@ var TraceOpt = {
 		$(".direct_toggle").each(function(){
 			$(this).on("click enter", function(){
 				var name = $(this).data("toggle");
-				TraceOpt.DirectSetting(this,name,true);
+				Opts.DirectSetting(this,name,true);
 			}).on("keypress",EnterTriggerClick);
 		});
 
-		$("#setting_backuprestore").on("click enter",TraceOpt.Backup.Interface);
-		$("#setting_reset").on("click enter",TraceOpt.ResetTraceSettings);
+		$("#setting_backuprestore").on("click enter",Opts.Backup.Interface);
+		$("#setting_reset").on("click enter",Opts.ResetTraceSettings);
 	},
 	GetCurrentSettings:function(){
 		// Get current settings
@@ -680,7 +686,7 @@ var TraceOpt = {
 					if (typeof settingsList[status] === "undefined") return;
 					e = settingsList[status].enabled;
 				}
-				$(this).text((e === true ? "Enabled" : "Disabled"));
+				$(this).text((e === true ? lang("advSettingsCtrlEnabled") : lang("advSettingsCtrlDisabled")));
 			});
 			$(".isetting_toggle").each(function(){
 				var status = $(this).data("toggle"), enabled = false;
@@ -690,11 +696,11 @@ var TraceOpt = {
 				} else {
 					enabled = settingsList[status].enabled;
 				}
-				$(this).text((enabled === true ? "Enabled" : "Disabled"));
+				$(this).text((enabled === true ? lang("advSettingsCtrlEnabled") : lang("advSettingsCtrlDisabled")));
 			});
 			$(".direct_toggle").each(function(){
 				var status = $(this).data("toggle");
-				TraceOpt.DirectSetting(this,status,false);
+				Opts.DirectSetting(this,status,false);
 			});
 			$(".trace_toggle").each(function(){
 				var status = $(this).data("toggle"), enabled = false;
@@ -704,7 +710,7 @@ var TraceOpt = {
 				} else {
 					enabled = settingsList[status].enabled;
 				}
-				$(this).text((enabled === true ? "Enabled" : "Disabled"));
+				$(this).text((enabled === true ? lang("advSettingsCtrlEnabled") : lang("advSettingsCtrlDisabled")));
 			});
 		});
 	},
@@ -733,7 +739,7 @@ var TraceOpt = {
 					$("#premium_status, #info_premium_status").empty().append(
 						$("<span/>",{class:"premium_inner"}).text("Support Trace's development! Buy premium to gain access to the Premium blocklist"),
 						$("<br/>"),$("<br/>"),
-						$("<button/>").on("click enter",TraceOpt.Premium.EnterCode).text("Enter Code"),
+						$("<button/>").on("click enter",Opts.Premium.EnterCode).text("Enter Code"),
 						$("<span/>").text(" "),
 						$("<button/>").on("click enter",function(){
 							var win = window.open("https://absolutedouble.co.uk/trace/premium", "_blank");
@@ -751,11 +757,11 @@ var TraceOpt = {
 				$("#premium_status,#info_premium_status").empty().append(
 					$("<span/>").text("Thank you for supporting Trace!"),
 					$("<br/>"),$("<br/>"),
-					$("<button/>").text("Disable Premium").click(TraceOpt.Premium.RemoveCode),
+					$("<button/>").text("Disable Premium").click(Opts.Premium.RemoveCode),
 					$("<span/>").text(" "),
 					$("<button/>").text(
 						(bg.Prefs.Current.Pref_WebController.enabled === true ? "Force Blocklist Update" : "Enable Web Request Controller")
-					).on("click enter",TraceOpt.UpdateBlocklist),
+					).on("click enter",Opts.UpdateBlocklist),
 					$("<span/>").text(" "),
 					$("<button/>").on("click enter",function(){
 						var win = window.open("https://absolutedouble.co.uk/trace/", "_blank");
@@ -770,17 +776,17 @@ var TraceOpt = {
 
 				// Update settings
 				bg.Prefs.Set("Main_Trace.PremiumCode","");
-				TraceOpt.Blocklist.InstallList("a00000001",false);
-				TraceOpt.Blocklist.InstallList("a00000003",false);
+				Opts.Blocklist.InstallList("a00000001",false);
+				Opts.Blocklist.InstallList("a00000003",false);
 
 				bg.Web.ClearDomainCache();
 
 				$(".premium_inner").empty().html("<h1>Please wait...</h1>");
 
-				TraceOpt.Interface.GetMainPage();
-				TraceOpt.Premium.GetStatus();
+				Opts.Interface.GetMainPage();
+				Opts.Premium.GetStatus();
 				setTimeout(function(){
-					TraceOpt.Blocklist.isPremium = (typeof bg.Vars.Premium !== "undefined" ?
+					Opts.Blocklist.isPremium = (typeof bg.Vars.Premium !== "undefined" ?
 						(bg.Vars.Premium.length !== 0) : false);
 				},1500);
 			});
@@ -790,16 +796,16 @@ var TraceOpt = {
 			var attn = 0, atme = 0;
 			var ntme = Math.round(dto.getTime()/1000);
 
-			if (TraceOpt.storage === true){
-				if (typeof TraceOpt.Read("attn") === "string" && typeof TraceOpt.Read("atme") === "string"){
-					attn = parseInt(TraceOpt.Read("attn"));
-					atme = parseInt(TraceOpt.Read("atme"));
+			if (Opts.storage === true){
+				if (typeof Opts.Read("attn") === "string" && typeof Opts.Read("atme") === "string"){
+					attn = parseInt(Opts.Read("attn"));
+					atme = parseInt(Opts.Read("atme"));
 
 					attn++;
 				}
 
-				TraceOpt.Store("attn",attn);
-				TraceOpt.Store("atme",ntme);
+				Opts.Store("attn",attn);
+				Opts.Store("atme",ntme);
 			} else {
 				alert("There was an issue with your browser's localStorage!");
 			}
@@ -809,10 +815,10 @@ var TraceOpt = {
 					$("<h1/>").text("Trace Premium"),
 					$("<h2/>").text("Please wait " + t + " minutes to try again." + (t === "10" ? " Might want to make a cup of tea to pass the time." : "")),
 					$("<span/>").text("The timer resets every time you re-enter this popup, wait " + t + " minutes before trying again."),$("<br />"),$("<br />"),
-					$("<button/>",{"title":"I need help"}).text("Help").click(TraceOpt.Premium.HelpDialog),
-					TraceOpt.CloseUI()
+					$("<button/>",{"title":"I need help"}).text("Help").click(Opts.Premium.HelpDialog),
+					Opts.CloseUI()
 				);
-				TraceOpt.AssignCloseOverlay();
+				Opts.AssignCloseOverlay();
 			};
 
 			if (attn > 12){
@@ -835,14 +841,14 @@ var TraceOpt = {
 					"id":"premium_code_box",
 					"class":"text_box boxmod_large"
 				}).on("keypress",function(e){
-					if (e.keyCode === 13) TraceOpt.Premium.Go();
+					if (e.keyCode === 13) Opts.Premium.Go();
 				}),
 				$("<br />"),$("<br />"),
-				$("<button/>",{"title":"Activate premium code"}).text("Activate").on("click enter",TraceOpt.Premium.Go),
-				$("<button/>",{"title":"I need help"}).text("Help").on("click enter",TraceOpt.Premium.HelpDialog),
-				TraceOpt.CloseUI()
+				$("<button/>",{"title":"Activate premium code"}).text("Activate").on("click enter",Opts.Premium.Go),
+				$("<button/>",{"title":"I need help"}).text("Help").on("click enter",Opts.Premium.HelpDialog),
+				Opts.CloseUI()
 			);
-			TraceOpt.AssignCloseOverlay(true);
+			Opts.AssignCloseOverlay(true);
 		},
 		HelpDialog:function(){
 			$("#drop_message").empty().append(
@@ -888,14 +894,14 @@ var TraceOpt = {
 						)
 					)
 				),
-				TraceOpt.CloseUI()
+				Opts.CloseUI()
 			);
-			TraceOpt.AssignCloseOverlay(true);
+			Opts.AssignCloseOverlay(true);
 		},
 		Go:function(){
 			if ($("#premium_code_box") === null) return;
 
-			TraceOpt.CloseOverlay();
+			Opts.CloseOverlay();
 
 			var pt = $("#premium_inner");
 			var eden = $("#premium_code_box").val();
@@ -934,8 +940,8 @@ var TraceOpt = {
 				},
 				success:function(l){
 					if (l !== lost) {
-						bgNotify(TraceOpt.Premium.eMessages[0], "optd");
-						pt.text(TraceOpt.Premium.eMessages[0]);
+						bgNotify(Opts.Premium.eMessages[0], "optd");
+						pt.text(Opts.Premium.eMessages[0]);
 						return;
 					}
 
@@ -950,10 +956,10 @@ var TraceOpt = {
 					});
 
 					// Enable premium blocklists
-					TraceOpt.Blocklist.InstallList("a00000001",true);
-					TraceOpt.Blocklist.InstallList("a00000003",true);
+					Opts.Blocklist.InstallList("a00000001",true);
+					Opts.Blocklist.InstallList("a00000003",true);
 
-					if (TraceOpt.storage === true){
+					if (Opts.storage === true){
 						localStorage.removeItem("attn");
 						localStorage.removeItem("atme");
 					}
@@ -969,21 +975,21 @@ var TraceOpt = {
 						bg.Web.BlocklistLoader(true);
 
 						setTimeout(function(){
-							TraceOpt.Blocklist.isPremium = (typeof bg.Vars.Premium !== "undefined" ?
+							Opts.Blocklist.isPremium = (typeof bg.Vars.Premium !== "undefined" ?
 								(bg.Vars.Premium.length !== 0) : false);
 						},1500);
 
-						TraceOpt.Interface.GetMainPage();
-						TraceOpt.Premium.GetStatus();
+						Opts.Interface.GetMainPage();
+						Opts.Premium.GetStatus();
 					});
 				},
 				error:function(e){
 					if (e.status === 403 || e.status === 402){
 						// Choose a status message to show
-						var a = TraceOpt.Premium.eMessages[0];
-						if (e.responseText === "CodeRevokedError") a = TraceOpt.Premium.eMessages[2];
-						if (e.responseText === "CodeInactiveError") a = TraceOpt.Premium.eMessages[1];
-						if (e.responseText === "CodePauseError") a = TraceOpt.Premium.eMessages[3];
+						var a = Opts.Premium.eMessages[0];
+						if (e.responseText === "CodeRevokedError") a = Opts.Premium.eMessages[2];
+						if (e.responseText === "CodeInactiveError") a = Opts.Premium.eMessages[1];
+						if (e.responseText === "CodePauseError") a = Opts.Premium.eMessages[3];
 
 						bgNotify(a,"optd");
 						pt.text(a);
@@ -1133,22 +1139,22 @@ var TraceOpt = {
 				$("<section/>",{"id":"backuprestore_section"}).append(
 					$("<span/>").text("The backup will save all of your settings, whitelist entries and statistics, you can choose what to restore. The file will be in JSON format and is editable."),
 					$("<br/>"),$("<br/>"),
-					$("<button/>",{"style":"font-size:1em"}).text("Download Backup").on("click",TraceOpt.Backup.Create),
+					$("<button/>",{"style":"font-size:1em"}).text("Download Backup").on("click",Opts.Backup.Create),
 					$("<h2/>").text("Restore a backup")
 				),
 				$("<input/>",{
 					"type":"file",
 					"accept":".json",
 					"style":"font-size:1.1em"
-				}).on("change",TraceOpt.Backup.Restore),
+				}).on("change",Opts.Backup.Restore),
 				$("<p/>",{"id":"restore_info"})
 			);
-			TraceOpt.AssignCloseOverlay(true);
+			Opts.AssignCloseOverlay(true);
 		},
 		Create:function(){
 			TraceBg(function(bg){
 				bg.Prefs.CreateBackup(function(raw){
-					TraceOpt.MakeDownload("TraceSettings",JSON.stringify(raw,null,4));
+					Opts.MakeDownload("TraceSettings",JSON.stringify(raw,null,4));
 				});
 			});
 		},
@@ -1159,21 +1165,21 @@ var TraceOpt = {
 			reader.onload = function(){
 				var data = reader.result;
 				try{
-					TraceOpt.Backup.Data = JSON.parse(data);
+					Opts.Backup.Data = JSON.parse(data);
 				} catch(e){
-					TraceOpt.Backup.Data = {};
+					Opts.Backup.Data = {};
 				}
-				TraceOpt.Backup.RestoreConfirmation();
+				Opts.Backup.RestoreConfirmation();
 			};
 			reader.readAsText(this.files[0]);
 		},
 		RestoreConfirmation:function(){
 			// Check backup file..
-			var keys = Object.keys(TraceOpt.Backup.Data);
+			var keys = Object.keys(Opts.Backup.Data);
 			var redFlags = 0;
-			if (TraceOpt.Backup.Data["backupTime"] === undefined) redFlags++;
-			if (TraceOpt.Backup.Data["version"] === undefined) redFlags++;
-			if (TraceOpt.Backup.Data["data"] === undefined) redFlags++;
+			if (Opts.Backup.Data["backupTime"] === undefined) redFlags++;
+			if (Opts.Backup.Data["version"] === undefined) redFlags++;
+			if (Opts.Backup.Data["data"] === undefined) redFlags++;
 			if (keys.length > 10) redFlags++;
 
 			if (redFlags >= 3){
@@ -1186,11 +1192,11 @@ var TraceOpt = {
 			var backupIdentifier = "";
 
 			var versionInfo = $("<span/>").text("This backup is the same version as your current version of Trace.");
-			if (TraceOpt.Backup.Data.version !== chrome.runtime.getManifest().version){
+			if (Opts.Backup.Data.version !== chrome.runtime.getManifest().version){
 				versionInfo = $(
 					$("<p/>").append(
 						$("<strong/>").text("Trace Backup Version: "),
-						$("<span/>").text(TraceOpt.Backup.Data.version || "Unknown.")
+						$("<span/>").text(Opts.Backup.Data.version || "Unknown.")
 					),
 					$("<p/>").append(
 						$("<strong/>").text("Trace Current Version: "),
@@ -1200,9 +1206,9 @@ var TraceOpt = {
 			}
 
 			try{
-				var computed = chrome.extension.getBackgroundPage().MD5(JSON.stringify(TraceOpt.Backup.Data["data"],null,2));
-				if (computed !== TraceOpt.Backup.Data.computed.verified){
-					if (TraceOpt.Backup.Data.computed.verified !== null){
+				var computed = chrome.extension.getBackgroundPage().MD5(JSON.stringify(Opts.Backup.Data["data"],null,2));
+				if (computed !== Opts.Backup.Data.computed.verified){
+					if (Opts.Backup.Data.computed.verified !== null){
 						alert("Backup invalid!");
 						return;
 					}
@@ -1218,18 +1224,18 @@ var TraceOpt = {
 				$("<h2/>").text("You are about to restore a backup..."),
 				$("<p/>").append(
 					$("<strong/>").text("Date: "),
-					$("<span/>").text(TraceOpt.Backup.Data.backupTime || "Unknown.")
+					$("<span/>").text(Opts.Backup.Data.backupTime || "Unknown.")
 				),
 				versionInfo,
 				$("<p/>").text(backupIdentifier),
-				$("<button/>",{"title":"Keep storage and write restore over current settings","class":"small"}).text("Restore backup").on("click enter",TraceOpt.Backup.NormalRestore),
+				$("<button/>",{"title":"Keep storage and write restore over current settings","class":"small"}).text("Restore backup").on("click enter",Opts.Backup.NormalRestore),
 				$("<br/>"),$("<br/>"),
-				$("<button/>",{"title":"Wipe storage and restore","class":"small"}).text("Clear storage & Restore backup").on("click enter",TraceOpt.Backup.ClearRestore)
+				$("<button/>",{"title":"Wipe storage and restore","class":"small"}).text("Clear storage & Restore backup").on("click enter",Opts.Backup.ClearRestore)
 			);
 		},
 		NormalRestore:function(){
 			var data = {};
-			data = TraceOpt.Backup.Data.data;
+			data = Opts.Backup.Data.data;
 
 			TraceBg(function(bg){
 				bg.Vars.s.set(data,function(){
@@ -1242,7 +1248,7 @@ var TraceOpt = {
 		ClearRestore:function(){
 			TraceBg(function(bg){
 				bg.Prefs.ClearStorage();
-				TraceOpt.Backup.NormalRestore();
+				Opts.Backup.NormalRestore();
 			});
 		}
 	},
@@ -1269,7 +1275,7 @@ var TraceOpt = {
 		},
 		ReloadInterface:function(){
 			TraceBg(function(bg){
-				bg.Trace.f.ReturnExecOrder(TraceOpt.ExecutionOrder.CreateInterface);
+				bg.Trace.f.ReturnExecOrder(Opts.ExecutionOrder.CreateInterface);
 			});
 		},
 		CreateInterface:function(p){
@@ -1286,8 +1292,8 @@ var TraceOpt = {
 						"title":"Click this protection to make it run on only some pages",
 						"data-pref":p.AllPage[si]
 					}).on("click enter",
-						TraceOpt.ExecutionOrder.SwapProtection
-					).text(TraceOpt.ExecutionOrder.SettingName[p.AllPage[si]] || p.AllPage[si])
+						Opts.ExecutionOrder.SwapProtection
+					).text(Opts.ExecutionOrder.SettingName[p.AllPage[si]] || p.AllPage[si])
 				);
 			}
 
@@ -1298,15 +1304,15 @@ var TraceOpt = {
 						"title":"Click this item to make it run on all pages",
 						"data-pref":p.PerPage[i]
 					}).on("click enter",
-						TraceOpt.ExecutionOrder.SwapProtection
-					).text(TraceOpt.ExecutionOrder.SettingName[p.PerPage[i]] || p.PerPage[i])
+						Opts.ExecutionOrder.SwapProtection
+					).text(Opts.ExecutionOrder.SettingName[p.PerPage[i]] || p.PerPage[i])
 				);
 			}
 		},
 		SwapProtection:function(){
 			var that = $(this).data("pref");
 			TraceBg(function(bg){
-				bg.Trace.f.ChangeExecOrder(that,TraceOpt.ExecutionOrder.ReloadInterface);
+				bg.Trace.f.ChangeExecOrder(that,Opts.ExecutionOrder.ReloadInterface);
 			});
 		}
 	},
@@ -1335,70 +1341,70 @@ var TraceOpt = {
 			wrtcRtpReceiver:"Disable the RTCRtpReceiver javascript object (*)"
 		},
 		Options:function(setting){
-			TraceOpt.Config.SelectedOption = setting;
+			Opts.Config.SelectedOption = setting;
 			TraceBg(function(bg){
 				//Trace.Config.CurrentSettings = bg.Prefs.GetSetting();
-				TraceOpt.Config.CurrentSel = bg.Prefs.GetSetting(TraceOpt.Config.SelectedOption);
+				Opts.Config.CurrentSel = bg.Prefs.GetSetting(Opts.Config.SelectedOption);
 
 				var enabled = false;
-				if (TraceOpt.Config.SelectedOption.includes(".")){
-					enabled = bg.Prefs.GetSetting(TraceOpt.Config.SelectedOption).enabled;
+				if (Opts.Config.SelectedOption.includes(".")){
+					enabled = bg.Prefs.GetSetting(Opts.Config.SelectedOption).enabled;
 				} else {
-					enabled = TraceOpt.Config.CurrentSel.enabled;
+					enabled = Opts.Config.CurrentSel.enabled;
 				}
 
-				TraceOpt.Config.OptionsView(setting,enabled);
+				Opts.Config.OptionsView(setting,enabled);
 			});
 		},
 		OptionsView:function(setting,enabled){
 			switch(setting){
 				case "Pref_AudioFingerprint":
-					TraceOpt.Config.s.AudioSettings();
+					Opts.Config.s.AudioSettings();
 					break;
 				case "Pref_GoogleHeader":
-					TraceOpt.Config.s.ChromeHeaderSettings();
+					Opts.Config.s.ChromeHeaderSettings();
 					break;
 				case "Pref_WebRTC":
-					TraceOpt.Config.s.WebRTCSettings();
+					Opts.Config.s.WebRTCSettings();
 					break;
 				case "Pref_PingBlock":
-					TraceOpt.Config.s.PingBlockSettings();
+					Opts.Config.s.PingBlockSettings();
 					break;
 				case "Pref_BatteryApi":
-					TraceOpt.Config.s.BatteryAPISettings();
+					Opts.Config.s.BatteryAPISettings();
 					break;
 				case "Pref_NetworkInformation":
-					TraceOpt.Config.s.NetworkAPISettings();
+					Opts.Config.s.NetworkAPISettings();
 					break;
 				case "Pref_HardwareSpoof":
-					TraceOpt.HardwareSpoof.OpenDialog();
+					Opts.HardwareSpoof.OpenDialog();
 					break;
 				case "Pref_CanvasFingerprint":
-					TraceOpt.CanvasRGBA.OpenDialog();
+					Opts.CanvasRGBA.OpenDialog();
 					break;
 				case "Pref_ScreenRes":
-					TraceOpt.ScreenRes.OpenDialog();
+					Opts.ScreenRes.OpenDialog();
 					break;
 				case "Pref_UserAgent":
-					TraceOpt.UserAgent.OpenDialog();
+					Opts.UserAgent.OpenDialog();
 					break;
 				case "Pref_IPSpoof":
-					TraceOpt.PIPSpoof.OpenDialog();
+					Opts.PIPSpoof.OpenDialog();
 					break;
 				case "Pref_WebController":
-					TraceOpt.Blocklist.OpenDialog();
+					Opts.Blocklist.OpenDialog();
 					break;
 				case "Pref_WebController.showBlocked":
-					TraceOpt.Blocklist.OpenDialog();
+					Opts.Blocklist.OpenDialog();
 					break;
 				case "Pref_CookieEater":
-					TraceOpt.CookieEaterUI.OpenDialog();
+					Opts.CookieEaterUI.OpenDialog();
 					break;
 				case "Pref_ReferHeader":
-					TraceOpt.RefererHeader.OpenDialog();
+					Opts.RefererHeader.OpenDialog();
 					break;
 				case "Main_Interface":
-					TraceOpt.UserInterfaceCustomiser.OptionsInterface();
+					Opts.UserInterfaceCustomiser.OptionsInterface();
 					break;
 				default:
 					console.error("Method not supported yet.");
@@ -1425,23 +1431,23 @@ var TraceOpt = {
 		GetConf:function(){
 			var el = $("<div/>",{
 				"class":"settings_config_container",
-				"data-parent":TraceOpt.Config.SelectedOption
+				"data-parent":Opts.Config.SelectedOption
 			}).append(
 				$("<span/>").text("When the switch is green, the protection is enabled."),$("<br />"),$("<br />")
 			);
 
-			for (var i in TraceOpt.Config.CurrentSel){
-				if (i !== "enabled" && TraceOpt.Config.CurrentSel[i] !== undefined){
-					if (Object.keys(TraceOpt.Config.CurrentSel[i]).length > 1){
+			for (var i in Opts.Config.CurrentSel){
+				if (i !== "enabled" && Opts.Config.CurrentSel[i] !== undefined){
+					if (Object.keys(Opts.Config.CurrentSel[i]).length > 1){
 						continue;
 					}
 
 					var opts = {
 						"type":"checkbox",
 						"id":"c_opt_"+makeRandomID(16),
-						"data-conf":TraceOpt.Config.SelectedOption + "." + i + ".enabled"
+						"data-conf":Opts.Config.SelectedOption + "." + i + ".enabled"
 					};
-					if (TraceOpt.Config.CurrentSel[i].enabled === true){
+					if (Opts.Config.CurrentSel[i].enabled === true){
 						opts["checked"] = "checked";
 					}
 
@@ -1452,9 +1458,9 @@ var TraceOpt = {
 							$("<label/>",{
 								"for":opts["id"],
 								"class":"checkbox_cont"
-							}).text(TraceOpt.Config.SettingName[i] || i).append(
+							}).text(Opts.Config.SettingName[i] || i).append(
 								$("<input/>",opts).on("click enter",function(){
-									TraceOpt.Config.SaveConf(this);
+									Opts.Config.SaveConf(this);
 								}),
 								$("<span/>",{"class":"ccheck"})
 							)
@@ -1471,71 +1477,71 @@ var TraceOpt = {
 		},
 		s:{
 			AudioSettings:function(){
-				var cont = TraceOpt.Config.GetConf();
+				var cont = Opts.Config.GetConf();
 				$("#drop_message").empty().append(
 					$("<h1/>").text("Audio Fingerprint Protection"),
 					cont,
-					TraceOpt.CloseUI(),
+					Opts.CloseUI(),
 					$("<br/>"),$("<br/>")
 				);
-				TraceOpt.AssignCloseOverlay(true);
+				Opts.AssignCloseOverlay(true);
 			},
 			ChromeHeaderSettings:function(){
-				var cont = TraceOpt.Config.GetConf();
+				var cont = Opts.Config.GetConf();
 				$("#drop_message").empty().append(
 					$("<h1/>").text("Google Header Protection"),
 					cont,
-					TraceOpt.CloseUI(),
+					Opts.CloseUI(),
 					$("<br/>"),$("<br/>")
 				);
-				TraceOpt.AssignCloseOverlay(true);
+				Opts.AssignCloseOverlay(true);
 			},
 			BatteryAPISettings:function(){
-				var cont = TraceOpt.Config.GetConf();
+				var cont = Opts.Config.GetConf();
 				$("#drop_message").empty().append(
 					$("<h1/>").text("Battery API Protection"),
 					cont,
 					$("<br/>"),
-					TraceOpt.CloseUI(),
+					Opts.CloseUI(),
 					$("<br/>"),$("<br/>")
 				);
-				TraceOpt.AssignCloseOverlay(true);
+				Opts.AssignCloseOverlay(true);
 			},
 			NetworkAPISettings:function(){
-				var cont = TraceOpt.Config.GetConf();
+				var cont = Opts.Config.GetConf();
 				$("#drop_message").empty().append(
 					$("<h1/>").text("Network Information API"),
 					cont,
 					$("<br/>"),
-					TraceOpt.CloseUI(),
+					Opts.CloseUI(),
 					$("<br/>"),$("<br/>")
 				);
-				TraceOpt.AssignCloseOverlay(true);
+				Opts.AssignCloseOverlay(true);
 			},
 			PingBlockSettings:function(){
-				var cont = TraceOpt.Config.GetConf();
+				var cont = Opts.Config.GetConf();
 				$("#drop_message").empty().append(
 					$("<h1/>").text("Browser Ping Protection"),
 					cont,
 					$("<br/>"),
 					$("<span/>").text("If you're looking for Hyperlink Auditing protection then you can find it under 'Browser Settings'"),
-					TraceOpt.CloseUI(),
+					Opts.CloseUI(),
 					$("<br/>"),$("<br/>")
 				);
-				TraceOpt.AssignCloseOverlay(true);
+				Opts.AssignCloseOverlay(true);
 			},
 			WebRTCSettings:function(){
-				var cont = TraceOpt.Config.GetConf();
+				var cont = Opts.Config.GetConf();
 				$("#drop_message").empty().append(
 					$("<h1/>").text("WebRTC Protection"),
 					cont,
 					$("<br/>"),
 					$("<span/>").text("WebRTC is used for applications such as video calling. Disabling javascript objects will most likely break lots of websites that rely on WebRTC."),$("<br/>"),
 					$("<span/>").text("* Options with an asterisk are optional settings and should only be used if you know what you're doing"),$("<br/>"),
-					TraceOpt.CloseUI(),
+					Opts.CloseUI(),
 					$("<br/>"),$("<br/>")
 				);
-				TraceOpt.AssignCloseOverlay(true);
+				Opts.AssignCloseOverlay(true);
 			}
 		}
 	},
@@ -1560,7 +1566,7 @@ var TraceOpt = {
 			var elID = this.id;
 			var potential = $(this).val();
 
-			var valid = TraceOpt.PIPSpoof.ValidIP(potential);
+			var valid = Opts.PIPSpoof.ValidIP(potential);
 			if (potential.length < 7 || !valid){
 				$(this).css({
 					"background":"#ffa3a3",
@@ -1572,9 +1578,9 @@ var TraceOpt = {
 					"background":"#ffc774",
 					"color":"#fff"
 				});
-				if (TraceOpt.PIPSpoof.IPSaveTimeout) clearTimeout(TraceOpt.PIPSpoof.IPSaveTimeout);
+				if (Opts.PIPSpoof.IPSaveTimeout) clearTimeout(Opts.PIPSpoof.IPSaveTimeout);
 
-				TraceOpt.PIPSpoof.IPSaveTimeout = setTimeout(function(){
+				Opts.PIPSpoof.IPSaveTimeout = setTimeout(function(){
 					TraceBg(function(bg){
 						bg.Prefs.Set("Pref_IPSpoof.traceIP.user_set",potential);
 					});
@@ -1582,7 +1588,7 @@ var TraceOpt = {
 						"background":"#70ff71",
 						"color":"#fff"
 					});
-					TraceOpt.PIPSpoof.UpdateIPText();
+					Opts.PIPSpoof.UpdateIPText();
 				},900);
 			}
 		},
@@ -1600,9 +1606,9 @@ var TraceOpt = {
 					"background":"#ffc774",
 					"color":"#fff"
 				});
-				if (TraceOpt.PIPSpoof.ViaSaveTimeout) clearTimeout(TraceOpt.PIPSpoof.ViaSaveTimeout);
+				if (Opts.PIPSpoof.ViaSaveTimeout) clearTimeout(Opts.PIPSpoof.ViaSaveTimeout);
 
-				TraceOpt.PIPSpoof.ViaSaveTimeout = setTimeout(function(){
+				Opts.PIPSpoof.ViaSaveTimeout = setTimeout(function(){
 					TraceBg(function(bg){
 						bg.Prefs.Set("Pref_IPSpoof.traceVia.value",potential);
 					});
@@ -1616,7 +1622,7 @@ var TraceOpt = {
 		OpenDialog:function(){
 			var el = $("<div/>",{
 				"class":"settings_config_container",
-				"data-parent":TraceOpt.Config.SelectedOption
+				"data-parent":Opts.Config.SelectedOption
 			});
 
 			el.append(
@@ -1630,10 +1636,10 @@ var TraceOpt = {
 				var opts = {
 					"type":"checkbox",
 					"id":"c_opt_"+makeRandomID(16),
-					"data-conf":TraceOpt.Config.SelectedOption + "." + configOpts[i] + ".enabled",
+					"data-conf":Opts.Config.SelectedOption + "." + configOpts[i] + ".enabled",
 					"data-special":configOpts[i]
 				};
-				if (TraceOpt.Config.CurrentSel[configOpts[i]].enabled === true){
+				if (Opts.Config.CurrentSel[configOpts[i]].enabled === true){
 					opts["checked"] = "checked";
 				}
 
@@ -1644,9 +1650,9 @@ var TraceOpt = {
 						$("<label/>",{
 							"for":opts["id"],
 							"class":"checkbox_cont"
-						}).text(TraceOpt.PIPSpoof.StringNames[configOpts[i]] || configOpts[i]).append(
+						}).text(Opts.PIPSpoof.StringNames[configOpts[i]] || configOpts[i]).append(
 							$("<input/>",opts).on("click enter",function(){
-								TraceOpt.Config.SaveConf(this);
+								Opts.Config.SaveConf(this);
 
 								var s = $(this).data("special");
 								if (s === "traceVia"){
@@ -1661,7 +1667,7 @@ var TraceOpt = {
 									} else {
 										$("#pip_custip").show();
 									}
-									TraceOpt.PIPSpoof.UpdateIPText();
+									Opts.PIPSpoof.UpdateIPText();
 								}
 							}),
 							$("<span/>",{"class":"ccheck"})
@@ -1675,16 +1681,16 @@ var TraceOpt = {
 					"type":"text",
 					"id":"pip_custip",
 					"placeholder":"Custom IP address",
-					"style":(TraceOpt.Config.CurrentSel["traceIP"].enabled ? "display:none" : ""),
-					"value":(TraceOpt.Config.CurrentSel["traceIP"].user_set)
-				}).on("keyup enter",TraceOpt.PIPSpoof.UserCustomIP),
+					"style":(Opts.Config.CurrentSel["traceIP"].enabled ? "display:none" : ""),
+					"value":(Opts.Config.CurrentSel["traceIP"].user_set)
+				}).on("keyup enter",Opts.PIPSpoof.UserCustomIP),
 				$("<input/>",{
 					"type":"text",
 					"id":"pip_custvia",
 					"placeholder":"Custom Via Header",
-					"style":(TraceOpt.Config.CurrentSel["traceVia"].enabled ? "display:none" : ""),
-					"value":(TraceOpt.Config.CurrentSel["traceVia"].value)
-				}).on("keyup enter",TraceOpt.PIPSpoof.UserCustomVia)
+					"style":(Opts.Config.CurrentSel["traceVia"].enabled ? "display:none" : ""),
+					"value":(Opts.Config.CurrentSel["traceVia"].value)
+				}).on("keyup enter",Opts.PIPSpoof.UserCustomVia)
 			);
 
 			el.append(
@@ -1696,19 +1702,19 @@ var TraceOpt = {
 			);
 
 			$("#drop_message").empty().append($("<h1/>").text("Configure Proxy IP Header Spoofing"),el);
-			TraceOpt.PIPSpoof.UpdateIPText();
-			TraceOpt.IPTextRefresh = setInterval(TraceOpt.PIPSpoof.UpdateIPText,2500);
+			Opts.PIPSpoof.UpdateIPText();
+			Opts.IPTextRefresh = setInterval(Opts.PIPSpoof.UpdateIPText,2500);
 
 			$("#ux").addClass("blurred");
 			$("#overlay_message").slideDown(300);
 			$("#overlay_close").unbind("click").click(function(){
-				clearInterval(TraceOpt.IPTextRefresh);
-				TraceOpt.CloseOverlay();
+				clearInterval(Opts.IPTextRefresh);
+				Opts.CloseOverlay();
 			});
 			$(window).unbind("click").click(function(e){
 				if ($(e.target)[0].id === "overlay_message"){
-					clearInterval(TraceOpt.IPTextRefresh);
-					TraceOpt.CloseOverlay();
+					clearInterval(Opts.IPTextRefresh);
+					Opts.CloseOverlay();
 				}
 			});
 		}
@@ -1719,19 +1725,19 @@ var TraceOpt = {
 		GraphObj:undefined,
 		AssignGraphOptions:function(){
 			$("#stats_download").click(function(){
-				TraceOpt.Stats.ShowDownloadOptions();
+				Opts.Stats.ShowDownloadOptions();
 			});
 			$("#stats_wipe").click(function(){
-				TraceOpt.Stats.DeleteStats();
+				Opts.Stats.DeleteStats();
 			});
 			$("#graph_datacontrol, #graph_contbreakdown").change(function(){
-				TraceOpt.Stats.MakeData(TraceOpt.Stats.GraphData,TraceOpt.Stats.MakeGraph)
+				Opts.Stats.MakeData(Opts.Stats.GraphData,Opts.Stats.MakeGraph)
 			});
 		},
 		GetStatsData:function(cb){
 			TraceBg(function(bg){
 				bg.Stats.Data(function(d){
-					TraceOpt.Stats.GraphData = d;
+					Opts.Stats.GraphData = d;
 					if (cb) cb(d);
 				});
 			});
@@ -1775,20 +1781,20 @@ var TraceOpt = {
 				if (chrome.extension.getBackgroundPage().Prefs.Current.Main_Trace.ProtectionStats.enabled === true){
 					$("#graph_container").html("Statistics are enabled, but there is no data available yet.<br /><br />Try browsing the web a bit and then check back here!<br />").css("height","auto");
 				} else {
-					TraceOpt.Stats.ShowDisabled(dLen);
+					Opts.Stats.ShowDisabled(dLen);
 				}
 				return;
 			}
 
 			if (chrome.extension.getBackgroundPage().Prefs.Current.Main_Trace.ProtectionStats.enabled === false){
 				$("#graph_controls").hide();
-				TraceOpt.Stats.ShowDisabled(dLen);
+				Opts.Stats.ShowDisabled(dLen);
 			}
 
 			if (dControl === 1){
 				var today = dataset[Object.keys(dataset)[Object.keys(dataset).length-1]];
 				if (cBreakDown === "type"){
-					var colors = TraceOpt.Stats.GraphColors(4);
+					var colors = Opts.Stats.GraphColors(4);
 					rData["title"] = "Today's statistics by type";
 					rData["labels"] = ["Content","Media","Code","Other"];
 					rData["data"] = [{
@@ -1798,7 +1804,7 @@ var TraceOpt = {
 						borderWidth:1
 					}];
 				} else {
-					var colors = TraceOpt.Stats.GraphColors("rand");
+					var colors = Opts.Stats.GraphColors("rand");
 					rData["title"] = "Today's total statistics";
 					rData["labels"] = ["Total requests blocked"];
 					rData["data"] = [{
@@ -1820,7 +1826,7 @@ var TraceOpt = {
 					rData["labels"] = ["Content","Media","Code","Other"];
 					rData["data"] = [];
 
-					var colors = TraceOpt.Stats.GraphColors(4);
+					var colors = Opts.Stats.GraphColors(4);
 					for(var i = 0;i < dControl;i++){
 						rData["data"].push({
 							label:keys[i],
@@ -1831,7 +1837,7 @@ var TraceOpt = {
 						});
 					}
 				} else {
-					var colors = TraceOpt.Stats.GraphColors(dControl);
+					var colors = Opts.Stats.GraphColors(dControl);
 					rData["title"] = "Total requests blocked in the past " + dControl + " days";
 					rData["labels"] = [];
 					rData["data"] = [{
@@ -1842,7 +1848,7 @@ var TraceOpt = {
 					}];
 
 					if (dControl >= 5){
-						TraceOpt.Stats.GraphObj.options.barValueSpacing = 20;
+						Opts.Stats.GraphObj.options.barValueSpacing = 20;
 					}
 
 					for(var i = 0;i < dControl;i++){
@@ -1857,22 +1863,22 @@ var TraceOpt = {
 		},
 		MakeGraph:function(d){
 			if (d !== undefined){
-				TraceOpt.Stats.GraphObj.data.datasets = d["data"];
-				TraceOpt.Stats.GraphObj.data.labels = d["labels"];
-				TraceOpt.Stats.GraphObj.options.title.text = d["title"];
-				TraceOpt.Stats.GraphObj.update(0);
+				Opts.Stats.GraphObj.data.datasets = d["data"];
+				Opts.Stats.GraphObj.data.labels = d["labels"];
+				Opts.Stats.GraphObj.options.title.text = d["title"];
+				Opts.Stats.GraphObj.update(0);
 			}
 		},
 		StructureGraph:function(){
-			if (typeof TraceOpt.Stats.GraphElm === "undefined"){
+			if (typeof Opts.Stats.GraphElm === "undefined"){
 				try {
-					TraceOpt.Stats.GraphElm = document.getElementById("graph").getContext("2d");
+					Opts.Stats.GraphElm = document.getElementById("graph").getContext("2d");
 				} catch(e) {
 					console.error(e);
 				}
 			}
 			Chart.defaults.global.defaultFontColor = "#fff";
-			TraceOpt.Stats.GraphObj = new Chart(TraceOpt.Stats.GraphElm, {
+			Opts.Stats.GraphObj = new Chart(Opts.Stats.GraphElm, {
 				type:'bar',
 				data:{
 					labels:[],
@@ -1924,8 +1930,8 @@ var TraceOpt = {
 					}
 
 					setTimeout(function(){
-						TraceOpt.Stats.GetStatsData(function(d){
-							TraceOpt.Stats.MakeData(d,TraceOpt.Stats.MakeGraph);
+						Opts.Stats.GetStatsData(function(d){
+							Opts.Stats.MakeData(d,Opts.Stats.MakeGraph);
 						});
 					},1500);
 				})
@@ -1937,23 +1943,23 @@ var TraceOpt = {
 				$("<h3/>",{"class":"bold"}).text("Choose a file format to download the statistics."),
 				$("<button/>",{
 					"title":"Download Statistics in CSV format"
-				}).text("CSV").click(function(){TraceOpt.Stats.DownloadStats("csv");}),
+				}).text("CSV").click(function(){Opts.Stats.DownloadStats("csv");}),
 				$("<span/>").text(" "),
 				$("<button/>",{
 					"title":"Download Statistics in TSV format"
-				}).text("TSV").click(function(){TraceOpt.Stats.DownloadStats("tsv");}),
+				}).text("TSV").click(function(){Opts.Stats.DownloadStats("tsv");}),
 				$("<span/>").text(" "),
 				$("<button/>",{
 					"title":"Download Statistics in XML format"
-				}).text("XML").click(function(){TraceOpt.Stats.DownloadStats("xml");}),
+				}).text("XML").click(function(){Opts.Stats.DownloadStats("xml");}),
 				$("<span/>").text(" "),
 				$("<button/>",{
 					"title":"Download Statistics in JSON format"
-				}).text("JSON").click(function(){TraceOpt.Stats.DownloadStats("json");}),
+				}).text("JSON").click(function(){Opts.Stats.DownloadStats("json");}),
 				$("<br/>"),$("<br/>"),
-				$("<button/>",{"title":"Close"}).text("Close").click(TraceOpt.CloseOverlay)
+				$("<button/>",{"title":"Close"}).text("Close").click(Opts.CloseOverlay)
 			);
-			TraceOpt.AssignCloseOverlay(true);
+			Opts.AssignCloseOverlay(true);
 		},
 		DownloadStats:function(file){
 			if (typeof file !== "string"){
@@ -1980,11 +1986,11 @@ var TraceOpt = {
 								s + (obj.webpage + obj.media + obj.code + obj.other);
 						}
 
-						TraceOpt.Stats.CreateDownload(returnd, file);
+						Opts.Stats.CreateDownload(returnd, file);
 
 					} else if (file === "xml") {
 
-						date = TraceOpt.theDate();
+						date = Opts.theDate();
 						returnd = '<?xml version="1.0" encoding="UTF-8"?>\n';
 						returnd += "<tracestats downloaded='" + (date[0] + "-" + date[1] + "-" + date[2]).toString() + "'>";
 
@@ -2002,17 +2008,17 @@ var TraceOpt = {
 
 						returnd += '\n</tracestats>';
 
-						TraceOpt.Stats.CreateDownload(returnd, file);
+						Opts.Stats.CreateDownload(returnd, file);
 
 					} else if (file === "json") {
 
-						date = TraceOpt.theDate();
+						date = Opts.theDate();
 						var stats = {
 							"downloaded": (date[0] + "-" + date[1] + "-" + date[2]).toString(),
 							"stats": d
 						};
 
-						TraceOpt.Stats.CreateDownload(JSON.stringify(stats, null, 4), file);
+						Opts.Stats.CreateDownload(JSON.stringify(stats, null, 4), file);
 
 					} else {
 						console.info("Cannot export this file format");
@@ -2027,7 +2033,7 @@ var TraceOpt = {
 			var url = URL.createObjectURL(file);
 
 			// Generate file date
-			var d = TraceOpt.theDate();
+			var d = Opts.theDate();
 			var filedate = (d[0] + "_" + d[1] + "_" + d[2]).toString();
 
 			// Download file
@@ -2057,18 +2063,18 @@ var TraceOpt = {
 					$("<option/>",{value:7}).text("Delete all statistics")
 				),
 				$("<br/>"),$("<br/>"),
-				$("<button/>",{"title":"Confirm deletion"}).text("Confirm").click(TraceOpt.Stats.ConfirmDeleteStats),
-				$("<button/>",{"title":"Close"}).text("Cancel").click(TraceOpt.CloseOverlay)
+				$("<button/>",{"title":"Confirm deletion"}).text("Confirm").click(Opts.Stats.ConfirmDeleteStats),
+				$("<button/>",{"title":"Close"}).text("Cancel").click(Opts.CloseOverlay)
 			);
-			TraceOpt.AssignCloseOverlay(true);
+			Opts.AssignCloseOverlay(true);
 		},
 		ConfirmDeleteStats:function(x){
 			var a = $("#stats_del_amount").val();
 
 			var cb = function(){
-				TraceOpt.CloseOverlay();
-				TraceOpt.Stats.GetStatsData(function(d){
-					TraceOpt.Stats.MakeData(d,TraceOpt.Stats.MakeGraph);
+				Opts.CloseOverlay();
+				Opts.Stats.GetStatsData(function(d){
+					Opts.Stats.MakeData(d,Opts.Stats.MakeGraph);
 				});
 			};
 
@@ -2083,12 +2089,12 @@ var TraceOpt = {
 	},
 	HardwareSpoof:{
 		OpenDialog:function(){
-			var optsCpu = {"type":"checkbox", "id":"hwspoof_use_fakecpu"}, cpuVal = TraceOpt.Config.CurrentSel["hardware"]["hardwareConcurrency"].value;
-			var optsRam = {"type":"checkbox", "id":"hwspoof_use_fakeram"}, ramVal = TraceOpt.Config.CurrentSel["hardware"]["deviceMemory"].value;
-			if (TraceOpt.Config.CurrentSel["hardware"]["hardwareConcurrency"].enabled === true){
+			var optsCpu = {"type":"checkbox", "id":"hwspoof_use_fakecpu"}, cpuVal = Opts.Config.CurrentSel["hardware"]["hardwareConcurrency"].value;
+			var optsRam = {"type":"checkbox", "id":"hwspoof_use_fakeram"}, ramVal = Opts.Config.CurrentSel["hardware"]["deviceMemory"].value;
+			if (Opts.Config.CurrentSel["hardware"]["hardwareConcurrency"].enabled === true){
 				optsCpu["checked"] = "checked";
 			}
-			if (TraceOpt.Config.CurrentSel["hardware"]["deviceMemory"].enabled === true){
+			if (Opts.Config.CurrentSel["hardware"]["deviceMemory"].enabled === true){
 				optsRam["checked"] = "checked";
 			}
 
@@ -2130,9 +2136,9 @@ var TraceOpt = {
 					})
 				),
 				$("<br/>"),$("<br/>"),
-				$("<button/>",{"class":"float_r"}).text("Save").click(TraceOpt.HardwareSpoof.SaveParameters)
+				$("<button/>",{"class":"float_r"}).text("Save").click(Opts.HardwareSpoof.SaveParameters)
 			);
-			TraceOpt.AssignCloseOverlay(true);
+			Opts.AssignCloseOverlay(true);
 		},
 		SaveParameters:function(){
 			TraceBg(function(bg){
@@ -2142,7 +2148,7 @@ var TraceOpt = {
 					"Pref_HardwareSpoof.hardware.hardwareConcurrency.value": $("#hwspoof_val_fakecpu").val(),
 					"Pref_HardwareSpoof.hardware.deviceMemory.value": $("#hwspoof_val_fakeram").val()
 				});
-				TraceOpt.CloseOverlay();
+				Opts.CloseOverlay();
 			});
 		}
 	},
@@ -2164,44 +2170,44 @@ var TraceOpt = {
 		OpenDialog:function(){
 			var el = $("<div/>",{
 				"class":"settings_config_container",
-				"data-parent":TraceOpt.Config.SelectedOption
+				"data-parent":Opts.Config.SelectedOption
 			});
 
 			el.append(
 				$("<span/>").text("Warning: Enabling user agents that don't match your system can break sites such as YouTube."),$("<br />"),$("<br />")
 			);
 
-			for (var i in TraceOpt.Config.CurrentSel){
-				if (i === "enabled" || i === "uaCust" || TraceOpt.Config.CurrentSel[i] === undefined) {
+			for (var i in Opts.Config.CurrentSel){
+				if (i === "enabled" || i === "uaCust" || Opts.Config.CurrentSel[i] === undefined) {
 					continue;
 				}
-				if (Object.keys(TraceOpt.Config.CurrentSel[i]).length <= 1) {
+				if (Object.keys(Opts.Config.CurrentSel[i]).length <= 1) {
 					continue;
 				}
 
 				// Create option name
 				el.append(
-					$("<span/>",{"class":"setting_cont_opt"}).text(TraceOpt.UserAgent.StringNames[i] || i)
+					$("<span/>",{"class":"setting_cont_opt"}).text(Opts.UserAgent.StringNames[i] || i)
 				);
 
-				for (var j in TraceOpt.Config.CurrentSel[i]){
-					if (j === "enabled" || typeof TraceOpt.Config.CurrentSel[i][j] === undefined) continue;
+				for (var j in Opts.Config.CurrentSel[i]){
+					if (j === "enabled" || typeof Opts.Config.CurrentSel[i][j] === undefined) continue;
 
 					var opts = {
 						"type":"checkbox",
 						"id":"c_opt_"+makeRandomID(16),
-						"data-conf":TraceOpt.Config.SelectedOption + "." + i + "." + j + ".enabled"
+						"data-conf":Opts.Config.SelectedOption + "." + i + "." + j + ".enabled"
 					};
-					if (TraceOpt.Config.CurrentSel[i][j].enabled === true) opts["checked"] = "checked";
+					if (Opts.Config.CurrentSel[i][j].enabled === true) opts["checked"] = "checked";
 
 					el.append(
 						$("<div/>",{"class":"setting_conf_opt"}).append(
 							$("<label/>",{
 								"for":opts["id"],
 								"class":"checkbox_cont"
-							}).text(TraceOpt.UserAgent.StringNames[j] || j).append(
+							}).text(Opts.UserAgent.StringNames[j] || j).append(
 								$("<input/>",opts).on("click enter",function(){
-									TraceOpt.Config.SaveConf(this);
+									Opts.Config.SaveConf(this);
 								}),
 								$("<span/>",{"class":"ccheck"})
 							)
@@ -2217,16 +2223,16 @@ var TraceOpt = {
 			$("#drop_message").empty().append(
 				$("<h1/>").text("User Agent Customiser"),
 				$("<div/>",{"id":"ua_specialconfig"}).append(el),
-				TraceOpt.CloseUI()
+				Opts.CloseUI()
 			);
-			TraceOpt.AssignCloseOverlay(true);
+			Opts.AssignCloseOverlay(true);
 		}
 	},
 	ScreenRes:{
 		OpenDialog:function(){
 			var el = $("<div/>",{
 				"class":"settings_config_container",
-				"data-parent":TraceOpt.Config.SelectedOption
+				"data-parent":Opts.Config.SelectedOption
 			});
 
 			el.append(
@@ -2235,8 +2241,8 @@ var TraceOpt = {
 					$("<div/>",{"id":"sr_currentresolutions"}),
 					$("<div/>",{"id":"sr_addtoresolutions"}).append(
 						$("<input/>",{"type":"text","id":"sr_addtoresinput","placeholder":"Resolution to add (Format WxH) e.g. 1920x1080"}),$("<br/>"),$("<br/>"),
-						$("<button/>",{"id":"sr_addtoressubmit","class":"small"}).text("Add Resolution").on("click enter",TraceOpt.ScreenRes.AddNewResolution),$("<span/>").text(" "),
-						$("<button/>",{"id":"sr_addtoressubmit","class":"small"}).text("Add Common Resolutions").on("click enter",TraceOpt.ScreenRes.AddCommonResolutions)
+						$("<button/>",{"id":"sr_addtoressubmit","class":"small"}).text("Add Resolution").on("click enter",Opts.ScreenRes.AddNewResolution),$("<span/>").text(" "),
+						$("<button/>",{"id":"sr_addtoressubmit","class":"small"}).text("Add Common Resolutions").on("click enter",Opts.ScreenRes.AddCommonResolutions)
 					)
 				),
 				$("<div/>",{"id":"sr_randoffset"}).append(
@@ -2248,10 +2254,10 @@ var TraceOpt = {
 					$("<span/>").text("Maximum Offset (Default is 10)"),
 					$("<input/>",{"type":"text","id":"sr_offsetmaxval","placeholder":"Maximum Value"}),
 					$("<br/>"),$("<br/>"),
-					$("<button/>",{"id":"sr_updateoffsets","class":"small"}).text("Save Offsets").on("click enter",TraceOpt.ScreenRes.UpdateOffset)
+					$("<button/>",{"id":"sr_updateoffsets","class":"small"}).text("Save Offsets").on("click enter",Opts.ScreenRes.UpdateOffset)
 				),
-				$("<br/>"),$("<button/>",{"id":"sr_togglemode","class":"small"}).text("Change selection method").on("click enter",TraceOpt.ScreenRes.ToggleModeUI),
-				$("<button/>",{"title":"Close","class":"small float_r"}).text("Close").click(TraceOpt.CloseOverlay)
+				$("<br/>"),$("<button/>",{"id":"sr_togglemode","class":"small"}).text("Change selection method").on("click enter",Opts.ScreenRes.ToggleModeUI),
+				$("<button/>",{"title":"Close","class":"small float_r"}).text("Close").click(Opts.CloseOverlay)
 			);
 
 			$("#drop_message").empty().append(
@@ -2259,22 +2265,22 @@ var TraceOpt = {
 				$("<div/>",{"id":"sr_specialconfig"}).append(el)
 			);
 
-			if (TraceOpt.Config.CurrentSel.randomOpts.enabled === true){
+			if (Opts.Config.CurrentSel.randomOpts.enabled === true){
 				$("#sr_resolutions").hide();
 			}
-			if (TraceOpt.Config.CurrentSel.commonResolutions.enabled === true){
+			if (Opts.Config.CurrentSel.commonResolutions.enabled === true){
 				$("#sr_randoffset").hide();
 			}
 
-			TraceOpt.ScreenRes.UpdateResolutions();
-			TraceOpt.ScreenRes.UpdateOffsets();
+			Opts.ScreenRes.UpdateResolutions();
+			Opts.ScreenRes.UpdateOffsets();
 
-			TraceOpt.AssignCloseOverlay(true);
+			Opts.AssignCloseOverlay(true);
 		},
 		ToggleModeUI:function(){
 			$(this).text("Changing...");
 
-			if (TraceOpt.Config.CurrentSel.randomOpts.enabled === true){
+			if (Opts.Config.CurrentSel.randomOpts.enabled === true){
 				TraceBg(function(bg){
 					bg.Prefs.SetMultiple({
 						"Pref_ScreenRes.randomOpts.enabled":false,
@@ -2290,11 +2296,11 @@ var TraceOpt = {
 				});
 			}
 
-			setTimeout(TraceOpt.ScreenRes.OpenDialog,500);
+			setTimeout(Opts.ScreenRes.OpenDialog,500);
 		},
 		UpdateOffsets:function(){
-			$("#sr_offsetminval").val(TraceOpt.Config.CurrentSel.randomOpts.values[0]);
-			$("#sr_offsetmaxval").val(TraceOpt.Config.CurrentSel.randomOpts.values[1]);
+			$("#sr_offsetminval").val(Opts.Config.CurrentSel.randomOpts.values[0]);
+			$("#sr_offsetmaxval").val(Opts.Config.CurrentSel.randomOpts.values[1]);
 		},
 		AddCommonResolutions:function(){
 			var common = [
@@ -2316,15 +2322,15 @@ var TraceOpt = {
 			if (!confirm("This will add " + common.length + " resolutions to the list.\nAre you sure you wish to proceed?")) return;
 
 			for (var res in common){
-				TraceOpt.Config.CurrentSel.commonResolutions.resolutions.push([parseInt(common[res][0]),parseInt(common[res][1])]);
+				Opts.Config.CurrentSel.commonResolutions.resolutions.push([parseInt(common[res][0]),parseInt(common[res][1])]);
 			}
 			TraceBg(function(bg){
-				bg.Prefs.Set("Pref_ScreenRes.commonResolutions.resolutions",TraceOpt.Config.CurrentSel.commonResolutions.resolutions);
+				bg.Prefs.Set("Pref_ScreenRes.commonResolutions.resolutions",Opts.Config.CurrentSel.commonResolutions.resolutions);
 			});
-			TraceOpt.ScreenRes.UpdateResolutions();
+			Opts.ScreenRes.UpdateResolutions();
 		},
 		UpdateResolutions:function(){
-			var r = TraceOpt.Config.CurrentSel.commonResolutions.resolutions,
+			var r = Opts.Config.CurrentSel.commonResolutions.resolutions,
 				d = $("#sr_currentresolutions");
 			d.empty();
 			if (typeof r === "undefined" || r.length === 0){
@@ -2337,17 +2343,17 @@ var TraceOpt = {
 						"class":"sr_cresolution",
 						"data-listid":item,
 						"title":"Click to delete this resolution"
-					}).text(r[item][0] + "x" + r[item][1]).on("click enter",TraceOpt.ScreenRes.RemoveResolution)
+					}).text(r[item][0] + "x" + r[item][1]).on("click enter",Opts.ScreenRes.RemoveResolution)
 				);
 			}
 		},
 		RemoveResolution:function(){
 			var id = $(this).data("listid");
-			TraceOpt.Config.CurrentSel.commonResolutions.resolutions.splice(id,1);
+			Opts.Config.CurrentSel.commonResolutions.resolutions.splice(id,1);
 			TraceBg(function(bg){
-				bg.Prefs.Set("Pref_ScreenRes.commonResolutions.resolutions",TraceOpt.Config.CurrentSel.commonResolutions.resolutions);
+				bg.Prefs.Set("Pref_ScreenRes.commonResolutions.resolutions",Opts.Config.CurrentSel.commonResolutions.resolutions);
 			});
-			TraceOpt.ScreenRes.UpdateResolutions();
+			Opts.ScreenRes.UpdateResolutions();
 		},
 		AddNewResolution:function(){
 			var res = $("#sr_addtoresinput").val().toLowerCase();
@@ -2364,20 +2370,20 @@ var TraceOpt = {
 				return;
 			}
 
-			TraceOpt.Config.CurrentSel.commonResolutions.resolutions.push([parseInt(res[0]),parseInt(res[1])]);
+			Opts.Config.CurrentSel.commonResolutions.resolutions.push([parseInt(res[0]),parseInt(res[1])]);
 			TraceBg(function(bg){
-				bg.Prefs.Set("Pref_ScreenRes.commonResolutions.resolutions",TraceOpt.Config.CurrentSel.commonResolutions.resolutions);
+				bg.Prefs.Set("Pref_ScreenRes.commonResolutions.resolutions",Opts.Config.CurrentSel.commonResolutions.resolutions);
 			});
-			TraceOpt.ScreenRes.UpdateResolutions();
+			Opts.ScreenRes.UpdateResolutions();
 		},
 		UpdateOffset:function(){
 			var max = parseInt($("#sr_offsetmaxval").val()),
 				min = parseInt($("#sr_offsetminval").val());
-			TraceOpt.Config.CurrentSel.randomOpts.values = [min,max];
+			Opts.Config.CurrentSel.randomOpts.values = [min,max];
 
 			TraceBg(function(bg){
-				bg.Prefs.Set("Pref_ScreenRes.randomOpts.values",TraceOpt.Config.CurrentSel.randomOpts.values);
-				TraceOpt.ScreenRes.UpdateOffsets();
+				bg.Prefs.Set("Pref_ScreenRes.randomOpts.values",Opts.Config.CurrentSel.randomOpts.values);
+				Opts.ScreenRes.UpdateOffsets();
 			});
 
 			$("#sr_updateoffsets").text("Saved!");
@@ -2392,7 +2398,7 @@ var TraceOpt = {
 		updatedList:false,
 		OpenDialog:function(){
 			TraceBg(function(bg){
-				TraceOpt.Blocklist.isPremium = (typeof bg.Vars.Premium !== "undefined" ?
+				Opts.Blocklist.isPremium = (typeof bg.Vars.Premium !== "undefined" ?
 					(bg.Vars.Premium.length !== 0) : false);
 			});
 
@@ -2413,14 +2419,14 @@ var TraceOpt = {
 					"id":"blc_searchlists",
 					"class":"hidden",
 					"placeholder":"Search lists"
-				}).on("keyup",TraceOpt.Blocklist.SearchList),
+				}).on("keyup",Opts.Blocklist.SearchList),
 				$("<span/>",{"id":"blc_updAlert","style":"display:none"}).text("The blocklist will update with new the settings when you exit this popup."),
 				$("<div/>",{"id":"blc_lists"}).append(
 					$("<span/>",{"id":"blc_loadStatus"}).text("Loading lists. Please Wait...")
 				)
 			);
 
-			TraceOpt.Blocklist.LoadList();
+			Opts.Blocklist.LoadList();
 
 			$("#ux").addClass("blurred");
 			$("#overlay_message").slideDown(300);
@@ -2432,7 +2438,7 @@ var TraceOpt = {
 			}
 
 			function updateLists(){
-				if (TraceOpt.Blocklist.updatedList) {
+				if (Opts.Blocklist.updatedList) {
 					unbindClick();
 					TraceBg(function(bg){
 						bg.Web.BlocklistLoader(true);
@@ -2441,7 +2447,7 @@ var TraceOpt = {
 
 				$("#blc_cServerList").empty();
 				$("#overlay_cont").removeClass("blc_parent");
-				TraceOpt.CloseOverlay();
+				Opts.CloseOverlay();
 			}
 
 			unbindClick();
@@ -2476,13 +2482,13 @@ var TraceOpt = {
 					"class":"settings_config_container"
 				});
 
-				if (TraceOpt.Blocklist.ListConfig.lists.length === 0){
+				if (Opts.Blocklist.ListConfig.lists.length === 0){
 					body.append(
 						$("<h2/>").text("There are no lists available for use.")
 					);
 				} else {
-					for (var i = 0,l = TraceOpt.Blocklist.ListConfig.lists.length;i<l;i++){
-						var currentItem = TraceOpt.Blocklist.ListConfig.lists[i];
+					for (var i = 0,l = Opts.Blocklist.ListConfig.lists.length;i<l;i++){
+						var currentItem = Opts.Blocklist.ListConfig.lists[i];
 						var currentItemId = makeRandomID(7);
 
 						var control = $("<div/>",{
@@ -2500,11 +2506,11 @@ var TraceOpt = {
 									"data-install":currentItem.install,
 									"data-warnPremium":currentItem.premium,
 								}).on("click enter",function(e){
-									if (TraceOpt.Blocklist.isPremium !== true && $(this).is(":checked") === true && $(this).data("warnpremium")){
+									if (Opts.Blocklist.isPremium !== true && $(this).is(":checked") === true && $(this).data("warnpremium")){
 										e.preventDefault();
 										alert("This list requires premium.");
 									} else {
-										TraceOpt.Blocklist.InstallList($(this).data("install"),$(this).is(":checked"));
+										Opts.Blocklist.InstallList($(this).data("install"),$(this).is(":checked"));
 									}
 								}),
 								$("<span/>",{"class":"ccheck"})
@@ -2514,12 +2520,12 @@ var TraceOpt = {
 						// List labels
 						var label = $("<span/>",{"class":"blc_optreq blc_req"}).text("Optional List");
 						if (currentItem.premium === true){
-							label = $("<span/>",{"class":"blc_premreq blc_req"}).text(TraceOpt.Blocklist.isPremium===true ? "Premium List" : "This list requires Premium");
+							label = $("<span/>",{"class":"blc_premreq blc_req"}).text(Opts.Blocklist.isPremium===true ? "Premium List" : "This list requires Premium");
 						} else if (currentItem.default === true){
 							label = $("<span/>",{"class":"blc_defreq blc_req"}).text("Default List");
 						}
 
-						if (TraceOpt.debug === true){
+						if (Opts.debug === true){
 							label.append(": "+currentItem.install);
 						}
 
@@ -2563,7 +2569,7 @@ var TraceOpt = {
 				},
 				success:function(data){
 					$("#blc_loadStatus").text("Compiling List...");
-					TraceOpt.Blocklist.ListConfig = JSON.parse(data);
+					Opts.Blocklist.ListConfig = JSON.parse(data);
 					writeListToBody();
 					checkEnabledItems();
 					$(".loader_img").hide();
@@ -2622,7 +2628,7 @@ var TraceOpt = {
 					currentCodes[installCode] = true;
 				}
 
-				TraceOpt.Blocklist.updatedList = true;
+				Opts.Blocklist.updatedList = true;
 				$("#blc_updAlert").show();
 
 				bg.Prefs.Set("Pref_WebController.installCodes",currentCodes);
@@ -2634,25 +2640,25 @@ var TraceOpt = {
 		CurrentSelect:null,
 		Title:$("#scope .sect_header"),
 		Init:function(){
-			TraceOpt.Scope.AssignEvents();
-			TraceOpt.Scope.PopulateList(TraceOpt.Scope.AddToUI);
+			Opts.Scope.AssignEvents();
+			Opts.Scope.PopulateList(Opts.Scope.AddToUI);
 		},
 		AssignEvents:function(){
-			$("#wlctrl_search").on("keyup",TraceOpt.Scope.StartSearch);
-			$("#wlctrl_refresh").on("click enter",TraceOpt.Scope.ReloadList);
-			$("#wlctrl_test").on("click enter",TraceOpt.Scope.ListTest);
-			$("#wlctrl_clear").on("click enter",TraceOpt.Scope.ClearWhitelist);
-			$("#wlctrl_addent").on("click enter",TraceOpt.Scope.AddDomain);
-			$("#wlctrl_rement").on("click enter",TraceOpt.Scope.RemoveDomain);
-			$("#wlctrl_editent").on("click enter",TraceOpt.Scope.EditDomain);
-			$("#wlctrl_import").on("click enter",TraceOpt.Scope.Export.UI);
-			$("#wlctrl_help").on("click enter",TraceOpt.Scope.HelpDialog);
+			$("#wlctrl_search").on("keyup",Opts.Scope.StartSearch);
+			$("#wlctrl_refresh").on("click enter",Opts.Scope.ReloadList);
+			$("#wlctrl_test").on("click enter",Opts.Scope.ListTest);
+			$("#wlctrl_clear").on("click enter",Opts.Scope.ClearWhitelist);
+			$("#wlctrl_addent").on("click enter",Opts.Scope.AddDomain);
+			$("#wlctrl_rement").on("click enter",Opts.Scope.RemoveDomain);
+			$("#wlctrl_editent").on("click enter",Opts.Scope.EditDomain);
+			$("#wlctrl_import").on("click enter",Opts.Scope.Export.UI);
+			$("#wlctrl_help").on("click enter",Opts.Scope.HelpDialog);
 		},
 		ClearWhitelist:function(){
 			if (confirm("Are you sure you wish to clear the entire list?")){
 				TraceBg(function(bg){
 					bg.Whitelist.EmptyList();
-					TraceOpt.Scope.ReloadList();
+					Opts.Scope.ReloadList();
 				});
 			}
 		},
@@ -2660,12 +2666,12 @@ var TraceOpt = {
 			$("#wl_biglist").html("<h2>&nbsp;Whitelist contains no entries.</h2>&nbsp;&nbsp;Add new ones here.<br />");
 		},
 		StartSearch:function(){
-			clearTimeout(TraceOpt.searchTimeout);
-			TraceOpt.searchTimeout = setTimeout(TraceOpt.Scope.SearchList,500);
+			clearTimeout(Opts.searchTimeout);
+			Opts.searchTimeout = setTimeout(Opts.Scope.SearchList,500);
 		},
 		SearchList:function(){
-			TraceOpt.Scope.UnselectDomain(false);
-			TraceOpt.Scope.PopulateList(function(array,cb){
+			Opts.Scope.UnselectDomain(false);
+			Opts.Scope.PopulateList(function(array,cb){
 				var keys = Object.keys(array);
 				var len = keys.length, added = 0;
 				var lst = $("#wl_biglist");
@@ -2681,7 +2687,7 @@ var TraceOpt = {
 							"data-itmkey":keys[pos],
 							"data-pos":added,
 							"id":"wle_id_" + makeRandomID(7)
-						}).text(keys[pos]).on("keyup",TraceOpt.Scope.AlterSelect).click(TraceOpt.Scope.SelectDomain)
+						}).text(keys[pos]).on("keyup",Opts.Scope.AlterSelect).click(Opts.Scope.SelectDomain)
 					);
 					added++;
 				}
@@ -2730,15 +2736,15 @@ var TraceOpt = {
 					$("<div/>",{"id":"s_add_perpage","class":"s_protside"}).append($("<h1/>").text("Loading..."))
 				),
 				$("<br/>"),$("<br/>"),
-				$("<button/>",{"class":"float_r"}).text("Cancel").click(TraceOpt.CloseOverlay),
+				$("<button/>",{"class":"float_r"}).text("Cancel").click(Opts.CloseOverlay),
 				$("<button/>",{"class":"float_r","title":"Add entry"}).text("Add Domain").click(function(){
 					var d = $("#wle_domainadd").val();
-					TraceOpt.Scope.AddValidation(d,this);
+					Opts.Scope.AddValidation(d,this);
 				}),
 				$("<br/>"),$("<br/>")
 			);
-			TraceOpt.AssignCloseOverlay(true);
-			TraceBg(TraceOpt.Scope.AddExecs);
+			Opts.AssignCloseOverlay(true);
+			TraceBg(Opts.Scope.AddExecs);
 		},
 		AddExecs:function(bg){
 			var enableStatus = bg.Whitelist.whitelistDefaults;
@@ -2756,7 +2762,7 @@ var TraceOpt = {
 							"class":"checkbox_cont xlarge",
 							"style":style,
 							"title":protmsg
-						}).text(TraceOpt.ExecutionOrder.SettingName[dpAllPage[i]] || dpAllPage[i]).append(
+						}).text(Opts.ExecutionOrder.SettingName[dpAllPage[i]] || dpAllPage[i]).append(
 							$("<input/>",{
 								"type":"checkbox",
 								"checked":"checked",
@@ -2777,7 +2783,7 @@ var TraceOpt = {
 							"class":"checkbox_cont xlarge",
 							"style":style,
 							"title":protmsg
-						}).text(TraceOpt.ExecutionOrder.SettingName[dpPerPage[i]] || dpPerPage[i]).append(
+						}).text(Opts.ExecutionOrder.SettingName[dpPerPage[i]] || dpPerPage[i]).append(
 							$("<input/>",{
 								"type":"checkbox",
 								"data-controls":dpPerPage[i]
@@ -2810,13 +2816,13 @@ var TraceOpt = {
 
 			TraceBg(function(bg){
 				bg.Whitelist.AddItem(domain,scopeData,function(){
-					TraceOpt.Scope.ReloadList();
-					TraceOpt.CloseOverlay();
+					Opts.Scope.ReloadList();
+					Opts.CloseOverlay();
 				});
 			});
 		},
 		EditDomain:function(){
-			if(TraceOpt.Scope.CurrentSelect === null){
+			if(Opts.Scope.CurrentSelect === null){
 				return false;
 			}
 
@@ -2829,7 +2835,7 @@ var TraceOpt = {
 					"class":"textbox",
 					"id":"wle_domainadd",
 					"autocomplete":"false",
-					"value":TraceOpt.Scope.CurrentSelect.data("itmkey")
+					"value":Opts.Scope.CurrentSelect.data("itmkey")
 				}),
 				$("<div/>",{"class":"setting_conf_opt"}).append(
 					$("<label/>",{
@@ -2858,16 +2864,16 @@ var TraceOpt = {
 					$("<div/>",{"id":"s_add_perpage","class":"s_protside"}).append($("<h1/>").text("Loading..."))
 				),
 				$("<br/>"),$("<br/>"),
-				$("<button/>",{"class":"float_r"}).text("Cancel").click(TraceOpt.CloseOverlay),
-				$("<button/>",{"class":"float_r"}).text("Modify").click(TraceOpt.Scope.DoEditDomain),
+				$("<button/>",{"class":"float_r"}).text("Cancel").click(Opts.CloseOverlay),
+				$("<button/>",{"class":"float_r"}).text("Modify").click(Opts.Scope.DoEditDomain),
 				$("<br/>"),$("<br/>")
 			);
-			TraceOpt.AssignCloseOverlay(true);
-			TraceBg(TraceOpt.Scope.AddExecs);
-			TraceBg(TraceOpt.Scope.UpdateExecs);
+			Opts.AssignCloseOverlay(true);
+			TraceBg(Opts.Scope.AddExecs);
+			TraceBg(Opts.Scope.UpdateExecs);
 		},
 		UpdateExecs:function(bg){
-			var currData = bg.Whitelist.storedWhitelist[TraceOpt.Scope.CurrentSelect.data("itmkey")];
+			var currData = bg.Whitelist.storedWhitelist[Opts.Scope.CurrentSelect.data("itmkey")];
 
 			if (typeof currData.Protections === "undefined"){
 				console.error(currData);
@@ -2882,13 +2888,13 @@ var TraceOpt = {
 			$("#s_prot_initreqs").attr("checked",currData.InitRequests);
 		},
 		DoEditDomain:function(){
-			if(TraceOpt.Scope.CurrentSelect === null){
+			if(Opts.Scope.CurrentSelect === null){
 				return false;
 			}
-			TraceOpt.CloseOverlay();
+			Opts.CloseOverlay();
 
 			// Get information
-			var removeItem = TraceOpt.Scope.CurrentSelect.data("itmkey");
+			var removeItem = Opts.Scope.CurrentSelect.data("itmkey");
 			var addItem = $("#wle_domainadd").val();
 
 			// Default protection template
@@ -2905,18 +2911,18 @@ var TraceOpt = {
 
 			TraceBg(function(bg){
 				bg.Whitelist.EditItem(removeItem,addItem,scopeData,function(){
-					TraceOpt.Scope.ReloadList();
+					Opts.Scope.ReloadList();
 				});
 			});
 		},
 		RemoveDomain:function(){
-			if(TraceOpt.Scope.CurrentSelect === null){
+			if(Opts.Scope.CurrentSelect === null){
 				return false;
 			}
-			var item = TraceOpt.Scope.CurrentSelect.data("itmkey");
+			var item = Opts.Scope.CurrentSelect.data("itmkey");
 			TraceBg(function(bg){
 				bg.Whitelist.RemoveItem(item,function(){
-					TraceOpt.Scope.ReloadList();
+					Opts.Scope.ReloadList();
 				});
 			});
 		},
@@ -2950,25 +2956,25 @@ var TraceOpt = {
 			el.click().focus();
 		},
 		UnselectDomain:function(deleted){
-			if (TraceOpt.Scope.CurrentSelect === null) return;
+			if (Opts.Scope.CurrentSelect === null) return;
 
-			if (!deleted) $("#" + $(TraceOpt.Scope.CurrentSelect)[0].id).removeClass("wl_selected");
+			if (!deleted) $("#" + $(Opts.Scope.CurrentSelect)[0].id).removeClass("wl_selected");
 
-			TraceOpt.Scope.CurrentSelect = null;
+			Opts.Scope.CurrentSelect = null;
 
 			$("#wl_scontrols").addClass("faded");
 			$("#wlctrl_rement").prop("disabled",true);
 			$("#wlctrl_editent").prop("disabled",true);
 		},
 		SelectDomain:function(){
-			if (TraceOpt.Scope.CurrentSelect !== null){
-				if ($(this)[0].id === $(TraceOpt.Scope.CurrentSelect)[0].id){
-					TraceOpt.Scope.UnselectDomain(false);
+			if (Opts.Scope.CurrentSelect !== null){
+				if ($(this)[0].id === $(Opts.Scope.CurrentSelect)[0].id){
+					Opts.Scope.UnselectDomain(false);
 					return;
 				}
-				TraceOpt.Scope.UnselectDomain(false);
+				Opts.Scope.UnselectDomain(false);
 			}
-			TraceOpt.Scope.CurrentSelect = $(this);
+			Opts.Scope.CurrentSelect = $(this);
 			$(this).addClass("wl_selected");
 
 			$("#wl_scontrols").removeClass("faded");
@@ -2979,8 +2985,8 @@ var TraceOpt = {
 			$("#wl_biglist").addClass("faded");
 			$("#wlctrl_search").val("");
 
-			TraceOpt.Scope.UnselectDomain(false);
-			TraceOpt.Scope.PopulateList(TraceOpt.Scope.AddToUI);
+			Opts.Scope.UnselectDomain(false);
+			Opts.Scope.PopulateList(Opts.Scope.AddToUI);
 			setTimeout(function(){
 				$("#wl_biglist").removeClass("faded");
 			},300);
@@ -3003,7 +3009,7 @@ var TraceOpt = {
 						"data-itmkey":keys[pos],
 						"data-pos":pos,
 						"id":"wle_id_" + makeRandomID(7)
-					}).html(parseEntry(keys[pos])).on("keyup",TraceOpt.Scope.AlterSelect).click(TraceOpt.Scope.SelectDomain)
+					}).html(parseEntry(keys[pos])).on("keyup",Opts.Scope.AlterSelect).click(Opts.Scope.SelectDomain)
 				);
 			}
 
@@ -3014,7 +3020,7 @@ var TraceOpt = {
 			TraceBg(function(bg){
 				bg.Whitelist.ReturnWhitelist(function(list){
 					if (Object.keys(list).length === 0){
-						TraceOpt.Scope.EmptyList();
+						Opts.Scope.EmptyList();
 					} else {
 						cb(list);
 					}
@@ -3071,9 +3077,9 @@ var TraceOpt = {
 					}).keyup(runTest),
 					$("<div/>",{"id":"sl_testresp","class":"textscrollable"})
 				),
-				TraceOpt.CloseUI(),$("<br />")
+				Opts.CloseUI(),$("<br />")
 			);
-			TraceOpt.AssignCloseOverlay(false);
+			Opts.AssignCloseOverlay(false);
 		},
 		HelpDialog:function(){
 			$("#drop_message").empty().append(
@@ -3093,9 +3099,9 @@ var TraceOpt = {
 						)
 					)
 				),
-				TraceOpt.CloseUI()
+				Opts.CloseUI()
 			);
-			TraceOpt.AssignCloseOverlay(true);
+			Opts.AssignCloseOverlay(true);
 		},
 		Export:{
 			Data:{},
@@ -3105,22 +3111,22 @@ var TraceOpt = {
 					$("<section/>",{"id":"backuprestore_section"}).append(
 						$("<span/>").text("Export your whitelist"),
 						$("<br/>"),$("<br/>"),
-						$("<button/>",{"style":"font-size:1em"}).text("Export Whitelist").on("click",TraceOpt.Scope.Export.Download),
+						$("<button/>",{"style":"font-size:1em"}).text("Export Whitelist").on("click",Opts.Scope.Export.Download),
 						$("<h2/>").text("Import a whitelist")
 					),
 					$("<input/>",{
 						"type":"file",
 						"accept":".json",
 						"style":"font-size:1.1em"
-					}).on("change",TraceOpt.Scope.Export.Upload),
+					}).on("change",Opts.Scope.Export.Upload),
 					$("<p/>",{"id":"restore_info"})
 				);
-				TraceOpt.AssignCloseOverlay(true);
+				Opts.AssignCloseOverlay(true);
 			},
 			Download:function(){
 				TraceBg(function(bg){
 					bg.Whitelist.WhitelistExport(function(raw){
-						TraceOpt.MakeDownload("TraceWhitelistExport",JSON.stringify(raw,null,4));
+						Opts.MakeDownload("TraceWhitelistExport",JSON.stringify(raw,null,4));
 					});
 				});
 			},
@@ -3131,22 +3137,22 @@ var TraceOpt = {
 				reader.onload = function(){
 					var data = reader.result;
 					try{
-						TraceOpt.Scope.Export.Data = JSON.parse(data);
+						Opts.Scope.Export.Data = JSON.parse(data);
 					} catch(e){
-						TraceOpt.Scope.Export.Data = {};
+						Opts.Scope.Export.Data = {};
 					}
-					TraceOpt.Scope.Export.UploadUI();
+					Opts.Scope.Export.UploadUI();
 				};
 				reader.readAsText(this.files[0]);
 			},
 			UploadUI:function(){
 				// Check backup file..
-				var keys = Object.keys(TraceOpt.Scope.Export.Data);
+				var keys = Object.keys(Opts.Scope.Export.Data);
 				var redFlags = 0;
-				if (TraceOpt.Scope.Export.Data["backupTime"] === undefined) redFlags++;
-				if (TraceOpt.Scope.Export.Data["traceVersion"] === undefined) redFlags++;
-				if (TraceOpt.Scope.Export.Data["traceBrowser"] === undefined) redFlags++;
-				if (TraceOpt.Scope.Export.Data["entries"] === undefined) redFlags++;
+				if (Opts.Scope.Export.Data["backupTime"] === undefined) redFlags++;
+				if (Opts.Scope.Export.Data["traceVersion"] === undefined) redFlags++;
+				if (Opts.Scope.Export.Data["traceBrowser"] === undefined) redFlags++;
+				if (Opts.Scope.Export.Data["entries"] === undefined) redFlags++;
 
 				if (redFlags >= 2){
 					$("#restore_info").empty().append(
@@ -3156,11 +3162,11 @@ var TraceOpt = {
 				}
 
 				var versionInfo = $("<span/>").text("This export is the same version as your current version of Trace.");
-				if (TraceOpt.Scope.Export.Data.traceVersion !== chrome.runtime.getManifest().version){
+				if (Opts.Scope.Export.Data.traceVersion !== chrome.runtime.getManifest().version){
 					versionInfo = $(
 						$("<p/>").append(
 							$("<strong/>").text("Trace Export Version: "),
-							$("<span/>").text(TraceOpt.Scope.Export.Data.traceVersion || "Unknown.")
+							$("<span/>").text(Opts.Scope.Export.Data.traceVersion || "Unknown.")
 						),
 						$("<p/>").append(
 							$("<strong/>").text("Trace Current Version: "),
@@ -3177,13 +3183,13 @@ var TraceOpt = {
 						$("<span/>").text("Please note: If an item in the import has the same key as one in the list then the list currently will be overridden."),
 						$("<br/>"),
 						$("<strong/>").text("Date: "),
-						$("<span/>").text(TraceOpt.Scope.Export.Data.exportTime || "Unknown.")
+						$("<span/>").text(Opts.Scope.Export.Data.exportTime || "Unknown.")
 					),
 					versionInfo,
 					$("<br/>"),
-					$("<button/>",{"title":"Import whitelist entries","class":"small"}).text("Just import entries").on("click enter",TraceOpt.Scope.Export.ImportList),
+					$("<button/>",{"title":"Import whitelist entries","class":"small"}).text("Just import entries").on("click enter",Opts.Scope.Export.ImportList),
 					$("<br/>"),$("<br/>"),
-					$("<button/>",{"title":"Clear whitelist and add entries","class":"small"}).text("Clear whitelist & Import Entries").on("click enter",TraceOpt.Scope.Export.ClearImportList)
+					$("<button/>",{"title":"Clear whitelist and add entries","class":"small"}).text("Clear whitelist & Import Entries").on("click enter",Opts.Scope.Export.ClearImportList)
 				);
 			},
 			ImportedListUI:function(){
@@ -3196,13 +3202,13 @@ var TraceOpt = {
 			},
 			ImportList:function(){
 				var data = {};
-				data = TraceOpt.Scope.Export.Data.entries;
+				data = Opts.Scope.Export.Data.entries;
 
 				//window.location.href = "#whitelistImported";
 				TraceBg(function(bg){
 					bg.Whitelist.WhitelistImport(data,function(){
 						bg.Whitelist.SaveWhitelist(function(){
-							TraceOpt.Scope.Export.ImportedListUI();
+							Opts.Scope.Export.ImportedListUI();
 							bg.window.location.reload();
 						});
 					});
@@ -3211,7 +3217,7 @@ var TraceOpt = {
 			ClearImportList:function(){
 				TraceBg(function(bg){
 					bg.Whitelist.EmptyList();
-					TraceOpt.Scope.Export.ImportList();
+					Opts.Scope.Export.ImportList();
 				});
 			}
 		}
@@ -3224,7 +3230,7 @@ var TraceOpt = {
 			few:["bid", "click", "country", "download", "faith", "gdn", "gq"]
 		},
 		AssignEvents:function(){
-			$("#adv_settingstld").click(TraceOpt.BadTopLevelBlock.SelectProtectionUI);
+			$("#adv_settingstld").click(Opts.BadTopLevelBlock.SelectProtectionUI);
 		},
 		SelectProtectionUI:function(){
 			$("#drop_message").empty().append(
@@ -3233,15 +3239,15 @@ var TraceOpt = {
 				$("<div/>",{"id":"adv_tldlist"}),
 				$("<div/>").append(
 					$("<h1/>").text("TLD Presets"),
-					$("<button/>",{"data-selects":"0"}).text("Minimal").on("click enter",TraceOpt.BadTopLevelBlock.SelectPreset),
-					$("<button/>",{"data-selects":"1"}).text("Regular").on("click enter",TraceOpt.BadTopLevelBlock.SelectPreset),
-					$("<button/>",{"data-selects":"2"}).text("Extended").on("click enter",TraceOpt.BadTopLevelBlock.SelectPreset),
-					$("<button/>",{"data-selects":"3"}).text("All Bad TLDs").on("click enter",TraceOpt.BadTopLevelBlock.SelectPreset)
+					$("<button/>",{"data-selects":"0"}).text("Minimal").on("click enter",Opts.BadTopLevelBlock.SelectPreset),
+					$("<button/>",{"data-selects":"1"}).text("Regular").on("click enter",Opts.BadTopLevelBlock.SelectPreset),
+					$("<button/>",{"data-selects":"2"}).text("Extended").on("click enter",Opts.BadTopLevelBlock.SelectPreset),
+					$("<button/>",{"data-selects":"3"}).text("All Bad TLDs").on("click enter",Opts.BadTopLevelBlock.SelectPreset)
 				),
 				$("<br/>"),$("<br/>"),
-				$("<button/>",{"class":"float_r"}).text("Close").click(TraceOpt.CloseOverlay)
+				$("<button/>",{"class":"float_r"}).text("Close").click(Opts.CloseOverlay)
 			);
-			TraceOpt.AssignCloseOverlay(true);
+			Opts.AssignCloseOverlay(true);
 
 			TraceBg(function(bg){
 				if (bg.Prefs.Current.Pref_WebController.tld.enabled !== true){
@@ -3251,7 +3257,7 @@ var TraceOpt = {
 				}
 			});
 
-			TraceOpt.BadTopLevelBlock.LoadTLDs();
+			Opts.BadTopLevelBlock.LoadTLDs();
 		},
 		SelectPreset:function(){
 			var preset = $(this).data("selects");
@@ -3279,10 +3285,10 @@ var TraceOpt = {
 				"zip":false
 			};
 			var enableList = [];
-			if (preset >= 0) enableList = enableList.concat(TraceOpt.BadTopLevelBlock.tldPresets.few);
-			if (preset >= 1) enableList = enableList.concat(TraceOpt.BadTopLevelBlock.tldPresets.most);
-			if (preset >= 2) enableList = enableList.concat(TraceOpt.BadTopLevelBlock.tldPresets.extended);
-			if (preset === 3) enableList = enableList.concat(TraceOpt.BadTopLevelBlock.tldPresets.all);
+			if (preset >= 0) enableList = enableList.concat(Opts.BadTopLevelBlock.tldPresets.few);
+			if (preset >= 1) enableList = enableList.concat(Opts.BadTopLevelBlock.tldPresets.most);
+			if (preset >= 2) enableList = enableList.concat(Opts.BadTopLevelBlock.tldPresets.extended);
+			if (preset === 3) enableList = enableList.concat(Opts.BadTopLevelBlock.tldPresets.all);
 
 			for (var tld in enableList){
 				newList[enableList[tld]] = true;
@@ -3291,7 +3297,7 @@ var TraceOpt = {
 			TraceBg(function(bg){
 				bg.Prefs.Set("Pref_WebController.tld.settings",newList);
 			});
-			TraceOpt.BadTopLevelBlock.LoadTLDs();
+			Opts.BadTopLevelBlock.LoadTLDs();
 		},
 		LoadTLDs:function(){
 			TraceBg(function(bg){
@@ -3305,7 +3311,7 @@ var TraceOpt = {
 							"data-current":s[k[i]],
 							"class":"setting_traffic " + (s[k[i]] === true ? "tld_enabled" : "tld_disabled"),
 							"title":(s[k[i]] === true ? "Enabled" : "Disabled")
-						}).on("click enter",TraceOpt.BadTopLevelBlock.SaveSelection).text(k[i])
+						}).on("click enter",Opts.BadTopLevelBlock.SaveSelection).text(k[i])
 					);
 				}
 
@@ -3317,27 +3323,27 @@ var TraceOpt = {
 			var tldId = $(this).data("tldid");
 			TraceBg(function(bg){
 				bg.Prefs.Set("Pref_WebController.tld.settings."+tldId,newVal);
-				TraceOpt.BadTopLevelBlock.LoadTLDs();
+				Opts.BadTopLevelBlock.LoadTLDs();
 			});
 		}
 	},
 	UserInterfaceCustomiser:{
 		OptionsInterface:function(){
 			TraceBg(function(bg){
-				TraceOpt.Blocklist.isPremium = (typeof bg.Vars.Premium !== "undefined" ?
+				Opts.Blocklist.isPremium = (typeof bg.Vars.Premium !== "undefined" ?
 					(bg.Vars.Premium.length !== 0) : false);
 			});
 
-			if (!TraceOpt.Blocklist.isPremium){
+			if (!Opts.Blocklist.isPremium){
 				$("#drop_message").empty().append(
 					$("<h1/>").text("This setting requires premium")
 				);
-				TraceOpt.AssignCloseOverlay(true);
+				Opts.AssignCloseOverlay(true);
 				return;
 			}
 
 			var opts = {"type":"checkbox"};
-			if (TraceOpt.Config.CurrentSel["Theme"]["timeAlterations"].enabled === true) opts["checked"] = "checked";
+			if (Opts.Config.CurrentSel["Theme"]["timeAlterations"].enabled === true) opts["checked"] = "checked";
 
 			$("#drop_message").empty().append(
 				$("<h1/>").text("Customise User Interface"),
@@ -3346,6 +3352,7 @@ var TraceOpt = {
 					$("<option>",{"value":"default"}).text("Default Theme"),
 					$("<option>",{"value":"traceintense"}).text("Intense"),
 					$("<option>",{"value":"traceleaf"}).text("Autumn Leaf"),
+					$("<option>",{"value":"tracebeach"}).text("Beach Sunset"),
 					$("<option>",{"value":"tracelight"}).text("Trace Light"),
 					$("<option>",{"value":"tracegreyscale"}).text("Trace Greyscale")
 				).on("change",function (){
@@ -3383,13 +3390,13 @@ var TraceOpt = {
 						$("<span/>",{"class":"ccheck"})
 					)
 				),
-				TraceOpt.CloseUI(),
+				Opts.CloseUI(),
 				$("<br/>"),$("<br/>")
 			);
-			TraceOpt.AssignCloseOverlay(true);
+			Opts.AssignCloseOverlay(true);
 
-			$("#custui_navbarpos option[value='" + TraceOpt.Config.CurrentSel.Theme["navPlacement"] + "']").prop("selected", true);
-			$("#custui_themename option[value='" + TraceOpt.Config.CurrentSel.Theme["name"] + "']").prop("selected", true);
+			$("#custui_navbarpos option[value='" + Opts.Config.CurrentSel.Theme["navPlacement"] + "']").prop("selected", true);
+			$("#custui_themename option[value='" + Opts.Config.CurrentSel.Theme["name"] + "']").prop("selected", true);
 		}
 	},
 	URLCleaner: {
@@ -3400,7 +3407,7 @@ var TraceOpt = {
 			extreme:["_reqid", "data", "payload", "providerid", "rev", "uid", "sourceid", "origin"]
 		},
 		AssignEvents: function () {
-			$("#adv_urlcleaner_settings").on("click enter",TraceOpt.URLCleaner.SelectProtectionUI);
+			$("#adv_urlcleaner_settings").on("click enter",Opts.URLCleaner.SelectProtectionUI);
 		},
 		SelectProtectionUI: function() {
 			$("#drop_message").empty().append(
@@ -3411,16 +3418,16 @@ var TraceOpt = {
 					$("<option/>", {value: "removeall"}).text("Remove All Parameters"),
 					$("<option/>", {value: "remove"}).text("Remove Selected Parameters"),
 					$("<option/>", {value: "randomise"}).text("Randomise Selected Parameters")
-				).on("change",TraceOpt.URLCleaner.SaveSelection),
+				).on("change",Opts.URLCleaner.SaveSelection),
 				$("<br/>"),
 				$("<div/>",{"id":"adv_urlparams","class":"sinksect"}),
 				$("<br/>"),
 				$("<div/>",{"class":"sinksect"}).append(
 					$("<h1/>").text("Parameter Presets"),
-					$("<button/>",{"data-selects":"0"}).text("Safe").on("click enter",TraceOpt.URLCleaner.SelectPreset),
-					$("<button/>",{"data-selects":"1"}).text("Regular").on("click enter",TraceOpt.URLCleaner.SelectPreset),
-					$("<button/>",{"data-selects":"2"}).text("Risky").on("click enter",TraceOpt.URLCleaner.SelectPreset),
-					$("<button/>",{"data-selects":"3"}).text("All Parameters").on("click enter",TraceOpt.URLCleaner.SelectPreset)
+					$("<button/>",{"data-selects":"0"}).text("Safe").on("click enter",Opts.URLCleaner.SelectPreset),
+					$("<button/>",{"data-selects":"1"}).text("Regular").on("click enter",Opts.URLCleaner.SelectPreset),
+					$("<button/>",{"data-selects":"2"}).text("Risky").on("click enter",Opts.URLCleaner.SelectPreset),
+					$("<button/>",{"data-selects":"3"}).text("All Parameters").on("click enter",Opts.URLCleaner.SelectPreset)
 				),
 				/*$("<h2/>").text("Resource URL Cleaning Settings"),
 				$("<select/>", {id: "ars_urlc_plevel"}).append(
@@ -3445,10 +3452,10 @@ var TraceOpt = {
 					$("<option/>", {value: "randomise"}).text("Randomise Parameters")
 				),*/
 				$("<br/>"),$("<br/>"),
-				$("<button/>",{"class":"float_r"}).text("Close").click(TraceOpt.CloseOverlay)
+				$("<button/>",{"class":"float_r"}).text("Close").click(Opts.CloseOverlay)
 			);
-			TraceOpt.AssignCloseOverlay(true);
-			TraceOpt.URLCleaner.LoadParams();
+			Opts.AssignCloseOverlay(true);
+			Opts.URLCleaner.LoadParams();
 
 			TraceBg(function(bg){
 				function getName(type){
@@ -3478,16 +3485,16 @@ var TraceOpt = {
 
 			var enableList = [];
 			if (preset >= 0)
-				enableList = enableList.concat(TraceOpt.URLCleaner.ParamPresets.safe);
+				enableList = enableList.concat(Opts.URLCleaner.ParamPresets.safe);
 
 			if (preset >= 1)
-				enableList = enableList.concat(TraceOpt.URLCleaner.ParamPresets.regular);
+				enableList = enableList.concat(Opts.URLCleaner.ParamPresets.regular);
 
 			if (preset >= 2)
-				enableList = enableList.concat(TraceOpt.URLCleaner.ParamPresets.risky);
+				enableList = enableList.concat(Opts.URLCleaner.ParamPresets.risky);
 
 			if (preset === 3)
-				enableList = enableList.concat(TraceOpt.URLCleaner.ParamPresets.extreme);
+				enableList = enableList.concat(Opts.URLCleaner.ParamPresets.extreme);
 
 			for (var param in enableList){
 				newList[enableList[param]] = true;
@@ -3496,7 +3503,7 @@ var TraceOpt = {
 			TraceBg(function(bg){
 				bg.Prefs.Set("Pref_WebController.urlCleaner.queryString.params",newList);
 			});
-			TraceOpt.URLCleaner.LoadParams();
+			Opts.URLCleaner.LoadParams();
 		},
 		LoadParams:function(){
 			TraceBg(function(bg){
@@ -3510,7 +3517,7 @@ var TraceOpt = {
 							"data-current":s[k[i]],
 							"class":"setting_traffic " + (s[k[i]] === true ? "tld_enabled" : "tld_disabled"),
 							"title":(s[k[i]] === true ? "Enabled" : "Disabled")
-						}).on("click enter",TraceOpt.URLCleaner.SaveParams).text(k[i])
+						}).on("click enter",Opts.URLCleaner.SaveParams).text(k[i])
 					);
 				}
 
@@ -3528,7 +3535,7 @@ var TraceOpt = {
 			TraceBg(function(bg){
 				bg.Prefs.Set("Pref_WebController.urlCleaner.queryString.params."+theTld,newVal);
 			});
-			TraceOpt.URLCleaner.LoadParams();
+			Opts.URLCleaner.LoadParams();
 		},
 		SaveSelection:function (){
 			var frameMethod = $("#afr_urlc_pmethod").val();
@@ -3545,8 +3552,8 @@ var TraceOpt = {
 				"type":"checkbox",
 				"id":"trcanv_custrgba"
 			};
-			var rgba = TraceOpt.Config.CurrentSel["customRGBA"]["rgba"];
-			if (TraceOpt.Config.CurrentSel["customRGBA"].enabled === true){
+			var rgba = Opts.Config.CurrentSel["customRGBA"]["rgba"];
+			if (Opts.Config.CurrentSel["customRGBA"].enabled === true){
 				opts["checked"] = "checked";
 			}
 
@@ -3587,10 +3594,10 @@ var TraceOpt = {
 					"placeholder":"A",
 					"value":rgba[3]
 				}),
-				$("<button/>",{"class":"float_r"}).text("Save").click(TraceOpt.CanvasRGBA.SaveParameters),
+				$("<button/>",{"class":"float_r"}).text("Save").click(Opts.CanvasRGBA.SaveParameters),
 				$("<br/>"),$("<br/>")
 			);
-			TraceOpt.AssignCloseOverlay(true);
+			Opts.AssignCloseOverlay(true);
 		},
 		SaveParameters:function(){
 			var rgba = [
@@ -3606,17 +3613,17 @@ var TraceOpt = {
 					"Pref_CanvasFingerprint.customRGBA.enabled":custRgba
 				});
 			});
-			TraceOpt.CloseOverlay();
+			Opts.CloseOverlay();
 		}
 	},
 	CookieEaterUI:{
 		OpenDialog:function(){
-			var rc_sett = TraceOpt.Config.CurrentSel["settings"]["cookie"];
-			var sc_sett = TraceOpt.Config.CurrentSel["settings"]["setcookie"];
+			var rc_sett = Opts.Config.CurrentSel["settings"]["cookie"];
+			var sc_sett = Opts.Config.CurrentSel["settings"]["setcookie"];
 			var rc_opts = {"type":"checkbox","id":"ce_sett_cookieheadmod"};
 			var sc_opts = {"type":"checkbox","id":"ce_sett_setcookieheadmod"};
-			if (TraceOpt.Config.CurrentSel["settings"]["cookie"].enabled === true) rc_opts["checked"] = "checked";
-			if (TraceOpt.Config.CurrentSel["settings"]["setcookie"].enabled === true) sc_opts["checked"] = "checked";
+			if (Opts.Config.CurrentSel["settings"]["cookie"].enabled === true) rc_opts["checked"] = "checked";
+			if (Opts.Config.CurrentSel["settings"]["setcookie"].enabled === true) sc_opts["checked"] = "checked";
 
 			$("#drop_message").empty().append(
 				$("<h1/>").text("Cookie Eater Settings"),
@@ -3684,12 +3691,12 @@ var TraceOpt = {
 				),
 				$("<br/>"),$("<br/>"),
 				$("<br/>"),$("<br/>"),
-				$("<button/>").text("Edit cookie list").on("click enter",TraceOpt.CookieEaterUI.List.InitUI),
+				$("<button/>").text("Edit cookie list").on("click enter",Opts.CookieEaterUI.List.InitUI),
 				$("<br/>"),$("<br/>"),
-				$("<button/>",{"class":"float_r"}).text("Cancel").click(TraceOpt.CloseOverlay),
-				$("<button/>",{"class":"float_r"}).text("Save & Close").click(TraceOpt.CookieEaterUI.SaveSelection)
+				$("<button/>",{"class":"float_r"}).text("Cancel").click(Opts.CloseOverlay),
+				$("<button/>",{"class":"float_r"}).text("Save & Close").click(Opts.CookieEaterUI.SaveSelection)
 			);
-			TraceOpt.AssignCloseOverlay(true);
+			Opts.AssignCloseOverlay(true);
 
 			$("#ce_sett_fpcookiehead option[value='" + rc_sett["fp_method"] + "']").prop("selected", true);
 			$("#ce_sett_tpcookiehead option[value='" + rc_sett["tp_method"] + "']").prop("selected", true);
@@ -3714,7 +3721,7 @@ var TraceOpt = {
 				});
 			});
 
-			TraceOpt.CloseOverlay();
+			Opts.CloseOverlay();
 		},
 		List:{
 			InitUI:function(){
@@ -3723,11 +3730,11 @@ var TraceOpt = {
 					$("<h2/>").text("Click a Cookie Name to toggle whether it is affected by the protection"),
 					$("<div/>",{"id":"adv_tldlist"}),
 					$("<br/>"),$("<br/>"),
-					TraceOpt.CloseUI()
+					Opts.CloseUI()
 				);
-				TraceOpt.AssignCloseOverlay(true);
+				Opts.AssignCloseOverlay(true);
 
-				TraceOpt.CookieEaterUI.List.LoadCookies();
+				Opts.CookieEaterUI.List.LoadCookies();
 			},
 			LoadCookies:function(){
 				TraceBg(function(bg){
@@ -3741,7 +3748,7 @@ var TraceOpt = {
 								"data-current":s[k[i]],
 								"class":"setting_traffic " + (s[k[i]] === true ? "tld_enabled" : "tld_disabled"),
 								"title":(s[k[i]] === true ? "Enabled" : "Disabled")
-							}).on("click enter",TraceOpt.CookieEaterUI.List.SaveSelection).text(k[i])
+							}).on("click enter",Opts.CookieEaterUI.List.SaveSelection).text(k[i])
 						);
 					}
 
@@ -3753,7 +3760,7 @@ var TraceOpt = {
 				var cookieId = $(this).data("cookieid");
 				TraceBg(function(bg){
 					bg.Prefs.Set("Pref_CookieEater.list."+cookieId,newVal);
-					TraceOpt.CookieEaterUI.List.LoadCookies();
+					Opts.CookieEaterUI.List.LoadCookies();
 				});
 			}
 		}
@@ -3761,7 +3768,7 @@ var TraceOpt = {
 	RefererHeader:{
 		OpenDialog:function(){
 			var jsvar_opts = {"type":"checkbox","id":"referhead_jsvar_cb","name":"referhead_jsvar_cb"};
-			if (TraceOpt.Config.CurrentSel["jsVariable"].enabled === true) jsvar_opts["checked"] = "checked";
+			if (Opts.Config.CurrentSel["jsVariable"].enabled === true) jsvar_opts["checked"] = "checked";
 
 			var httpHead_ash = {"type":"checkbox","id":"referhead_ash","name":"referhead_ash"};
 			var httpHead_ashu = {"type":"checkbox","id":"referhead_ashu","name":"referhead_ashu"};
@@ -3770,13 +3777,13 @@ var TraceOpt = {
 			var httpHead_atp = {"type":"checkbox","id":"referhead_atp","name":"referhead_atp"};
 			var httpHead_atpu = {"type":"checkbox","id":"referhead_atpu","name":"referhead_atpu"};
 			var httpHead_oso = {"type":"checkbox","id":"referhead_oso","name":"referhead_oso"};
-			if (TraceOpt.Config.CurrentSel.httpHeader["allowSameHost"].enabled === true) httpHead_ash["checked"] = "checked";
-			if (TraceOpt.Config.CurrentSel.httpHeader["allowSameHost"].fullUrl === true) httpHead_ashu["checked"] = "checked";
-			if (TraceOpt.Config.CurrentSel.httpHeader["allowSameDomain"].enabled === true) httpHead_asd["checked"] = "checked";
-			if (TraceOpt.Config.CurrentSel.httpHeader["allowSameDomain"].fullUrl === true) httpHead_asdu["checked"] = "checked";
-			if (TraceOpt.Config.CurrentSel.httpHeader["allowThirdParty"].enabled === true) httpHead_atp["checked"] = "checked";
-			if (TraceOpt.Config.CurrentSel.httpHeader["allowThirdParty"].fullUrl === true) httpHead_atpu["checked"] = "checked";
-			if (TraceOpt.Config.CurrentSel.httpHeader["onlySecureOrigins"].enabled === true) httpHead_oso["checked"] = "checked";
+			if (Opts.Config.CurrentSel.httpHeader["allowSameHost"].enabled === true) httpHead_ash["checked"] = "checked";
+			if (Opts.Config.CurrentSel.httpHeader["allowSameHost"].fullUrl === true) httpHead_ashu["checked"] = "checked";
+			if (Opts.Config.CurrentSel.httpHeader["allowSameDomain"].enabled === true) httpHead_asd["checked"] = "checked";
+			if (Opts.Config.CurrentSel.httpHeader["allowSameDomain"].fullUrl === true) httpHead_asdu["checked"] = "checked";
+			if (Opts.Config.CurrentSel.httpHeader["allowThirdParty"].enabled === true) httpHead_atp["checked"] = "checked";
+			if (Opts.Config.CurrentSel.httpHeader["allowThirdParty"].fullUrl === true) httpHead_atpu["checked"] = "checked";
+			if (Opts.Config.CurrentSel.httpHeader["onlySecureOrigins"].enabled === true) httpHead_oso["checked"] = "checked";
 
 			$("#drop_message").empty().append(
 				$("<h1/>").text("HTTP 'Referer' Header Settings"),
@@ -3869,10 +3876,10 @@ var TraceOpt = {
 					)
 				),*/
 				$("<span/>").text("If you don't select any boxes then the header will never be set."),
-				$("<button/>",{"class":"float_r"}).text("Cancel").click(TraceOpt.CloseOverlay),
-				$("<button/>",{"class":"float_r"}).text("Save & Close").click(TraceOpt.RefererHeader.SaveSelection)
+				$("<button/>",{"class":"float_r"}).text("Cancel").click(Opts.CloseOverlay),
+				$("<button/>",{"class":"float_r"}).text("Save & Close").click(Opts.RefererHeader.SaveSelection)
 			);
-			TraceOpt.AssignCloseOverlay(true);
+			Opts.AssignCloseOverlay(true);
 		},
 		SaveSelection:function(){
 			var rf_ash = $("#referhead_ash").is(":checked");
@@ -3894,13 +3901,13 @@ var TraceOpt = {
 				});
 			});
 
-			TraceOpt.CloseOverlay();
+			Opts.CloseOverlay();
 		},
 	}
 };
 
 try{
-	$(document).ready(TraceOpt.WindowLoad);
+	$(document).ready(Opts.WindowLoad);
 } catch(e){
 	showErr("Unable to load UI.");
 	console.error(e);
@@ -3908,10 +3915,10 @@ try{
 
 // Check if is new install
 if(window.location.hash && window.location.hash === "#v2installed") {
-	TraceOpt.NewInstall.ShowInterface();
+	Opts.NewInstall.ShowInterface();
 } else {
 	$("#ux").removeClass("blurred");
 	if (window.location.hash && window.location.hash.includes("#view")) {
-		TraceOpt.Interface.NavigateFromHash();
+		Opts.Interface.NavigateFromHash();
 	}
 }

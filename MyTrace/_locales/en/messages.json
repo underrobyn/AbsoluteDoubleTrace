@@ -1,4 +1,8 @@
 {
+	"addon_lang":{
+		"message":"en",
+		"description":""
+	},
 	"addon_name":{
 		"message":"Trace - Online Tracking Protection",
 		"description":""
@@ -6,5 +10,163 @@
 	"addon_description":{
 		"message":"Browse online without leaving a Trace, because who wants to be tracked?",
 		"description":""
+	},
+
+
+	"advOverlayCtrlClose":{
+		"message":"Close",
+		"description":"button text for a trace overlay"
+	},
+
+	"advSettingsCtrlEnabled":{
+		"message":"Enabled",
+		"description":"setting enabled/disabled toggle"
+	},
+	"advSettingsCtrlDisabled":{
+		"message":"Disabled",
+		"description":"setting enabled/disabled toggle"
+	},
+
+
+	"mainNavProtection":{
+		"message":"Protection",
+		"description":""
+	},
+	"mainNavSiteList":{
+		"message":"Site List",
+		"description":""
+	},
+	"mainNavAdvanced":{
+		"message":"Advanced",
+		"description":""
+	},
+	"mainNavAbout":{
+		"message":"About",
+		"description":""
+	},
+
+	"mainTitleProtection":{
+		"message":"Trace Dashboard",
+		"description":""
+	},
+	"mainTitlePresets":{
+		"message":"Trace Protection Level",
+		"description":""
+	},
+	"mainTitleSiteList":{
+		"message":"Site List",
+		"description":""
+	},
+	"mainSubTitleProtection":{
+		"message":"Welcome to the new settings page",
+		"description":""
+	},
+	"mainSubTitlePresets":{
+		"message":"Global protection level for all websites",
+		"description":""
+	},
+  	"mainSubTitleSiteList":{
+		"message":"Set a custom protection level for a website",
+		"description":""
+  	},
+
+  	"mainCardTitleDisabled": {
+	  	"message":"No Protection",
+	  	"description":""
+	},
+  	"mainCardTitleWeb": {
+	  	"message":"Website Blocking",
+	  	"description":""
+	},
+  	"mainCardTitlePremium": {
+	  	"message":"Trace Premium",
+	  	"description":""
+	},
+  	"mainCardTitleLow": {
+	  	"message":"Minimum",
+	  	"description":""
+	},
+  	"mainCardTitleMedium": {
+	  	"message":"Standard",
+	  	"description":""
+	},
+  	"mainCardTitleHigh": {
+	  	"message":"High",
+	  	"description":""
+	},
+  	"mainCardTitleExtreme": {
+	  	"message":"Extreme",
+	  	"description":""
+	},
+
+  	"mainCardDescDisabled": {
+	  	"message":"All of Trace's protections will be disabled. When you restart your browser they will be turned back on.",
+	  	"description":""
+	},
+  	"mainCardDescWeb": {
+	  	"message":"This will enable Trace to block trackers, malicious domains and clean URLs of tracking information.",
+	  	"description":""
+	},
+  	"mainCardDescPremium": {
+	  	"message":"Get access to Premium blocklists and support Trace's development by buying Trace Premium.",
+	  	"description":""
+	},
+  	"mainCardDescLow": {
+	  	"message":"Lowest level of tracking protection.",
+	  	"description":""
+	},
+  	"mainCardDescMedium": {
+	  	"message":"Default level of tracking protection, includes all the protections from 'Minimum'.",
+	  	"description":""
+	},
+  	"mainCardDescHigh": {
+	  	"message":"A heightened level of tracking protection, includes all the protections from 'Minimum' and 'Standard'. Websites may break some times as a result of some protections here.",
+	  	"description":""
+	},
+  	"mainCardDescExtreme": {
+	  	"message":"The highest level of tracking protection Trace can offer. All protections are enabled which can cause websites to break, use of the Site List is advised.",
+	  	"description":""
+	},
+
+  	"mainCardCtrlDisabled": {
+	  	"message":"Activate",
+	  	"description":""
+	},
+  	"mainCardCtrlWeb": {
+	  	"message":"Configure",
+	  	"description":""
+	},
+  	"mainCardCtrlPremium": {
+	  	"message":"Options",
+	  	"description":""
+	},
+  	"mainCardCtrlLow": {
+	  	"message":"Select",
+	  	"description":""
+	},
+  	"mainCardCtrlMedium": {
+	  	"message":"Select",
+	  	"description":""
+	},
+  	"mainCardCtrlHigh": {
+	  	"message":"Select",
+	  	"description":""
+	},
+  	"mainCardCtrlExtreme": {
+	  	"message":"Select",
+	  	"description":""
+	},
+
+  	"mainSiteListSearchPlaceholder": {
+	  	"message":"Search...",
+	  	"description":""
+	},
+  	"mainSiteListAddPlaceholder": {
+	  	"message":"Add URL to list",
+	  	"description":""
+	},
+  	"mainSiteListSliderMedium": {
+	  	"message":"Current Setting: Medium",
+	  	"description":""
 	}
 }

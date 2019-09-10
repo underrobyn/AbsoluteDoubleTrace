@@ -274,7 +274,7 @@ var Prefs = {
 				},
 				"allowSameDomain":{
 					"enabled":true,
-					"fullUrl":true
+					"fullUrl":false
 				},
 				"allowThirdParty":{
 					"enabled":false,
@@ -465,7 +465,11 @@ var Prefs = {
 			"PremiumCode":""
 		},
 		"Main_Simple":{
-
+			"enabled":false,
+			"presets":{
+				"enabled":true,
+				"global":"medium"
+			}
 		},
 		"Main_ExecutionOrder":{
 			"AllPage":[
@@ -541,6 +545,7 @@ var Prefs = {
 				"Pref_IPSpoof",
 				"Main_Interface",
 				"Main_Trace",
+				"Main_Simple",
 				"Main_ExecutionOrder"
 			],
 			function(prefs){

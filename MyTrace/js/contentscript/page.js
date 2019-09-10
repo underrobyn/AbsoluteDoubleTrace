@@ -55,6 +55,11 @@ var TPage = {
 				update:parts[1],
 				protection:parts[2],
 				part:parts[3]
+			},function(reply){
+				if (chrome.runtime.lastError){
+					console.error(chrome.runtime.lastError);
+				}
+				if (reply) console.warn(reply);
 			});
 		}, false);
 	},

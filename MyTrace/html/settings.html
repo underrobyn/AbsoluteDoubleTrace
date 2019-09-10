@@ -18,17 +18,26 @@
 	<body>
 
 		<!--
-			Trace Version 2.3.8
+			Trace Version 2.3.9
 			By Jake Mcneill
 
 			Website:	https://absolutedouble.co.uk/
 			Github:		https://github.com/jake-cryptic/
 			Changelog: 	https://absolutedouble.co.uk/trace/information.html
 
-			Copyright AbsoluteDouble Trace 2018
+			Copyright AbsoluteDouble Trace 2018 - 2019
 		-->
 
 		<script src="../js/common/theme.js"></script>
+
+		<div id="overlay_message">
+			<div id="overlay_cont">
+				<span id="overlay_close">&times;</span>
+				<div id="drop_message">
+					<h1>Thanks for installing Trace!</h1>
+				</div>
+			</div>
+		</div>
 
 		<div id="e_msg" class="hidden">
 			<h2>Trace failed to load</h2>
@@ -36,10 +45,41 @@
 		</div>
 
 		<div id="ux" class="blurred">
-			<div id="main">
+			<nav id="main_nav"></nav>
+			<main id="simple">
+				<section id="protection" class="view">
+					<div class="sect_headers">
+						<h1 class="sect_title" id="protection_title"></h1>
+						<h2 class="sect_subtitle" id="protection_subtitle"></h2>
+					</div>
+					<div class="protection_cards">
+						<div class="protection_card card_optional" id="prot_disabled" data-card="pause"></div>
+						<div class="protection_card card_optional" id="prot_web" data-card="web"></div>
+						<div class="protection_card card_optional" id="prot_premium" data-card="premium"></div>
+					</div>
 
-
-			</div>
+					<div class="sect_headers">
+						<h1 class="sect_title" id="presets_title"></h1>
+						<h2 class="sect_subtitle" id="presets_subtitle"></h2>
+					</div>
+					<div class="protection_cards">
+						<div class="protection_card card_standard" id="prot_low" data-card="low"></div>
+						<div class="protection_card card_active" id="prot_med" data-card="medium"></div>
+						<div class="protection_card card_standard" id="prot_high" data-card="high"></div>
+						<div class="protection_card card_standard" id="prot_extreme" data-card="extreme"></div>
+					</div>
+				</section>
+				<section id="sites" class="view hidden">
+					<div class="sect_headers">
+						<h1 class="sect_title" id="sitelist_title"></h1>
+						<h2 class="sect_subtitle" id="sitelist_subtitle"></h2>
+					</div>
+					<div id="sites_search"></div>
+					<div id="sites_list">
+						<div id="sites_new" class="list_item"></div>
+					</div>
+				</section>
+			</main>
 		</div>
 		
 		<script src="../js/libraries/jquery.js"></script>

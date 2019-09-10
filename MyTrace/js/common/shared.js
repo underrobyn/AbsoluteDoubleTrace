@@ -25,6 +25,33 @@ if (!String.prototype.includes) {
 	};
 }
 
+// Polyfill: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/assign
+if (typeof Object.assign !== 'function') {
+	Object.defineProperty(Object,"assign",{
+		value:function assign(target, varArgs) {
+			if (target === null || target === undefined) {
+				throw new TypeError('Cannot convert undefined or null to object');
+			}
+
+			var to = Object(target);
+			for (var index = 1; index < arguments.length; index++) {
+				var nextSource = arguments[index];
+
+				if (nextSource !== null && nextSource !== undefined) {
+					for (var nextKey in nextSource) {
+						if (Object.prototype.hasOwnProperty.call(nextSource, nextKey)) {
+							to[nextKey] = nextSource[nextKey];
+						}
+					}
+				}
+			}
+			return to;
+		},
+		writable:true,
+		configurable:true
+	});
+}
+
 // Generate a random string of r length
 var makeRandomID = function(r){
 	for(var n="",t="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789",a=0;r > a;a++){
@@ -79,6 +106,7 @@ var extractRootDomain = function(url){
 // Trace whitelist template
 var ProtectionTemplate = function(defaults){
 	return {
+		PresetLevel:null,
 		SiteBlocked:false,
 		InitRequests:true,
 		Protections:{

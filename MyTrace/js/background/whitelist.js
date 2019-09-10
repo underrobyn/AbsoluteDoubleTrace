@@ -20,7 +20,11 @@ var Whitelist = {
 		"Pref_WebGLFingerprint":true
 	},
 
-	tempWhitelist:{},
+	tempWhitelist:{
+		"keys":[],
+		"values":[]
+	},
+	useTempWl:false,
 
 	storedWhitelist:{},
 	decodedWhitelist:{
@@ -87,6 +91,7 @@ var Whitelist = {
 			}
 
 			try {
+				// Repair protections object
 				if (typeof vals[i].Protections !== "object" || Object.keys(vals[i].Protections).length !== defKeys.length){
 					var repairedProts = vals[i].Protections;
 					for (var j = 0, k = defKeys.length;j<k;j++){
@@ -99,6 +104,13 @@ var Whitelist = {
 					Whitelist.storedWhitelist[keys[i]].Protections = repairedProts;
 					Whitelist.UpdateStorage();
 				}
+
+				// Add settings preset key if not exists
+				if (vals[i].PresetLevel === undefined){
+					vals[i].PresetLevel = null;
+					Whitelist.storedWhitelist[keys[i]].PresetLevel = null;
+					Whitelist.UpdateStorage();
+				}
 			} catch(e){
 				console.warn("Caught error");
 				console.error(e);
@@ -107,6 +119,7 @@ var Whitelist = {
 
 			decoded["values"].push(vals[i]);
 		}
+
 		Whitelist.decodedWhitelist = decoded;
 		Whitelist.wlEnabled = l !== 0;
 
@@ -169,7 +182,19 @@ var Whitelist = {
 		callback(Whitelist.storedWhitelist);
 	},
 	GetWhitelist:function(){
-		return Whitelist.decodedWhitelist;
+		if (!Whitelist.useTempWl) return Whitelist.decodedWhitelist;
+
+		// Merge temporary whitelist with main whitelist
+		return {
+			"keys":[].concat(
+				Whitelist.decodedWhitelist.keys,
+				Whitelist.tempWhitelist.keys
+			),
+			"values":[].concat(
+				Whitelist.decodedWhitelist.values,
+				Whitelist.tempWhitelist.values
+			)
+		};
 	},
 	EmptyList:function(){
 		Whitelist.storedWhitelist = {};
@@ -213,9 +238,10 @@ var Whitelist = {
 		return !!checkResult.Protections[protection];
 	},
 	DoCheck:function(url){
-		for (var i = 0, l = Whitelist.decodedWhitelist.keys.length;i<l;i++){
-			if (Whitelist.decodedWhitelist.keys[i].test(url)){
-				return Whitelist.decodedWhitelist.values[i];
+		var activeWl = Whitelist.GetWhitelist();
+		for (var i = 0, l = activeWl.keys.length;i<l;i++){
+			if (activeWl.keys[i].test(url)){
+				return activeWl.values[i];
 			}
 		}
 		return false;
