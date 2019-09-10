@@ -1,20 +1,26 @@
 /*
  * 	Trace blocked page script
- * 	Copyright AbsoluteDouble 2018
+ * 	Copyright AbsoluteDouble 2018 - 2019
  * 	Written by Jake Mcneill
  * 	https://absolutedouble.co.uk/
  */
 
-var TraceBlock = {
+// Get message for language
+var lang = function(msg){
+	if (!chrome.i18n) return "";
+	return chrome.i18n.getMessage(msg);
+};
+
+var tBlock = {
 	blockedURL:"",
 	blockReason:0,
 	whitelistData:{},
 	init:function(){
-		TraceBlock.Auth.Init();
-		TraceBlock.assignButtonEvents();
-		TraceBlock.getPageDetails();
-		TraceBlock.setBasicContent();
-		TraceBlock.setWhitelistOptions();
+		tBlock.Auth.Init();
+		tBlock.assignButtonEvents();
+		tBlock.getPageDetails();
+		tBlock.setBasicContent();
+		tBlock.setWhitelistOptions();
 
 		if (/Firefox/.test(navigator.userAgent)){
 			$("body").css("font-size","0.8em");
@@ -25,15 +31,15 @@ var TraceBlock = {
 		Init:function(){
 			if ('BroadcastChannel' in self) {
 				// Start Authentication Channel
-				TraceBlock.Auth.Channel = new BroadcastChannel('TraceAuth');
+				tBlock.Auth.Channel = new BroadcastChannel('TraceAuth');
 			}
 
 			return true;
 		},
 		SafePost:function(data){
 			if ('BroadcastChannel' in self) {
-				if (typeof TraceBlock.Auth.Channel !== null){
-					TraceBlock.Auth.Channel.postMessage(data);
+				if (typeof tBlock.Auth.Channel !== null){
+					tBlock.Auth.Channel.postMessage(data);
 				}
 			}
 		}
@@ -58,15 +64,15 @@ var TraceBlock = {
 		if (window.location.hash.includes("u;")){
 			var u = window.location.hash.split(";")[1];
 			var t = u.split("&");
-			TraceBlock.blockedURL = atob(t[0]);
-			TraceBlock.blockReason = t[1];
+			tBlock.blockedURL = atob(t[0]);
+			tBlock.blockReason = t[1];
 		} else {
-			TraceBlock.blockedURL = null;
+			tBlock.blockedURL = null;
 		}
 	},
 	setBasicContent:function(){
 		var u = $("#url"), r = $("#reason");
-		if (TraceBlock.blockedURL === null){
+		if (tBlock.blockedURL === null){
 			u.text("No information was provided");
 			r.empty();
 			return;
@@ -81,21 +87,21 @@ var TraceBlock = {
 			5:"Blocked because file matched blacklisted files",
 			"undefined":"No reason set"
 		};
-		u.text(TraceBlock.blockedURL);
-		r.text(types[TraceBlock.blockReason]);
+		u.text(tBlock.blockedURL);
+		r.text(types[tBlock.blockReason]);
 	},
 	setWhitelistOptions:function(){
-		if (TraceBlock.blockedURL === null) return;
+		if (tBlock.blockedURL === null) return;
 
-		var url = new URL(TraceBlock.blockedURL);
-		TraceBlock.whitelistData["origin"] = url.origin + "/*";
-		TraceBlock.whitelistData["path"] = "*" + url + "*";
-		TraceBlock.whitelistData["host"] = "*" + extractHostname(TraceBlock.blockedURL) + "*";
-		TraceBlock.whitelistData["root"] = "*" + extractRootDomain(TraceBlock.blockedURL) + "*";
+		var url = new URL(tBlock.blockedURL);
+		tBlock.whitelistData["origin"] = url.origin + "/*";
+		tBlock.whitelistData["path"] = "*" + url + "*";
+		tBlock.whitelistData["host"] = "*" + extractHostname(tBlock.blockedURL) + "*";
+		tBlock.whitelistData["root"] = "*" + extractRootDomain(tBlock.blockedURL) + "*";
 
 		var el = $("#whitelist_opts");
 
-		if (typeof TraceBlock.whitelistData["origin"] === "string"){
+		if (typeof tBlock.whitelistData["origin"] === "string"){
 			el.append(
 				$("<label/>",{"for":"url_origin"}).text("Unblock the Origin URL: "),
 				$("<form/>").append(
@@ -104,13 +110,13 @@ var TraceBlock = {
 						"name":"url_origin",
 						"id":"url_origin",
 						"placeholder":"Origin URL",
-						"value":TraceBlock.whitelistData["origin"]
+						"value":tBlock.whitelistData["origin"]
 					}),
-					$("<button/>").text("Apply").on("click enter",function(){TraceBlock.whitelistURL("origin");}),$("<br />")
+					$("<button/>").text("Apply").on("click enter",function(){tBlock.whitelistURL("origin");}),$("<br />")
 				)
 			);
 		}
-		if (typeof TraceBlock.whitelistData["path"] === "string" && TraceBlock.whitelistData["path"] !== "*/*" && TraceBlock.whitelistData["path"].split("/").length > 4){
+		if (typeof tBlock.whitelistData["path"] === "string" && tBlock.whitelistData["path"] !== "*/*" && tBlock.whitelistData["path"].split("/").length > 4){
 			el.append(
 				$("<label/>",{"for":"url_path"}).text("Unblock the URL path: "),
 				$("<form/>").append(
@@ -119,13 +125,13 @@ var TraceBlock = {
 						"name":"url_path",
 						"id":"url_path",
 						"placeholder":"URL pathname",
-						"value":TraceBlock.whitelistData["path"]
+						"value":tBlock.whitelistData["path"]
 					}),
-					$("<button/>").text("Apply").on("click enter",function(){TraceBlock.whitelistURL("path");}),$("<br />")
+					$("<button/>").text("Apply").on("click enter",function(){tBlock.whitelistURL("path");}),$("<br />")
 				)
 			);
 		}
-		if (typeof TraceBlock.whitelistData["host"] === "string" && TraceBlock.whitelistData.host !== TraceBlock.whitelistData.root){
+		if (typeof tBlock.whitelistData["host"] === "string" && tBlock.whitelistData.host !== tBlock.whitelistData.root){
 			el.append(
 				$("<label/>",{"for":"url_host"}).text("Unblock the Host URL: "),
 				$("<form/>").append(
@@ -134,13 +140,13 @@ var TraceBlock = {
 						"name":"url_host",
 						"id":"url_host",
 						"placeholder":"Hostname",
-						"value":TraceBlock.whitelistData["host"]
+						"value":tBlock.whitelistData["host"]
 					}),
-					$("<button/>").text("Apply").on("click enter",function(){TraceBlock.whitelistURL("host");}),$("<br />")
+					$("<button/>").text("Apply").on("click enter",function(){tBlock.whitelistURL("host");}),$("<br />")
 				)
 			);
 		}
-		if (typeof TraceBlock.whitelistData["root"] === "string"){
+		if (typeof tBlock.whitelistData["root"] === "string"){
 			el.append(
 				$("<label/>",{"for":"url_root"}).text("Unblock the Root Domain: "),
 				$("<form/>").append(
@@ -149,27 +155,22 @@ var TraceBlock = {
 						"name":"url_root",
 						"id":"url_root",
 						"placeholder":"Root Domain Name",
-						"value":TraceBlock.whitelistData["root"]
+						"value":tBlock.whitelistData["root"]
 					}),
-					$("<button/>").text("Apply").on("click enter",function(){TraceBlock.whitelistURL("root");})
+					$("<button/>").text("Apply").on("click enter",function(){tBlock.whitelistURL("root");})
 				)
 			);
 		}
 	},
 	whitelistURL:function(type){
-		var url = TraceBlock.whitelistData[type], result;
-
-		result = confirm("Are you sure you wish to allow access to:\n"+url);
-		if (result !== true){
-			return;
-		}
+		var url = tBlock.whitelistData[type];
 
 		chrome.runtime.getBackgroundPage(function(bg){
 			bg.Whitelist.AddItem(url,ProtectionTemplate(false),function(){
-				TraceBlock.Auth.SafePost({action:"ReloadWhitelist"});
-				window.location.href = TraceBlock.blockedURL;
+				tBlock.Auth.SafePost({action:"ReloadWhitelist"});
+				window.location.href = tBlock.blockedURL;
 			});
 		});
 	}
 };
-TraceBlock.init();
+tBlock.init();

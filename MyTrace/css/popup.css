@@ -38,7 +38,7 @@ body {
 	transition:background-color 0.2s ease-in-out;
 }
 #home_title div{
-	width:100%;
+	width:50%;
 	float:left;
 	cursor:pointer;
 	user-select: none;
@@ -218,6 +218,7 @@ a{
 	width:98%;
 }
 .section_toggle{
+	box-sizing:border-box;
 	width:25%;
 	height:11vh;
 	line-height:11vh;
@@ -247,7 +248,7 @@ a{
 		width:350px;
 	}
 	#ux{
-		width:61%;
+		width:100%;
 		font-size:0.9em;
 	}
 }

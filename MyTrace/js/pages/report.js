@@ -111,6 +111,8 @@ var TPop = {
 
 			if (!TPop.wlData.currentOpenURL){
 				TPop.wlData.currentOpenURL = false;
+			} else {
+				TPop.updateUrlInfo();
 			}
 
 			// Make sure its a URL we are allowed to interact with and that the URL object can decode
@@ -119,6 +121,17 @@ var TPop = {
 			}
 		});
 	},
+
+	updateUrlInfo:function(){
+		if (typeof TPop.wlData.currentOpenURL !== "string") return;
+
+		var url = new URL(TPop.wlData.currentOpenURL);
+		TPop.wlData["origin"] = url.origin + "/*";
+		TPop.wlData["path"] = "*" + url + "*";
+		TPop.wlData["host"] = "*" + extractHostname(TPop.wlData.currentOpenURL) + "*";
+		TPop.wlData["root"] = "*" + extractRootDomain(TPop.wlData.currentOpenURL) + "*";
+	},
+
 	updatePauseState:function(uiOnly){
 		uiOnly = uiOnly || false;
 		chrome.runtime.getBackgroundPage(function(bg){
@@ -135,6 +148,31 @@ var TPop = {
 			}
 
 			$("#pause_trace").text(newState === true ? "Unpause Trace" : "Pause Trace");
+		});
+	},
+	updateTempWlState:function(uiOnly){
+		uiOnly = uiOnly || false;
+		chrome.runtime.getBackgroundPage(function(bg){
+			var tempCheck = TPop.wlData["root"];
+			var state = bg.Whitelist.tempWhitelist.search.indexOf(tempCheck) !== -1;
+			var newState = state;
+
+			if (!uiOnly){
+				newState = !state;
+				if (state === true){
+					bg.Whitelist.RemoveTempItem(tempCheck,function(){
+						console.log("Removed %s from temp whitelist",tempCheck);
+					});
+				} else {
+					bg.Whitelist.AddTempItem(tempCheck,function(){
+						console.log("Added %s to temp whitelist",tempCheck);
+					});
+				}
+			} else {
+				console.log("Is %s in temp whitelist? %s",tempCheck,state);
+			}
+
+			$("#temp_whitelist").text(newState === true ? "Unwhitelist" : "Temporarily Whitelist");
 		});
 	},
 
@@ -177,7 +215,7 @@ var TPop = {
 					"id":"home_title"
 				}).append(
 					$("<div/>",{"id":"pause_trace"}).text("Pause Trace"),
-					$("<div/>",{"id":"temp_whitelist"}).text("Temporarily Whitelist").css("display","none")
+					$("<div/>",{"id":"temp_whitelist"}).text("Temporarily Whitelist")
 				)
 			);
 
@@ -226,11 +264,15 @@ var TPop = {
 			// Update HTML
 			$("#current_section").empty().append(el);
 
-			// Keep this as a function otherwise it will pass event info
+			// Keep these as a function otherwise it will pass event info
 			$("#pause_trace").on("click enter",function(){
 				TPop.updatePauseState(false);
 			});
+			$("#temp_whitelist").on("click enter",function(){
+				TPop.updateTempWlState(false);
+			});
 			TPop.updatePauseState(true);
+			TPop.updateTempWlState(true);
 
 			$(".home_sect_t").on("click enter",function(){
 				$($(this).data("opens")).toggle();
@@ -535,12 +577,6 @@ var TPop = {
 			$("#s_prot_initreqs").attr("checked",currData.InitRequests);
 		},
 		createOpts:function(){
-			var url = new URL(TPop.wlData.currentOpenURL);
-			TPop.wlData["origin"] = url.origin + "/*";
-			TPop.wlData["path"] = "*" + url + "*";
-			TPop.wlData["host"] = "*" + extractHostname(TPop.wlData.currentOpenURL) + "*";
-			TPop.wlData["root"] = "*" + extractRootDomain(TPop.wlData.currentOpenURL) + "*";
-
 			var el = $("#page_form");
 
 			if (typeof TPop.wlData["origin"] === "string"){
@@ -623,12 +659,7 @@ var TPop = {
 			});
 		},
 		addNewEntry:function(type,callback){
-			var url = TPop.wlData[type], result;
-
-			result = confirm("Are you sure you wish to add the following item to the whitelist:\n"+url);
-			if (result !== true){
-				return;
-			}
+			var url = TPop.wlData[type];
 
 			chrome.runtime.getBackgroundPage(function(bg){
 				bg.Whitelist.AddItem(url,ProtectionTemplate(false),callback);

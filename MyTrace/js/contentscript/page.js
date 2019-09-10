@@ -71,8 +71,6 @@ var TPage = {
 
 	/* Load information about settings from extension storage */
 	init:function(data){
-		console.log(data);
-
 		if (data.tracePaused === true){
 			console.log("%c Trace Paused.",TPage.css);
 			return;
@@ -813,7 +811,7 @@ var TPage = {
 			wrtcRtpReceiver:{enabled:TPage.Prefs.BlockWebRTC.wrtcRtpReceiver.enabled}
 		};
 
-		// If nothing is enabled just don't run the protection
+		// If nothing is enabled don't inject the protection code
 		if (opts["wrtcPeerConnection"]["enabled"] !== true && opts["wrtcDataChannel"]["enabled"] !== true && opts["wrtcRtpReceiver"]["enabled"] !== true){
 			return;
 		}

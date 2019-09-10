@@ -245,8 +245,8 @@ a.dark{
 	background-color:rgba(0,0,0,0.35);
 }
 .sect_cont, .sect_cont_semipad{
-	padding:1.5% 2%;
-	width:96%;
+	padding:1% 1%;
+	width:98%;
 	font-size:1.8em;
 }
 .sect_cont_nopad,.sect_largetext{

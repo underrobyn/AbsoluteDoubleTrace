@@ -21,6 +21,7 @@ var Whitelist = {
 	},
 
 	tempWhitelist:{
+		"search":[],
 		"keys":[],
 		"values":[]
 	},
@@ -212,12 +213,45 @@ var Whitelist = {
 		var newSafeObject = JSON.parse(JSON.stringify(newObject));
 
 		Whitelist.storedWhitelist[item] = newSafeObject;
-		//Whitelist.storedWhitelist[item] = newObject;
 		Whitelist.SaveWhitelist(cb);
 	},
 	RemoveItem:function(item,cb){
 		delete Whitelist.storedWhitelist[item];
 		if (cb) Whitelist.SaveWhitelist(cb);
+	},
+	AddTempItem:function(item,cb){
+		if (typeof item !== "string" || item.length < 2){
+			return "Invalid entry";
+		}
+
+		var template = new ProtectionTemplate(false);
+		template.tempEntry = true;
+
+		// Update temp whitelist
+		Whitelist.tempWhitelist.search.push(item);
+		Whitelist.tempWhitelist.keys.push(Utils.wildcardToRegExp(item));
+		Whitelist.tempWhitelist.values.push(template);
+
+		// Allow Trace to see temp whitelist
+		Whitelist.useTempWl = true;
+
+		if (Trace.DEBUG) console.log("[tmpwd]-> Added %s to the temporary whitelist",item);
+		if (cb) cb();
+	},
+	RemoveTempItem:function(item,cb){
+		var index = Whitelist.tempWhitelist.search.indexOf(item);
+
+		if (index === -1) return;
+
+		Whitelist.tempWhitelist.search.splice(index,1);
+		Whitelist.tempWhitelist.keys.splice(index,1);
+		Whitelist.tempWhitelist.values.splice(index,1);
+
+		console.log(Whitelist.tempWhitelist.keys.length);
+		Whitelist.useTempWl = Whitelist.tempWhitelist.keys.length !== 0;
+
+		if (Trace.DEBUG) console.log("[tmpwd]-> Removed %s from the temporary whitelist",item);
+		if (cb) cb();
 	},
 	CheckWhitelist:function(url,protection){
 		// Check if protection can run on all pages

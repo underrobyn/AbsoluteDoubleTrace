@@ -19,42 +19,36 @@ var Trace = {
 		try {
 			chrome.notifications.create("notification",opts);
 		} catch(e){
-			console.log("Looks like notifications aren't actually allowed at a browser level.");
+			console.warn("Looks like notifications aren't actually allowed at a browser level.");
 		}
 	},
 
 	// Chrome runtime functions
 	a:{
 		AssignRuntime:function(){
+			// Set uninstall URL
 			var uninstallUrl = "https://absolutedouble.co.uk/trace/extension-uninstall?e=";
+			var storage_type = (!window.chrome.storage.sync ? window.chrome.storage.local : window.chrome.storage.sync);
 
-			if (/Chrome/.test(navigator.userAgent)) {
-				chrome.runtime.onSuspend.addListener(Trace.a.SuspendSave);
+			storage_type.get('userid',function(items) {
 
-				// Set uninstall URL
-				var storage_type = (!window.chrome.storage.sync ? window.chrome.storage.local : window.chrome.storage.sync);
-				storage_type.get('userid',function(items) {
+				if (typeof items === "undefined" || !items.hasOwnProperty("userid")) {
+					items = {'userid': "Unknown"};
+				}
 
-					if (typeof items === "undefined" || !items.hasOwnProperty("userid")) {
-						items = {'userid': "Unknown"};
-					}
+				// We pass the users error reporting ID so that their data can be purged from the error reporting database
+				var usr = items.userid;
+				uninstallUrl = uninstallUrl + usr;
 
-					// We pass the users error reporting ID so that their data can be purged from the error reporting database
-					var usr = items.userid;
-					uninstallUrl = uninstallUrl + usr;
-
-					try {
-						chrome.runtime.setUninstallURL(uninstallUrl,function(){
-							if (Trace.DEBUG) console.log("[mangd]-> Set uninstall URL");
-						});
-					} catch(e){
-						chrome.runtime.setUninstallURL(uninstallUrl);
-						if (Trace.DEBUG) console.log("[mangd]-> Set uninstall URL using method 2");
-					}
-				});
-			} else {
-				chrome.runtime.setUninstallURL(uninstallUrl);
-			}
+				try {
+					chrome.runtime.setUninstallURL(uninstallUrl,function(){
+						if (Trace.DEBUG) console.log("[mangd]-> Set uninstall URL");
+					});
+				} catch(e){
+					chrome.runtime.setUninstallURL(uninstallUrl);
+					if (Trace.DEBUG) console.log("[mangd]-> Set uninstall URL using method 2");
+				}
+			});
 		},
 		NewInstall:function(details){
 			// If this is a new install, open welcome page and set default settings
@@ -66,11 +60,6 @@ var Trace = {
 				chrome.tabs.create({url:"/html/options.html#v2installed"});
 			} else if (details.reason && details.reason === "update") {
 				if (Trace.DEBUG) console.info("[mangd]-> Updated from: " + details.previousVersion);
-			}
-		},
-		SuspendSave:function(){
-			if (Prefs.Current.Main_Trace.ProtectionStats.enabled === true){
-				Stats.SaveStats();
 			}
 		},
 		ContentTalk:function(request, sender, sendResponse){
@@ -89,7 +78,7 @@ var Trace = {
 					break;
 				case "checkList":
 					// See if the whitelist can sort this one out for us
-					if (Whitelist.wlEnabled === true){
+					if (Whitelist.wlEnabled === true || Whitelist.useTempWl === true){
 						var reqUrl = request.url;
 
 						var wl = Whitelist.GetWhitelist();

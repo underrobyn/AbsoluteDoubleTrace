@@ -744,7 +744,7 @@ var Opts = {
 						$("<button/>").on("click enter",function(){
 							var win = window.open("https://absolutedouble.co.uk/trace/premium", "_blank");
 							if (win !== null) win.focus();
-						}).text("Get Premium Code"),
+						}).text(lang("advPremiumCtrlBuy")),
 						$("<span/>").text(" "),
 						$("<button/>").on("click enter",function(){
 							var win = window.open("https://absolutedouble.co.uk/trace/", "_blank");
@@ -755,9 +755,9 @@ var Opts = {
 				}
 
 				$("#premium_status,#info_premium_status").empty().append(
-					$("<span/>").text("Thank you for supporting Trace!"),
+					$("<span/>").text(lang("advPremiumMsgThanks")),
 					$("<br/>"),$("<br/>"),
-					$("<button/>").text("Disable Premium").click(Opts.Premium.RemoveCode),
+					$("<button/>").text(lang("advPremiumCtrlDisable")).click(Opts.Premium.RemoveCode),
 					$("<span/>").text(" "),
 					$("<button/>").text(
 						(bg.Prefs.Current.Pref_WebController.enabled === true ? "Force Blocklist Update" : "Enable Web Request Controller")
@@ -812,7 +812,7 @@ var Opts = {
 
 			var uTimeOut = function(t){
 				$("#drop_message").empty().append(
-					$("<h1/>").text("Trace Premium"),
+					$("<h1/>").text(lang("advPremiumMsgTitle")),
 					$("<h2/>").text("Please wait " + t + " minutes to try again." + (t === "10" ? " Might want to make a cup of tea to pass the time." : "")),
 					$("<span/>").text("The timer resets every time you re-enter this popup, wait " + t + " minutes before trying again."),$("<br />"),$("<br />"),
 					$("<button/>",{"title":"I need help"}).text("Help").click(Opts.Premium.HelpDialog),
@@ -834,8 +834,8 @@ var Opts = {
 			}
 
 			$("#drop_message").empty().append(
-				$("<h1/>").text("Trace Premium"),
-				$("<h2/>").text("Thanks for supporting Trace!"),
+				$("<h1/>").text(lang("advPremiumMsgTitle")),
+				$("<h2/>").text(lang("advPremiumMsgThanks")),
 				$("<input/>",{
 					"placeholder":"Premium Code",
 					"id":"premium_code_box",
@@ -852,7 +852,7 @@ var Opts = {
 		},
 		HelpDialog:function(){
 			$("#drop_message").empty().append(
-				$("<h1/>").text("Trace Premium Help"),
+				$("<h1/>").text(lang("advPremiumMsgHelp")),
 				$("<h2/>").text("If you don't find what you're looking for here, please email me"),
 				$("<div/>",{"class":"textscrollable"}).append(
 					$("<ul/>").append(
@@ -1795,7 +1795,7 @@ var Opts = {
 				var today = dataset[Object.keys(dataset)[Object.keys(dataset).length-1]];
 				if (cBreakDown === "type"){
 					var colors = Opts.Stats.GraphColors(4);
-					rData["title"] = "Today's statistics by type";
+					rData["title"] = lang("advStatsGraphTodayType");
 					rData["labels"] = ["Content","Media","Code","Other"];
 					rData["data"] = [{
 						data:[today.webpage,today.media,today.code,today.other],
@@ -1805,7 +1805,7 @@ var Opts = {
 					}];
 				} else {
 					var colors = Opts.Stats.GraphColors("rand");
-					rData["title"] = "Today's total statistics";
+					rData["title"] = lang("advStatsGraphTodayTotal");
 					rData["labels"] = ["Total requests blocked"];
 					rData["data"] = [{
 						data:[today.webpage+today.media+today.code+today.other],
@@ -3336,7 +3336,7 @@ var Opts = {
 
 			if (!Opts.Blocklist.isPremium){
 				$("#drop_message").empty().append(
-					$("<h1/>").text("This setting requires premium")
+					$("<h1/>").text(lang("advPremiumMsgRequired"))
 				);
 				Opts.AssignCloseOverlay(true);
 				return;

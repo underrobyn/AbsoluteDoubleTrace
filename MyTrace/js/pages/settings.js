@@ -247,4 +247,4 @@ var sTrace = {
 
 };
 
-//sTrace.start();
+sTrace.start();

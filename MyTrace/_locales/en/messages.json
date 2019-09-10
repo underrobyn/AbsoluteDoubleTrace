@@ -18,6 +18,31 @@
 		"description":"button text for a trace overlay"
 	},
 
+	"advPremiumCtrlBuy":{
+		"message":"Get Premium Code",
+		"description":"button text for premium purchase"
+	},
+	"advPremiumCtrlDisable":{
+		"message":"Disable Premium",
+		"description":"button text for premium removal"
+	},
+	"advPremiumMsgHelp":{
+		"message":"Trace Premium Help",
+		"description":"content text title for premium help messages"
+	},
+	"advPremiumMsgTitle":{
+		"message":"Trace Premium",
+		"description":"content text title for premium messages"
+	},
+	"advPremiumMsgThanks":{
+		"message":"Thank you for supporting Trace!",
+		"description":"content text for when user has premium active"
+	},
+	"advPremiumMsgRequired":{
+		"message":"This setting requires premium",
+		"description":"content text for when user does not have premium"
+	},
+	
 	"advSettingsCtrlEnabled":{
 		"message":"Enabled",
 		"description":"setting enabled/disabled toggle"
@@ -25,6 +50,15 @@
 	"advSettingsCtrlDisabled":{
 		"message":"Disabled",
 		"description":"setting enabled/disabled toggle"
+	},
+
+	"advStatsGraphTodayTotal":{
+		"message":"Today's total statistics",
+		"description":"title of graph"
+	},
+	"advStatsGraphTodayType":{
+		"message":"Today's total statistics",
+		"description":"title of graph"
 	},
 
 
