@@ -147,7 +147,7 @@ var TPop = {
 				console.log("Pause state: "+newState);
 			}
 
-			$("#pause_trace").text(newState === true ? "Unpause Trace" : "Pause Trace");
+			$("#pause_trace").text(newState === true ? lang("popNavCtrlUnpause") : lang("popNavCtrlPause"));
 		});
 	},
 	updateTempWlState:function(uiOnly){
@@ -172,7 +172,7 @@ var TPop = {
 				console.log("Is %s in temp whitelist? %s",tempCheck,state);
 			}
 
-			$("#temp_whitelist").text(newState === true ? "Unwhitelist" : "Temporarily Whitelist");
+			$("#temp_whitelist").text(newState === true ? lang("popNavCtrlUnwhitelist") : lang("popNavCtrlWhitelist"));
 		});
 	},
 
@@ -214,8 +214,8 @@ var TPop = {
 				$("<div/>",{
 					"id":"home_title"
 				}).append(
-					$("<div/>",{"id":"pause_trace"}).text("Pause Trace"),
-					$("<div/>",{"id":"temp_whitelist"}).text("Temporarily Whitelist")
+					$("<div/>",{"id":"pause_trace"}).text(lang("popNavCtrlPause")),
+					$("<div/>",{"id":"temp_whitelist"}).text(lang("popNavCtrlWhitelist"))
 				)
 			);
 
@@ -256,8 +256,8 @@ var TPop = {
 			}
 
 			var msg = "Headers (" + hTotal + " modified)";
-			if (hTot === 0) msg = "No Header Protections Enabled";
-			if (hTotal === 0) msg = "No Header Protections Used In This Tab";
+			if (hTot === 0) msg = lang("popHomeMsgNoHeaderEnabled");
+			if (hTotal === 0) msg = lang("popHomeMsgNoHeaderUsed");
 
 			el.append($("<div/>",{"class":"home_sect_t","id":"home_headers_title","data-opens":"#home_data_headers"}).text(msg),hEl);
 
@@ -307,8 +307,8 @@ var TPop = {
 			}
 
 			var msg = "Headers (" + hTotal + " modified)";
-			if (hTot === 0) msg = "No Header Protections Enabled";
-			if (hTotal === 0) msg = "No Header Protections Used In This Tab";
+			if (hTot === 0) msg = lang("popHomeMsgNoHeaderEnabled");
+			if (hTotal === 0) msg = lang("popHomeMsgNoHeaderUsed");
 			$("#home_headers_title").text(msg);
 			//TPop.createUriList(data,tab);
 		},
@@ -343,7 +343,7 @@ var TPop = {
 
 		if (TPop.wlData.currentOpenURL === false){
 			$("#page_form").empty().append(
-				$("<h1/>").text("Unsupported URL"),
+				$("<h1/>").text(lang("popMiscMsgUnsupported")),
 				$("<span/>").text("You can only send reports about pages that are http or https")
 			);
 		} else {
@@ -354,7 +354,9 @@ var TPop = {
 		var user_text = $("#user_message").val();
 		var rep_msg = $("#report_msg");
 		if (!navigator.onLine){
-			rep_msg.html("<h2>No internet connection found</h2>");
+			rep_msg.empty().append(
+				$("<h2/>").text(lang("miscMsgOffline"))
+			);
 			return;
 		}
 
@@ -388,16 +390,20 @@ var TPop = {
 			},
 			error:function(e){
 				$("#send_report").text("Send Report").prop("disabled","false");
-				if (!navigator.onLine){
-					rep_msg.html("<h2>No internet connection found</h2>");
-				} else {
-					if (e.status === 0){
-						rep_msg.html("<h2>Report Sending Failed</h2><h3>Unable to establish a connection to the server</h3>");
-						return;
-					}
-					rep_msg.html("<h2>Report Sending Failed<br />Error Code: " + e.status + "</h2>");
-					console.log(e);
+				if (!navigator.onLine) {
+					rep_msg.empty().append(
+						$("<h2/>").text(lang("miscMsgOffline"))
+					);
+					return;
 				}
+
+				if (e.status === 0){
+					rep_msg.html("<h2>Report Sending Failed</h2><h3>Unable to establish a connection to the server</h3>");
+					return;
+				}
+				rep_msg.html("<h2>Report Sending Failed<br />Error Code: " + e.status + "</h2>");
+				console.log(e);
+
 			}
 		});
 	},
@@ -429,7 +435,7 @@ var TPop = {
 
 			if (TPop.wlData.currentOpenURL === false || TPop.wlData.currentOpenURL === null){
 				$("#page_form").empty().append(
-					$("<h1/>").text("Unsupported URL"),
+					$("<h1/>").text(lang("popMiscMsgUnsupported")),
 					$("<span/>").text("You can only whitelist pages that are http or https")
 				);
 				return;
@@ -487,7 +493,7 @@ var TPop = {
 							$("<span/>",{"class":"ccheck"})
 						)
 					),
-					$("<div/>",{"id":"whitelist_prots_list"}).append($("<h1/>").text("Loading...")),
+					$("<div/>",{"id":"whitelist_prots_list"}).append($("<h1/>").text(lang("miscMsgLoading"))),
 					$("<button/>",{"id":"whitelist_save"}).text("Save Entry").on("click enter",TPop.scope.updateEntry),
 					$("<button/>",{"id":"whitelist_rmdomain"}).text("Remove Entry").on("click enter",TPop.scope.removeEntry),
 					$("<button/>",{"id":"whitelist_goto"}).text("Open Whitelist").on("click enter",TPop.gotoWhitelist)
@@ -565,7 +571,6 @@ var TPop = {
 
 			if (typeof currData.Protections === "undefined"){
 				console.error(currData);
-				console.error(currData);
 				alert("Error with Scope entry.");
 			}
 
@@ -581,7 +586,7 @@ var TPop = {
 
 			if (typeof TPop.wlData["origin"] === "string"){
 				el.append(
-					$("<label/>",{"for":"url_origin"}).text("Unblock the Origin URL: "),
+					$("<label/>",{"for":"url_origin"}).text(lang("miscMsgUnblockOrigin")),
 					$("<form/>").append(
 						$("<input/>",{
 							"type":"text",
@@ -591,13 +596,13 @@ var TPop = {
 							"readonly":true,
 							"value":TPop.wlData["origin"]
 						}),
-						$("<button/>",{"data-type":"origin"}).text("Apply").on("click enter",TPop.scope.submitEntry),$("<br />")
+						$("<button/>",{"data-type":"origin"}).text(lang("miscCtrlApplyEntry")).on("click enter",TPop.scope.submitEntry),$("<br />")
 					)
 				);
 			}
 			if (typeof TPop.wlData["path"] === "string" && TPop.wlData["path"] !== "*/*" && TPop.wlData["path"].split("/").length > 4){
 				el.append(
-					$("<label/>",{"for":"url_path"}).text("Unblock the URL path: "),
+					$("<label/>",{"for":"url_path"}).text(lang("miscMsgUnblockPath")),
 					$("<form/>").append(
 						$("<input/>",{
 							"type":"text",
@@ -607,13 +612,13 @@ var TPop = {
 							"readonly":true,
 							"value":TPop.wlData["path"]
 						}),
-						$("<button/>",{"data-type":"path"}).text("Apply").on("click enter",TPop.scope.submitEntry),$("<br />")
+						$("<button/>",{"data-type":"path"}).text(lang("miscCtrlApplyEntry")).on("click enter",TPop.scope.submitEntry),$("<br />")
 					)
 				);
 			}
 			if (typeof TPop.wlData["host"] === "string" && TPop.wlData.host !== TPop.wlData.root){
 				el.append(
-					$("<label/>",{"for":"url_host"}).text("Unblock the Host URL: "),
+					$("<label/>",{"for":"url_host"}).text(lang("miscMsgUnblockHost")),
 					$("<form/>").append(
 						$("<input/>",{
 							"type":"text",
@@ -623,13 +628,13 @@ var TPop = {
 							"readonly":true,
 							"value":TPop.wlData["host"]
 						}),
-						$("<button/>",{"data-type":"host"}).text("Apply").on("click enter",TPop.scope.submitEntry),$("<br />")
+						$("<button/>",{"data-type":"host"}).text(lang("miscCtrlApplyEntry")).on("click enter",TPop.scope.submitEntry),$("<br />")
 					)
 				);
 			}
 			if (typeof TPop.wlData["root"] === "string"){
 				el.append(
-					$("<label/>",{"for":"url_root"}).text("Unblock the Root Domain: "),
+					$("<label/>",{"for":"url_root"}).text(lang("miscMsgUnblockRoot")),
 					$("<form/>").append(
 						$("<input/>",{
 							"type":"text",
@@ -639,7 +644,7 @@ var TPop = {
 							"readonly":true,
 							"value":TPop.wlData["root"]
 						}),
-						$("<button/>",{"data-type":"root"}).text("Apply").on("click enter",TPop.scope.submitEntry),$("<br />")
+						$("<button/>",{"data-type":"root"}).text(lang("miscCtrlApplyEntry")).on("click enter",TPop.scope.submitEntry),$("<br />")
 					)
 				);
 			}

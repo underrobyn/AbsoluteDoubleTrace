@@ -8,7 +8,6 @@
 // A general fix for browser that use window.browser instead of window.chrome
 if (typeof window.chrome === "undefined" || !window.chrome.hasOwnProperty("extension")) window.chrome = (function (){ return window.msBrowser || window.browser || window.chrome; })();
 
-
 var TLoaded = {
 	debug:2,
 
@@ -16,7 +15,7 @@ var TLoaded = {
 	css:"font-size:1em;line-height:1.5em;color:#1a1a1a;background-color:#fff;border:.1em solid #00af00;",
 
 	init:function(data){
-		console.log("%c [TracePage]Page loaded ",TLoaded.css);
+		console.log("%c [TracePage] Page loaded ",TLoaded.css);
 
 		TLoaded.protections = data;
 

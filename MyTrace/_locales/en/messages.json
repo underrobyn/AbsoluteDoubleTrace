@@ -13,6 +13,36 @@
 	},
 
 
+	"miscMsgOffline":{
+		"message":"No internet connection available",
+		"description":""
+	},
+	"miscMsgLoading":{
+		"message":"Loading...",
+		"description":""
+	},
+	"miscMsgUnblockOrigin":{
+		"message":"Unblock the Origin URL: ",
+		"description":""
+	},
+	"miscMsgUnblockPath":{
+		"message":"Unblock the URL path: ",
+		"description":""
+	},
+	"miscMsgUnblockHost":{
+		"message":"Unblock the Host URL: ",
+		"description":""
+	},
+	"miscMsgUnblockRoot":{
+		"message":"Unblock the Root Domain: ",
+		"description":""
+	},
+	"miscCtrlApplyEntry":{
+		"message":"Apply",
+		"description":""
+	},
+
+
 	"advOverlayCtrlClose":{
 		"message":"Close",
 		"description":"button text for a trace overlay"
@@ -42,7 +72,7 @@
 		"message":"This setting requires premium",
 		"description":"content text for when user does not have premium"
 	},
-	
+
 	"advSettingsCtrlEnabled":{
 		"message":"Enabled",
 		"description":"setting enabled/disabled toggle"
@@ -202,5 +232,35 @@
   	"mainSiteListSliderMedium": {
 	  	"message":"Current Setting: Medium",
 	  	"description":""
+	},
+
+
+	"popMiscMsgUnsupported":{
+		"message":"Unsupported URL",
+		"description":""
+	},
+	"popNavCtrlPause":{
+		"message":"Pause Trace",
+		"description":""
+	},
+	"popNavCtrlUnpause":{
+		"message":"Unpause Trace",
+		"description":""
+	},
+	"popNavCtrlWhitelist":{
+		"message":"Temporarily Whitelist",
+		"description":""
+	},
+	"popNavCtrlUnwhitelist":{
+		"message":"Unwhitelist",
+		"description":""
+	},
+	"popHomeMsgNoHeaderEnabled":{
+		"message":"No Header Protections Enabled",
+		"description":""
+	},
+	"popHomeMsgNoHeaderUsed":{
+		"message":"No Header Protections Used In This Tab",
+		"description":""
 	}
 }

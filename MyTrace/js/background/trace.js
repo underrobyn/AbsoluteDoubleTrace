@@ -134,6 +134,7 @@ var Trace = {
 					break;
 				case "protectionRan":
 					Trace.f.HandleCsUpdate(request);
+					sendResponse({});
 					break;
 				default:
 					console.error("Invalid message recieved");
@@ -297,9 +298,10 @@ var Trace = {
 			if (c === "ToggleTraceWeb"){
 				if (Trace.DEBUG) console.info("Toggled Trace Web");
 				Prefs.ToggleSetting("Pref_WebController");
-			} else if (c === "ForceBlocklistUpdate") {
-				if (Trace.DEBUG) console.info("Forcing the blocklist to update");
-				Web.BlocklistLoader(true);
+			} else if (c === "PauseTrace") {
+				if (Trace.DEBUG) console.info("Updated paused state");
+				Vars.paused = !Vars.paused;
+				Trace.Notify(Vars.paused ? "Trace paused." : "Trace protections are active again.","commd");
 			} else if (c === "OpenTraceSettings") {
 				if (Trace.DEBUG) console.info("Opening Trace's settings");
 				chrome.tabs.create({url:"/html/options.html"});

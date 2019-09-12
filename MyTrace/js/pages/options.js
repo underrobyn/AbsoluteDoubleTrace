@@ -36,12 +36,6 @@ var EnterTriggerClick = function(e) {
 	}
 };
 
-// Get message for language
-var lang = function(msg){
-	if (!chrome.i18n) return "";
-	return chrome.i18n.getMessage(msg);
-};
-
 var Opts = {
 	homeRefresh:null,
 	searchTimeout:null,
@@ -1889,7 +1883,7 @@ var Opts = {
 					title:{
 						display:true,
 						fontSize:28,
-						text:"Loading..."
+						text:lang("miscMsgLoading")
 					},
 					legend: {
 						display: false
@@ -2732,8 +2726,8 @@ var Opts = {
 				$("<div/>",{"id":"s_add_protections"}).append(
 					$("<div/>",{"class":"xlarge settings_title_execorder rborder align_c"}).append("Applied to all pages"),
 					$("<div/>",{"class":"xlarge settings_title_execorder align_c"}).append("Apply only to this entry"),
-					$("<div/>",{"id":"s_add_allpage","class":"s_protside"}).append($("<h1/>").text("Loading...")),
-					$("<div/>",{"id":"s_add_perpage","class":"s_protside"}).append($("<h1/>").text("Loading..."))
+					$("<div/>",{"id":"s_add_allpage","class":"s_protside"}).append($("<h1/>").text(lang("miscMsgLoading"))),
+					$("<div/>",{"id":"s_add_perpage","class":"s_protside"}).append($("<h1/>").text(lang("miscMsgLoading")))
 				),
 				$("<br/>"),$("<br/>"),
 				$("<button/>",{"class":"float_r"}).text("Cancel").click(Opts.CloseOverlay),
@@ -2860,8 +2854,8 @@ var Opts = {
 				$("<div/>",{"id":"s_add_protections"}).append(
 					$("<div/>",{"class":"xlarge settings_title_execorder rborder align_c"}).append("Applied to all pages"),
 					$("<div/>",{"class":"xlarge settings_title_execorder align_c"}).append("Apply only to this entry"),
-					$("<div/>",{"id":"s_add_allpage","class":"s_protside"}).append($("<h1/>").text("Loading...")),
-					$("<div/>",{"id":"s_add_perpage","class":"s_protside"}).append($("<h1/>").text("Loading..."))
+					$("<div/>",{"id":"s_add_allpage","class":"s_protside"}).append($("<h1/>").text(lang("miscMsgLoading"))),
+					$("<div/>",{"id":"s_add_perpage","class":"s_protside"}).append($("<h1/>").text(lang("miscMsgLoading")))
 				),
 				$("<br/>"),$("<br/>"),
 				$("<button/>",{"class":"float_r"}).text("Cancel").click(Opts.CloseOverlay),

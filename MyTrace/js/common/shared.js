@@ -52,6 +52,12 @@ if (typeof Object.assign !== 'function') {
 	});
 }
 
+// Get message for language
+var lang = function(msg){
+	if (!chrome.i18n) return "";
+	return chrome.i18n.getMessage(msg);
+};
+
 // Generate a random string of r length
 var makeRandomID = function(r){
 	for(var n="",t="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789",a=0;r > a;a++){

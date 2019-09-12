@@ -406,6 +406,9 @@ var Prefs = {
 			},
 			"wrtcRtpReceiver":{
 				"enabled":false
+			},
+			"deviceEnumeration":{
+				"enabled":true
 			}
 		},
 		"Pref_IPSpoof":{

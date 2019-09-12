@@ -7,7 +7,7 @@
 	"description":"__MSG_addon_description__",
 	"default_locale": "en",
 	"minimum_edge_version":"42.17134.1.0",
-	"version":"2.3.10",
+	"version":"2.3.11",
   	"homepage_url":"https://absolutedouble.co.uk/trace/",
   	"options_page":"html/options.html",
 	"options_ui": {
@@ -36,12 +36,19 @@
 			},
 		  	"description": "Toggle Web Controller"
 		},
-		"ForceBlocklistUpdate": {
-		  	"suggested_key": {
+		"PauseTrace": {
+			"suggested_key": {
 				"default":"Ctrl+Shift+F",
 				"mac":"Command+Shift+F"
-		  	},
-		  	"description": "Force the blocklist to update"
+			},
+			"description": "Pause Trace"
+		},
+		"OpenTraceSettings": {
+			"suggested_key": {
+				"default":"Ctrl+Shift+X",
+				"mac":"Command+Shift+X"
+			},
+			"description": "Open the Trace dashboard"
 		}
   	},
 	"icons": {

@@ -5,12 +5,6 @@
  * 	https://absolutedouble.co.uk/
  */
 
-// Get message for language
-var lang = function(msg){
-	if (!chrome.i18n) return "";
-	return chrome.i18n.getMessage(msg);
-};
-
 var tBlock = {
 	blockedURL:"",
 	blockReason:0,
@@ -103,7 +97,7 @@ var tBlock = {
 
 		if (typeof tBlock.whitelistData["origin"] === "string"){
 			el.append(
-				$("<label/>",{"for":"url_origin"}).text("Unblock the Origin URL: "),
+				$("<label/>",{"for":"url_origin"}).text(lang("miscMsgUnblockOrigin")),
 				$("<form/>").append(
 					$("<input/>",{
 						"type":"text",
@@ -112,13 +106,13 @@ var tBlock = {
 						"placeholder":"Origin URL",
 						"value":tBlock.whitelistData["origin"]
 					}),
-					$("<button/>").text("Apply").on("click enter",function(){tBlock.whitelistURL("origin");}),$("<br />")
+					$("<button/>").text(lang("miscCtrlApplyEntry")).on("click enter",function(){tBlock.whitelistURL("origin");}),$("<br />")
 				)
 			);
 		}
 		if (typeof tBlock.whitelistData["path"] === "string" && tBlock.whitelistData["path"] !== "*/*" && tBlock.whitelistData["path"].split("/").length > 4){
 			el.append(
-				$("<label/>",{"for":"url_path"}).text("Unblock the URL path: "),
+				$("<label/>",{"for":"url_path"}).text(lang("miscMsgUnblockPath")),
 				$("<form/>").append(
 					$("<input/>",{
 						"type":"text",
@@ -127,13 +121,13 @@ var tBlock = {
 						"placeholder":"URL pathname",
 						"value":tBlock.whitelistData["path"]
 					}),
-					$("<button/>").text("Apply").on("click enter",function(){tBlock.whitelistURL("path");}),$("<br />")
+					$("<button/>").text(lang("miscCtrlApplyEntry")).on("click enter",function(){tBlock.whitelistURL("path");}),$("<br />")
 				)
 			);
 		}
 		if (typeof tBlock.whitelistData["host"] === "string" && tBlock.whitelistData.host !== tBlock.whitelistData.root){
 			el.append(
-				$("<label/>",{"for":"url_host"}).text("Unblock the Host URL: "),
+				$("<label/>",{"for":"url_host"}).text(lang("miscMsgUnblockHost")),
 				$("<form/>").append(
 					$("<input/>",{
 						"type":"text",
@@ -142,13 +136,13 @@ var tBlock = {
 						"placeholder":"Hostname",
 						"value":tBlock.whitelistData["host"]
 					}),
-					$("<button/>").text("Apply").on("click enter",function(){tBlock.whitelistURL("host");}),$("<br />")
+					$("<button/>").text(lang("miscCtrlApplyEntry")).on("click enter",function(){tBlock.whitelistURL("host");}),$("<br />")
 				)
 			);
 		}
 		if (typeof tBlock.whitelistData["root"] === "string"){
 			el.append(
-				$("<label/>",{"for":"url_root"}).text("Unblock the Root Domain: "),
+				$("<label/>",{"for":"url_root"}).text(lang("miscMsgUnblockRoot")),
 				$("<form/>").append(
 					$("<input/>",{
 						"type":"text",
@@ -157,7 +151,7 @@ var tBlock = {
 						"placeholder":"Root Domain Name",
 						"value":tBlock.whitelistData["root"]
 					}),
-					$("<button/>").text("Apply").on("click enter",function(){tBlock.whitelistURL("root");})
+					$("<button/>").text(lang("miscCtrlApplyEntry")).on("click enter",function(){tBlock.whitelistURL("root");})
 				)
 			);
 		}

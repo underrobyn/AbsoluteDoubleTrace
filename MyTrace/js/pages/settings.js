@@ -20,12 +20,6 @@ if (typeof window.JSON !== "object"){
 // A general fix for browser that use window.browser instead of window.chrome
 if (!window.chrome.hasOwnProperty("extension")) window.chrome = (function (){ return window.msBrowser || window.browser || window.chrome; })();
 
-// Get message for language
-var lang = function(msg){
-	if (!chrome.i18n) return "";
-	return chrome.i18n.getMessage(msg);
-};
-
 var sTrace = {
 	debug:false,
 	port:null,
