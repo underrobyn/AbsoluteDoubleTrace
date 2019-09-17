@@ -154,7 +154,7 @@ var TPop = {
 		uiOnly = uiOnly || false;
 		chrome.runtime.getBackgroundPage(function(bg){
 			var tempCheck = TPop.wlData["root"];
-			var state = bg.Whitelist.tempWhitelist.search.indexOf(tempCheck) !== -1;
+			var state = bg.Whitelist.tempList.search.indexOf(tempCheck) !== -1;
 			var newState = state;
 
 			if (!uiOnly){
@@ -374,18 +374,23 @@ var TPop = {
 			data:dataStr,
 			timeout:45000,
 			beforeSend:function(){
-				$("#send_report").text("Sending...").prop("disabled","true");
+				$("#send_report").text(lang("miscMsgSending")).prop("disabled","true");
 			},
 			success:function(d){
 				$("#send_report").text("Send Report").prop("disabled","false");
 				console.log(d);
+
 				if (d === "") {
 					$("#user_in").slideUp(500);
 					setTimeout(function(){
-						rep_msg.html("<h2>Report Successful</h2>");
+						rep_msg.append(
+							$("<h2/>").text(lang("popReportMsgSuccess"))
+						);
 					},500);
 				} else {
-					rep_msg.html("<h2>Report Sending Failed</h2>");
+					rep_msg.append(
+						$("<h2/>").text(lang("popReportMsgFail"))
+					);
 				}
 			},
 			error:function(e){
@@ -398,37 +403,24 @@ var TPop = {
 				}
 
 				if (e.status === 0){
-					rep_msg.html("<h2>Report Sending Failed</h2><h3>Unable to establish a connection to the server</h3>");
+					rep_msg.append(
+						$("<h2/>").text(lang("popReportMsgFail")),
+						$("<h3/>").text("Unable to establish a connection to the server")
+					);
 					return;
 				}
-				rep_msg.html("<h2>Report Sending Failed<br />Error Code: " + e.status + "</h2>");
-				console.log(e);
 
+				rep_msg.append(
+					$("<h2/>").text(lang("popReportMsgFail")),
+					$("<h3/>").text("Error Code: " + e.status)
+				);
+
+				console.error(e);
 			}
 		});
 	},
 	
 	scope:{
-		SettingName:{
-			"Pref_AudioFingerprint":"Audio Fingerprinting Protection",
-			"Pref_BatteryApi":"Battery API Protection",
-			"Pref_CanvasFingerprint":"Canvas Fingerprinting Protection",
-			"Pref_ClientRects":"getClientRects Protection",
-			"Pref_CookieEater":"Cookie Eater",
-			"Pref_HardwareSpoof":"Hardware Fingerprinting Protection",
-			"Pref_ETagTrack":"E-Tag Tracking Protection",
-			"Pref_GoogleHeader":"Google Header Removal",
-			"Pref_IPSpoof":"Proxy IP Header Spoofing",
-			"Pref_NativeFunctions":"JS functions",
-			"Pref_NetworkInformation":"Network Information API",
-			"Pref_PingBlock":"Ping Protection",
-			"Pref_PluginHide":"JS Plugin Hide",
-			"Pref_ReferHeader":"Referer Controller",
-			"Pref_ScreenRes":"Screen Resolution Tracking",
-			"Pref_UserAgent":"User-Agent Randomiser",
-			"Pref_WebGLFingerprint":"WebGL Fingerprinting Protection",
-			"Pref_WebRTC":"WebRTC Protection"
-		},
 		createPanel:function(){
 			// Start writing the UI
 			$("#current_section").empty().append($("<div/>",{"id":"page_form"}));
@@ -443,8 +435,8 @@ var TPop = {
 
 			// Check if hostname is affected by the whitelist
 			chrome.runtime.getBackgroundPage(function(bg){
-				var decWl = bg.Whitelist.decodedWhitelist;
-				var stoWl = bg.Whitelist.storedWhitelist;
+				var decWl = bg.Whitelist.decodedList;
+				var stoWl = bg.Whitelist.storedList;
 				var entriesApply = 0;
 
 				for (var i = 0, l = decWl.keys.length;i<l;i++){
@@ -525,7 +517,7 @@ var TPop = {
 								"class":"checkbox_cont xlarge",
 								"style":style,
 								"title":protmsg
-							}).text((TPop.scope.SettingName[dpAllPage[i]] || dpAllPage[i]) + enabledStatus).append(
+							}).text((SettingNames[dpAllPage[i]] || dpAllPage[i]) + enabledStatus).append(
 								$("<input/>",{
 									"type":"checkbox",
 									"checked":"checked",
@@ -554,7 +546,7 @@ var TPop = {
 								"class":"checkbox_cont xlarge",
 								"style":style,
 								"title":protmsg
-							}).text((TPop.scope.SettingName[dpPerPage[i]] || dpPerPage[i]) + enabledStatus).append(
+							}).text((SettingNames[dpPerPage[i]] || dpPerPage[i]) + enabledStatus).append(
 								$("<input/>",{
 									"type":"checkbox",
 									"data-controls":dpPerPage[i]
@@ -567,11 +559,11 @@ var TPop = {
 			}
 		},
 		updateExecs:function(bg){
-			var currData = bg.Whitelist.storedWhitelist[TPop.wlData.txtEntry];
+			var currData = bg.Whitelist.storedList[TPop.wlData.txtEntry];
 
 			if (typeof currData.Protections === "undefined"){
 				console.error(currData);
-				alert("Error with Scope entry.");
+				alert("Error with whitelist entry.");
 			}
 
 			$("input[data-controls]").each(function() {
@@ -686,7 +678,7 @@ var TPop = {
 		},
 		updateEntry:function(){
 			var that = $(this);
-			that.text("Saving..");
+			that.text(lang("miscMsgSaving"));
 
 			// Get information
 			var item = TPop.wlData.txtEntry;

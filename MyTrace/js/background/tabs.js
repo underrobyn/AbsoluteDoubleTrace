@@ -124,6 +124,7 @@ var Tabs = {
 			if (!Tabs.List.TabAccounted(id)){
 				if (Trace.DEBUG) console.log("[tabmd]-> Found new tab!",id);
 				chrome.tabs.get(id,function(tab){
+					// TODO: Check tab exists
 					Tabs.List.Add(id,tab.url);
 					if (cb) cb();
 				});

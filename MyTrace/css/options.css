@@ -19,11 +19,11 @@ html, body {
 }
 .hidden {display: none;}
 .blurred {
-	filter:blur(11px);
+	opacity:0.1;
 }
 #ux{
 	min-height:100vh !important;
-	transition:filter .3s ease-in-out;
+	transition:opacity .3s ease-in-out;
 }
 #e_msg{
 	display: none;
@@ -329,7 +329,8 @@ a.dark{
 	width:100%;
 	height:auto;
 }
-#sr_currentresolutions{
+
+.itemlist{
 	margin:2% 0 0 0;
 	height:30vh;
 	width:97%;
@@ -337,7 +338,7 @@ a.dark{
 	overflow-y:scroll;
 	padding:.5% 1.5%;
 }
-.sr_cresolution {
+.itemlist_itm {
 	padding:1% 1%;
 	font-size:1.2em;
 	text-align:center;
@@ -347,15 +348,11 @@ a.dark{
 	transition:background-color .2s ease-in-out, color .2s ease-in-out;
 	cursor:pointer;
 }
-.sr_cresolution:hover {
+.itemlist_itm:hover {
 	background-color:rgba(255,255,255,0.5);
 	color:#000;
 }
-#newuser_protections ul {
-	list-style-type: square;
-	text-align:left;
-	margin:0;
-}
+
 .prot_config {
 	width:33.33%;
 	float:left;
@@ -401,7 +398,7 @@ table th{
 }
 table tr {
 	border-bottom:.05em #000 solid;
-	height:2.3em;
+	height:2.15em;
 	transition:all .2s ease-in-out;
 }
 table tr:hover, table tr:focus {

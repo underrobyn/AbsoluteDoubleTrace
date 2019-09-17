@@ -115,14 +115,6 @@
 	background:linear-gradient(to top, #6e1250, #8e133e, #3604bf);
 }
 
-.tracedefault_theme div.protection_card{
-	background-color:rgba(0,0,0,0.3);
-	color:#fff;
-}
-.tracedefault_theme div.protection_card div.card_bottom {
-	border-top:none !important;
-}
-
 /* Trace Greyscale */
 .tracegreyscale_theme{
 	background: #434343;
@@ -196,14 +188,6 @@
 	background-color:rgba(255,255,255,0.15);
 }
 
-.traceintense_theme div.protection_card{
-	background-color:rgba(0,0,0,0.3);
-	color:#fff;
-}
-.traceintense_theme div.protection_card div.card_bottom {
-	border-top:none !important;
-}
-
 /* Trace Beach Sunset */
 .tracebeach_theme {
 	background:#225cff;
@@ -219,14 +203,6 @@
 }
 .tracebeach_theme .sect_adv_cont{
 	background-color:rgba(255,255,255,0.15);
-}
-
-.tracebeach_theme div.protection_card{
-	background-color:rgba(0,0,0,0.3);
-	color:#fff;
-}
-.tracebeach_theme div.protection_card div.card_bottom {
-	border-top:none !important;
 }
 
 /* Trace Intense */

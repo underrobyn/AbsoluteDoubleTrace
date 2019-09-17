@@ -21,7 +21,7 @@
 			<div id="block_info">
 				<h1 id="title">Trace Blocked this URL</h1>
 				<h2 id="reason">loading reason</h2><br />
-				<h2 id="url">loading url</h2>
+				<a href="#" id="url_link"><h2 id="url">loading url</h2></a>
 			</div>
 			<div id="whitelist_opts" class="page_action">
 				<div id="opts_title">Add this site to the whitelist:</div>
@@ -39,12 +39,13 @@
 					</li>
 					<li>
 						<span class="blocked_q">What is the difference between the whitelist options on the left?</span>
-						<span class="blocked_a">They unblock different parts of the site - if you want to unblock all parts of it, unblock the root domain.</span>
+						<span class="blocked_a">They unblock different parts of the site - if you want to unblock the entire site then unblock the root domain.</span>
 					</li>
 				</ul>
 			</div>
 			<div id="footer">
 				<button id="open_settings">Trace Settings</button>
+				<button id="pause_trace">Pause Trace</button>
 				<button id="go_back">Go back to previous page</button>
 			</div>
 		</div>

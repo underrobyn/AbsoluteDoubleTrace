@@ -39,20 +39,32 @@ var tBlock = {
 		}
 	},
 	assignButtonEvents:function(){
-		document.getElementById("open_settings").addEventListener("click",function(){
+		$("#open_settings").on("click enter",function(){
 			if (/Chrome/.test(navigator.userAgent)){
 				chrome.tabs.create({url:"html/options.html"});
 			} else {
 				chrome.tabs.create({url:"options.html"});
 			}
-		},false);
-		document.getElementById("go_back").addEventListener("click",function(){
+		});
+		$("#go_back").on("click enter",function(){
 			try{
 				history.go(-1);
 			} catch(e){
 				window.close();
 			}
-		},false);
+		});
+		$("#pause_trace").on("click enter",function(){
+			chrome.runtime.getBackgroundPage(function(bg){
+				var state = bg.Vars.paused;
+				var newState = !state;
+
+				bg.Vars.paused = newState;
+				bg.Vars.pauseEnd = 999999;
+				console.log("Updated pause state to "+newState);
+
+				$("#pause_trace").text(newState === true ? lang("popNavCtrlUnpause") : lang("popNavCtrlPause"));
+			});
+		});
 	},
 	getPageDetails:function(){
 		if (window.location.hash.includes("u;")){
@@ -65,7 +77,7 @@ var tBlock = {
 		}
 	},
 	setBasicContent:function(){
-		var u = $("#url"), r = $("#reason");
+		var u = $("#url"), l = $("#url_link"), r = $("#reason");
 		if (tBlock.blockedURL === null){
 			u.text("No information was provided");
 			r.empty();
@@ -81,6 +93,7 @@ var tBlock = {
 			5:"Blocked because file matched blacklisted files",
 			"undefined":"No reason set"
 		};
+		l.attr("href",tBlock.blockedURL);
 		u.text(tBlock.blockedURL);
 		r.text(types[tBlock.blockReason]);
 	},

@@ -12,13 +12,12 @@
 		<link rel="stylesheet" type="text/css" href="../css/options.css" media="all" />
 		<link rel="stylesheet" type="text/css" href="../css/simple.css" media="all" />
 		<link rel="stylesheet" type="text/css" href="../css/themedata.css" media="all" />
-		<link rel="stylesheet" type="text/css" href="../css/Chart.min.css" media="all" />
 
 	</head>
 	<body>
 
 		<!--
-			Trace Version 2.3.11
+			Trace Version 2.4
 			By Jake Mcneill
 
 			Website:	https://absolutedouble.co.uk/
@@ -35,6 +34,14 @@
 				<span id="overlay_close">&times;</span>
 				<div id="drop_message">
 					<h1>Thanks for installing Trace!</h1>
+					<div class="bigtext">
+						By default, Trace is set to "standard" protection, you can change the protection level for each site under the "site list" section.<br /><br />
+						If you would like more control over Trace, you can use the <a href="options.html" target="_blank" title="Trace Options page" class="dark">advanced settings page</a>.<br />
+						<br />
+						<a href="https://github.com/jake-cryptic/AbsoluteDoubleTrace/" title="GitHub Source" class="dark">Source Code</a> |
+						<a href="https://absolutedouble.co.uk/trace/information.html" title="Change log" class="dark">Changelog</a> |
+						<a href="https://absolutedouble.co.uk/trace/faq.html" title="FAQ" class="dark">Frequently Asked Questions</a>
+					</div>
 				</div>
 			</div>
 		</div>
@@ -67,6 +74,7 @@
 						<div class="protection_card card_active" id="prot_med" data-card="medium"></div>
 						<div class="protection_card card_standard" id="prot_high" data-card="high"></div>
 						<div class="protection_card card_standard" id="prot_extreme" data-card="extreme"></div>
+						<div class="protection_card card_standard" id="prot_custom" data-card="custom"></div>
 					</div>
 				</section>
 				<section id="sites" class="view hidden">
@@ -75,9 +83,7 @@
 						<h2 class="sect_subtitle" id="sitelist_subtitle"></h2>
 					</div>
 					<div id="sites_search"></div>
-					<div id="sites_list">
-						<div id="sites_new" class="list_item"></div>
-					</div>
+					<div id="sites_list"></div>
 				</section>
 			</main>
 		</div>
@@ -85,6 +91,7 @@
 		<script src="../js/libraries/jquery.js"></script>
 		<script src="../js/common/data.js"></script>
 		<script src="../js/common/shared.js"></script>
+		<script src="../js/common/ux.js"></script>
 		<script src="../js/pages/settings.js" defer></script>
 
 	</body>

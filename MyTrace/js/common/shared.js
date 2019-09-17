@@ -66,6 +66,18 @@ var makeRandomID = function(r){
 	return n;
 };
 
+// Get day month and year as strings
+var getDateStrings = function(){
+	var date = new Date();
+	var day = date.getDate();
+	var month = date.getMonth()+1;
+	day.toString().length !== 2 ? day = "0" + day.toString() : 0;
+	month.toString().length !== 2 ? month = "0" + month.toString() : 0;
+
+	return [date.getFullYear().toString(),month.toString(),day.toString()];
+};
+
+// Choose a random item from an array
 var rA = function(a){
 	return a[Math.floor(Math.random() * a.length)];
 };
@@ -109,6 +121,28 @@ var extractRootDomain = function(url){
 	return domain;
 };
 
+var SettingNames = {
+	"Pref_AudioFingerprint":"Audio Fingerprinting Protection",
+	"Pref_BatteryApi":"Battery API Protection",
+	"Pref_CanvasFingerprint":"Canvas Fingerprinting Protection",
+	"Pref_ClientRects":"getClientRects Protection",
+	"Pref_CommonTracking":"Common Tracking Protection",
+	"Pref_CookieEater":"Cookie Eater",
+	"Pref_HardwareSpoof":"Hardware Fingerprinting Protection",
+	"Pref_ETagTrack":"E-Tag Tracking Protection",
+	"Pref_GoogleHeader":"Google Header Removal",
+	"Pref_IPSpoof":"Proxy IP Header Spoofing",
+	"Pref_NativeFunctions":"JS functions",
+	"Pref_NetworkInformation":"Network Information API",
+	"Pref_PingBlock":"Ping Protection",
+	"Pref_PluginHide":"JS Plugin Hide",
+	"Pref_ReferHeader":"Referer Controller",
+	"Pref_ScreenRes":"Screen Resolution Tracking",
+	"Pref_UserAgent":"User-Agent Randomiser",
+	"Pref_WebGLFingerprint":"WebGL Fingerprinting Protection",
+	"Pref_WebRTC":"WebRTC Protection"
+};
+
 // Trace whitelist template
 var ProtectionTemplate = function(defaults){
 	return {
@@ -120,6 +154,7 @@ var ProtectionTemplate = function(defaults){
 			Pref_BatteryApi:defaults,
 			Pref_CanvasFingerprint: defaults,
 			Pref_ClientRects:defaults,
+			Pref_CommonTracking:defaults,
 			Pref_CookieEater:defaults,
 			Pref_ETagTrack:defaults,
 			Pref_GoogleHeader:defaults,

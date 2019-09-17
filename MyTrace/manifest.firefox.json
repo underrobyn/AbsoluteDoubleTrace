@@ -7,7 +7,7 @@
 	"description":"__MSG_addon_description__",
 	"default_locale": "en",
 	"minimum_chrome_version":"32",
-	"version":"2.3.11",
+	"version":"2.4",
   	"homepage_url":"https://absolutedouble.co.uk/trace/",
   	"options_page":"html/options.html",
 	"options_ui": {
@@ -86,7 +86,6 @@
 		  	"js/background/simple.js",
 			"js/background/stats.js",
 			"js/background/tabs.js",
-			"js/background/utils.js",
 			"js/background/vars.js",
 			"js/background/web.js",
 			"js/background/whitelist.js",

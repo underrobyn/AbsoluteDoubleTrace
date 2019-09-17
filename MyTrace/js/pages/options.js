@@ -5,55 +5,18 @@
  * 	https://absolutedouble.co.uk/
  */
 
-var showErr = function(m){
-	document.getElementById("e_msg").style.display = "block";
-	document.getElementById("fail_reason").innerText = m;
-};
-
-if (typeof $ !== "function" || typeof jQuery !== "function") {
-	showErr("jQuery Library failed to load.");
-}
-if (typeof window.JSON !== "object"){
-	showErr("JSON Library failed to load.");
-}
-
 if (!chrome.hasOwnProperty("extension") || typeof chrome.extension.getBackgroundPage !== "function"){
 	showErr("Extension failed to connect to background page. Please try reloading the page.");
 }
-
-var TraceBg = chrome.runtime.getBackgroundPage;
-
-TraceBg(function(bg){
-	if (bg === null){
-		showErr("Extension failed to connect to background page. This may be caused if you're running Trace in normal and private browsing at the same time.");
-	}
-});
-
-// UI event to trigger a click handle on "enter" key press
-var EnterTriggerClick = function(e) {
-	if(e.which === 13) {
-		$(this).trigger('enter');
-	}
-};
 
 var Opts = {
 	homeRefresh:null,
 	searchTimeout:null,
 	currentSettingTab:"settings_stracefeature",
-	storage:(typeof Storage !== "undefined" && typeof localStorage !== "undefined" && localStorage !== null),
 	debug:false,
 
-	theDate:function(){
-		var date = new Date();
-		var day = date.getDate();
-		var month = date.getMonth()+1;
-		day.toString().length !== 2 ? day = "0" + day.toString() : 0;
-		month.toString().length !== 2 ? month = "0" + month.toString() : 0;
-
-		return [date.getFullYear().toString(),month.toString(),day.toString()];
-	},
 	CloseUI:function(){
-		return $("<button/>",{"title":"Close","class":"float_r"}).text(lang("advOverlayCtrlClose")).on("click enter",Opts.CloseOverlay);
+		return $("<button/>",{"title":lang("miscCtrlClose"),"class":"float_r"}).text(lang("advOverlayCtrlClose")).on("click enter",Opts.CloseOverlay);
 	},
 	CloseOverlay:function(){
 		$("#overlay_message").fadeOut(250);
@@ -74,33 +37,6 @@ var Opts = {
 			}
 		});
 	},
-	Store:function(key,value){
-		try {
-			localStorage.setItem(key,value);
-		} catch(e) {
-			if (e.name === 'NS_ERROR_DOM_QUOTA_REACHED'){
-				alert("Your localStorage is full, please increase the size.");
-				console.error(e);
-			} else {
-				_UserCrashReportService(e);
-			}
-		}
-	},
-	Read:function(key){
-		var ret = null;
-		try{
-			ret = localStorage.getItem(key);
-		} catch(e) {
-			if (e.name === 'NS_ERROR_FILE_CORRUPTED'){
-				alert("Your localStorage is corrupt, Trace may not function correctly as a result.");
-				console.error(e);
-			} else {
-				_UserCrashReportService(e);
-			}
-		}
-
-		return ret;
-	},
 	MakeDownload:function(name,data){
 		// File information
 		var a = document.createElement("a"),
@@ -108,7 +44,7 @@ var Opts = {
 		var url = URL.createObjectURL(file);
 
 		// Generate file date
-		var d = Opts.theDate();
+		var d = getDateStrings();
 		var filedate = (d[0] + "-" + d[1] + "-" + d[2]).toString();
 
 		// Download file
@@ -172,75 +108,6 @@ var Opts = {
 		}
 	},
 
-	NewInstall:{
-		ShowInterface:function(){
-			var freshInstall = function(){
-				$("#overlay_message").fadeOut(300);
-				window.location.hash = '#';
-				setTimeout(function(){$("#ux").removeClass("blurred");},10);
-			};
-
-			$("#overlay_message").slideDown(300);
-			$("#overlay_close").on("click enter",freshInstall);
-
-			if (Opts.storage === true){
-				Opts.Store("showSettingsTutorial",true);
-				Opts.Store("showRequestTutorial",true);
-				Opts.Store("showScopeTutorial",true);
-				Opts.Store("hasAskedForFeedback",false);
-			}
-
-			$(window).click(function(e){
-				if ($(e.target)[0].id === "overlay_message"){
-					freshInstall();
-				}
-			});
-
-			$("#newuser_prots").on("click enter",function(){
-				$("#newuser_protections").toggle();
-			});
-			$("#prot_sim").on("click enter",function(){
-				Opts.NewInstall.SelectProtection(0);
-				$(this).text("Applied!").prop("disabled",true);
-			});
-			$("#prot_adv").on("click enter",function(){
-				Opts.NewInstall.SelectProtection(1);
-				$(this).text("Applied!").prop("disabled",true);
-			});
-			$("#prot_exp").on("click enter",function(){
-				Opts.NewInstall.SelectProtection(2);
-				$(this).text("Applied!").prop("disabled",true);
-			});
-		},
-		SelectProtection:function(level){
-			if (level === 0){
-				TraceBg(function(bg){
-					bg.Prefs.SetMultiple({
-						"Pref_ETagTrack.enabled":true,
-						"Pref_ClientRects.enabled":true
-					});
-				});
-			}
-
-			if(level === 1){
-				TraceBg(function(bg){
-					bg.Prefs.SetMultiple({
-						"Pref_GoogleHeader.enabled":true,
-						"Pref_AudioFingerprint.enabled":true
-					});
-				});
-			}
-
-			if (level === 2){
-				TraceBg(function(bg){
-					bg.Prefs.SetMultiple({
-						"Pref_WebController.urlCleaner.enabled":true,
-						"Pref_ReferHeader.enabled":true
-					});
-				});
-			}
-		}
-	},
 	Tutorial:{
 		ShowRequest:function(){
 			$("#drop_message").empty().append(
@@ -251,14 +118,14 @@ var Opts = {
 				$("<br/>"),$("<br/>"),
 				$("<span/>").text("The URL Tracking Cleaner removes information from URLs that is used to track you, it has lots of configuration options and I recommend you enable it at some level to improve your privacy."),
 				$("<br/>"),$("<br/>"),
-				$("<button/>",{"title":"Close"}).text("Okay").click(Opts.CloseOverlay)
+				$("<button/>",{"title":lang("miscCtrlClose")}).text(lang("miscCtrlOkay")).on("click enter",Opts.CloseOverlay)
 			);
 
 			$("#ux").addClass("blurred");
 			$("#overlay_message").slideDown(300);
-			$("#overlay_close").click(Opts.CloseOverlay);
+			$("#overlay_close").on("click enter",Opts.CloseOverlay);
 
-			if (Opts.storage === true) Opts.Store("showRequestTutorial",false);
+			ls.Store("showRequestTutorial",false);
 		},
 		ShowSettings:function(){
 			$("#drop_message").empty().append(
@@ -272,14 +139,14 @@ var Opts = {
 				$("<span/>").text("You can find settings such as URL Parameter editing and Bad TLD Protection in the 'Requests' section."),
 				$("<br/>"),$("<br/>"),
 				$("<h3/>").html("If you find a bug with anything, especially features marked as 'Beta', please report it to <a class='dark' href='mailto:absolutedouble@gmail.com'>absolutedouble@gmail.com</a>"),
-				$("<button/>",{"title":"Close"}).text("Okay").click(Opts.CloseOverlay)
+				$("<button/>",{"title":lang("miscCtrlClose")}).text(lang("miscCtrlOkay")).on("click enter",Opts.CloseOverlay)
 			);
 
 			$("#ux").addClass("blurred");
 			$("#overlay_message").slideDown(300);
-			$("#overlay_close").click(Opts.CloseOverlay);
+			$("#overlay_close").on("click enter",Opts.CloseOverlay);
 
-			if (Opts.storage === true) Opts.Store("showSettingsTutorial",false);
+			ls.Store("showSettingsTutorial",false);
 		},
 		ShowScope:function(){
 			$("#drop_message").empty().append(
@@ -288,14 +155,14 @@ var Opts = {
 				$("<br/>"),$("<br/>"),
 				$("<span/>").text("Add entries to the list and use the check boxes to select what protections are allowed to run on that page."),
 				$("<br/>"),$("<br/>"),
-				$("<button/>",{"title":"Close"}).text("Okay").click(Opts.CloseOverlay)
+				$("<button/>",{"title":lang("miscCtrlClose")}).text(lang("miscCtrlOkay")).on("click enter",Opts.CloseOverlay)
 			);
 
 			$("#ux").addClass("blurred");
 			$("#overlay_message").slideDown(300);
-			$("#overlay_close").click(Opts.CloseOverlay);
+			$("#overlay_close").on("click enter",Opts.CloseOverlay);
 
-			if (Opts.storage === true) Opts.Store("showScopeTutorial",false);
+			ls.Store("showScopeTutorial",false);
 		}
 	},
 
@@ -346,7 +213,7 @@ var Opts = {
 
 		// Assign click events to advanced settings
 		Opts.Scope.Init();
-		Opts.BadTopLevelBlock.AssignEvents();
+		Opts.BadTLD.AssignEvents();
 		Opts.URLCleaner.AssignEvents();
 
 		Opts.Interface.GenerateHome();
@@ -358,19 +225,19 @@ var Opts = {
 		});
 
 		// Update storage counter
-		if (Opts.storage === true) {
+		if (ls.supported === true) {
 			var count = 1, askedFeedback = true;
-			if (Opts.Read("userStatOptionsOpenCount") !== undefined && Opts.Read("userStatOptionsOpenCount") !== null){
-				count = parseInt(Opts.Read("userStatOptionsOpenCount"));
+			if (ls.Read("userStatOptionsOpenCount") !== undefined && ls.Read("userStatOptionsOpenCount") !== null){
+				count = parseInt(ls.Read("userStatOptionsOpenCount"));
 			}
-			if (Opts.Read("hasAskedForFeedback") !== undefined && Opts.Read("hasAskedForFeedback") !== null){
-				askedFeedback = Opts.Read("hasAskedForFeedback");
+			if (ls.Read("hasAskedForFeedback") !== undefined && ls.Read("hasAskedForFeedback") !== null){
+				askedFeedback = ls.Read("hasAskedForFeedback");
 			} else {
-				Opts.Store("hasAskedForFeedback",false);
+				ls.Store("hasAskedForFeedback",false);
 			}
 
 			count++;
-			Opts.Store("userStatOptionsOpenCount",count);
+			ls.Store("userStatOptionsOpenCount",count);
 
 			if (count > 10 && (count % 3 === 0) && askedFeedback === "false"){
 				Opts.Interface.AskFeedback();
@@ -389,6 +256,32 @@ var Opts = {
 
 		$("#trace_vernum").text(chrome.runtime.getManifest().version || "?");
 	},
+	NewInstall:{
+		ShowInterface:function(){
+			var freshInstall = function(){
+				$("#overlay_message").fadeOut(300);
+				window.location.hash = '#';
+				setTimeout(function(){$("#ux").removeClass("blurred");},10);
+			};
+
+			$("#ux").addClass("blurred");
+			$("#overlay_message").slideDown(300);
+			$("#overlay_close").on("click enter",freshInstall);
+
+			if (ls.supported === true){
+				ls.Store("showSettingsTutorial",true);
+				ls.Store("showRequestTutorial",true);
+				ls.Store("showScopeTutorial",true);
+				ls.Store("hasAskedForFeedback",false);
+			}
+
+			$(window).click(function(e){
+				if ($(e.target)[0].id === "overlay_message"){
+					freshInstall();
+				}
+			});
+		}
+	},
 	Interface:{
 		Browsers:function(){
 			if (!/Chrome|Firefox/.test(navigator.userAgent)){
@@ -405,8 +298,8 @@ var Opts = {
 		},
 		GenerateHome:function(){
 			var greetings = [
-				"Welcome to the Trace Dashboard!",
-				"Trace Dashboard"
+				lang("advHomeMsgWelcomeLong"),
+				lang("advHomeMsgWelcomeShort")
 			];
 			$("#trace_main_title").text(greetings[Math.floor(Math.random()*greetings.length)]);
 
@@ -485,18 +378,18 @@ var Opts = {
 				$("<button/>").text("Contact Developer").on("click enter",function(){
 					var openUrl = "mailto:absolutedouble@gmail.com";
 					window.open(openUrl,"_blank");
-					Opts.Store("hasAskedForFeedback",true);
+					ls.Store("hasAskedForFeedback",true);
 				}),
 				$("<span/>").text(" "),
 				$("<button/>").text("Leave Feedback").on("click enter",function(){
 					var openUrl = "https://addons.mozilla.org/en-GB/firefox/addon/absolutedouble-trace/reviews/";
 					if (!/Firefox/.test(navigator.userAgent)) openUrl = "https://chrome.google.com/webstore/detail/trace-online-tracking-pro/njkmjblmcfiobddjgebnoeldkjcplfjb/reviews";
 					window.open(openUrl,"_blank");
-					Opts.Store("hasAskedForFeedback",true);
+					ls.Store("hasAskedForFeedback",true);
 				}),
 				$("<span/>").text(" "),
 				$("<button/>").text("Dismiss").on("click enter",function(){
-					Opts.Store("hasAskedForFeedback",true);
+					ls.Store("hasAskedForFeedback",true);
 					$(this).text("Done!");
 					_UserCrashReportService({"UserDismissedFeedback":true});
 				})
@@ -510,9 +403,14 @@ var Opts = {
 			if (spl[0] !== "#view") return;
 
 			var allowed = ["home","statistics","settings","requests","whitelist","information"];
-			if (allowed.indexOf(spl[1]) === -1) return;
+			if (allowed.indexOf(spl[1]) !== -1){
+				Opts.LoadPage(spl[1]);
+			} else {
+				if (spl[1] !== "wrc") return;
 
-			Opts.LoadPage(spl[1]);
+				Opts.LoadPage("requests");
+				Opts.Config.Options("Pref_WebController");
+			}
 
 			window.location.hash = "";
 		}
@@ -565,24 +463,24 @@ var Opts = {
 				document.title = "Trace | Statistics";
 				break;
 			case "settings":
-				if (Opts.storage === true){
-					if (Opts.Read("showSettingsTutorial") === null || Opts.Read("showSettingsTutorial") === "true"){
+				if (ls.supported === true){
+					if (ls.Read("showSettingsTutorial") === null || ls.Read("showSettingsTutorial") === "true"){
 						Opts.Tutorial.ShowSettings();
 					}
 				}
 				document.title = "Trace | Settings";
 				break;
 			case "requests":
-				if (Opts.storage === true){
-					if (Opts.Read("showRequestTutorial") === null || Opts.Read("showRequestTutorial") === "true"){
+				if (ls.supported === true){
+					if (ls.Read("showRequestTutorial") === null || ls.Read("showRequestTutorial") === "true"){
 						Opts.Tutorial.ShowRequest();
 					}
 				}
 				document.title = "Trace | Web Request Settings";
 				break;
 			case "whitelist":
-				if (Opts.storage === true){
-					if (Opts.Read("showScopeTutorial") === null || Opts.Read("showScopeTutorial") === "true"){
+				if (ls.supported === true){
+					if (ls.Read("showScopeTutorial") === null || ls.Read("showScopeTutorial") === "true"){
 						Opts.Tutorial.ShowScope();
 					}
 				}
@@ -790,16 +688,16 @@ var Opts = {
 			var attn = 0, atme = 0;
 			var ntme = Math.round(dto.getTime()/1000);
 
-			if (Opts.storage === true){
-				if (typeof Opts.Read("attn") === "string" && typeof Opts.Read("atme") === "string"){
-					attn = parseInt(Opts.Read("attn"));
-					atme = parseInt(Opts.Read("atme"));
+			if (ls.supported === true){
+				if (typeof ls.Read("attn") === "string" && typeof ls.Read("atme") === "string"){
+					attn = parseInt(ls.Read("attn"));
+					atme = parseInt(ls.Read("atme"));
 
 					attn++;
 				}
 
-				Opts.Store("attn",attn);
-				Opts.Store("atme",ntme);
+				ls.Store("attn",attn);
+				ls.Store("atme",ntme);
 			} else {
 				alert("There was an issue with your browser's localStorage!");
 			}
@@ -953,7 +851,7 @@ var Opts = {
 					Opts.Blocklist.InstallList("a00000001",true);
 					Opts.Blocklist.InstallList("a00000003",true);
 
-					if (Opts.storage === true){
+					if (ls.supported === true){
 						localStorage.removeItem("attn");
 						localStorage.removeItem("atme");
 					}
@@ -1129,12 +1027,12 @@ var Opts = {
 		Data:{},
 		Interface:function(){
 			$("#drop_message").empty().append(
-				$("<h1/>",{"id":"backuprestore_title"}).text("Backup/Restore Settings"),
+				$("<h1/>",{"id":"backuprestore_title"}).text(lang("advBackupMsgTitle")),
 				$("<section/>",{"id":"backuprestore_section"}).append(
 					$("<span/>").text("The backup will save all of your settings, whitelist entries and statistics, you can choose what to restore. The file will be in JSON format and is editable."),
 					$("<br/>"),$("<br/>"),
-					$("<button/>",{"style":"font-size:1em"}).text("Download Backup").on("click",Opts.Backup.Create),
-					$("<h2/>").text("Restore a backup")
+					$("<button/>",{"style":"font-size:1em"}).text(lang("advBackupCtrlCreate")).on("click",Opts.Backup.Create),
+					$("<h2/>").text(lang("advRestoreMsgTitle"))
 				),
 				$("<input/>",{
 					"type":"file",
@@ -1178,7 +1076,7 @@ var Opts = {
 
 			if (redFlags >= 3){
 				$("#restore_info").empty().append(
-					$("<h2/>").text("This file isn't a valid Trace Backup.")
+					$("<h2/>").text(lang("advRestoreMsgInvalid"))
 				);
 				return;
 			}
@@ -1212,7 +1110,7 @@ var Opts = {
 			}
 
 			$("#backuprestore_section").hide();
-			$("#backuprestore_title").text("Restore a Trace backup");
+			$("#backuprestore_title").text(lang("advRestoreMsgTitle"));
 
 			$("#restore_info").empty().append(
 				$("<h2/>").text("You are about to restore a backup..."),
@@ -1247,26 +1145,6 @@ var Opts = {
 		}
 	},
 	ExecutionOrder:{
-		SettingName:{
-			"Pref_AudioFingerprint":"Audio Fingerprinting Protection",
-			"Pref_BatteryApi":"Battery API Protection",
-			"Pref_CanvasFingerprint":"Canvas Fingerprinting Protection",
-			"Pref_ClientRects":"getClientRects Protection",
-			"Pref_CookieEater":"Cookie Eater",
-			"Pref_HardwareSpoof":"Hardware Fingerprinting Protection",
-			"Pref_ETagTrack":"E-Tag Tracking Protection",
-			"Pref_GoogleHeader":"Google Header Removal",
-			"Pref_IPSpoof":"Proxy IP Header Spoofing",
-			"Pref_NativeFunctions":"JS functions",
-			"Pref_NetworkInformation":"Network Information API",
-			"Pref_PingBlock":"Ping Protection",
-			"Pref_PluginHide":"JS Plugin Hide",
-			"Pref_ReferHeader":"Referer Controller",
-			"Pref_ScreenRes":"Screen Resolution Tracking",
-			"Pref_UserAgent":"User-Agent Randomiser",
-			"Pref_WebGLFingerprint":"WebGL Fingerprinting Protection",
-			"Pref_WebRTC":"WebRTC Protection"
-		},
 		ReloadInterface:function(){
 			TraceBg(function(bg){
 				bg.Trace.f.ReturnExecOrder(Opts.ExecutionOrder.CreateInterface);
@@ -1287,7 +1165,7 @@ var Opts = {
 						"data-pref":p.AllPage[si]
 					}).on("click enter",
 						Opts.ExecutionOrder.SwapProtection
-					).text(Opts.ExecutionOrder.SettingName[p.AllPage[si]] || p.AllPage[si])
+					).text(SettingNames[p.AllPage[si]] || p.AllPage[si])
 				);
 			}
 
@@ -1299,7 +1177,7 @@ var Opts = {
 						"data-pref":p.PerPage[i]
 					}).on("click enter",
 						Opts.ExecutionOrder.SwapProtection
-					).text(Opts.ExecutionOrder.SettingName[p.PerPage[i]] || p.PerPage[i])
+					).text(SettingNames[p.PerPage[i]] || p.PerPage[i])
 				);
 			}
 		},
@@ -1328,7 +1206,14 @@ var Opts = {
 			sendBeacon:"Disable the javascript navigator.sendBeacon function on webpages",
 			removePingAttr:"Remove ping tracking from web links",
 
+			countly:"Countly",
+			fbevents:"Facebook Events",
+			google:"Google Tracking",
+			piwik:"Matomo (Piwik)",
+			segment:"Segment",
+
 			javascript:"Something went wrong if you're seeing this.",
+			deviceEnumeration:"Device Enumeration protection",
 			wrtcInternal:"Stop WebRTC exposing your local IPv4 address",
 			wrtcPeerConnection:"Disable the RTCPeerConnection javascript object (*)",
 			wrtcDataChannel:"Disable the RTCDataChannel javascript object (*)",
@@ -1336,6 +1221,7 @@ var Opts = {
 		},
 		Options:function(setting){
 			Opts.Config.SelectedOption = setting;
+
 			TraceBg(function(bg){
 				//Trace.Config.CurrentSettings = bg.Prefs.GetSetting();
 				Opts.Config.CurrentSel = bg.Prefs.GetSetting(Opts.Config.SelectedOption);
@@ -1358,6 +1244,9 @@ var Opts = {
 				case "Pref_GoogleHeader":
 					Opts.Config.s.ChromeHeaderSettings();
 					break;
+				case "Pref_CommonTracking":
+					Opts.Config.s.CommonTrackingSettings();
+					break;
 				case "Pref_WebRTC":
 					Opts.Config.s.WebRTCSettings();
 					break;
@@ -1372,6 +1261,9 @@ var Opts = {
 					break;
 				case "Pref_HardwareSpoof":
 					Opts.HardwareSpoof.OpenDialog();
+					break;
+				case "Pref_WebGLFingerprint":
+					Opts.WebGL.OpenDialog();
 					break;
 				case "Pref_CanvasFingerprint":
 					Opts.CanvasRGBA.OpenDialog();
@@ -1398,7 +1290,7 @@ var Opts = {
 					Opts.RefererHeader.OpenDialog();
 					break;
 				case "Main_Interface":
-					Opts.UserInterfaceCustomiser.OptionsInterface();
+					Opts.UICustomiser.OptionsInterface();
 					break;
 				default:
 					console.error("Method not supported yet.");
@@ -1407,7 +1299,7 @@ var Opts = {
 
 			if (enabled !== true){
 				$("#drop_message").prepend(
-					$("<h1/>",{"class":"setting_disabled"}).text("This setting isn't currently enabled")
+					$("<h1/>",{"class":"setting_disabled"}).text(lang("advSettingsMsgDisabled"))
 				);
 			}
 		},
@@ -1427,44 +1319,60 @@ var Opts = {
 				"class":"settings_config_container",
 				"data-parent":Opts.Config.SelectedOption
 			}).append(
-				$("<span/>").text("When the switch is green, the protection is enabled."),$("<br />"),$("<br />")
+				$("<span/>").text(lang("advSettingsMsgSwitch"))
 			);
 
+			function makeCheckbox(opts,name){
+				return $("<div/>",{
+					"class":"setting_conf_opt"
+				}).append(
+					$("<label/>",{
+						"for":opts["id"],
+						"class":"checkbox_cont"
+					}).text(name).append(
+						$("<input/>",opts).on("click enter",function(){
+							Opts.Config.SaveConf(this);
+						}),
+						$("<span/>",{"class":"ccheck"})
+					)
+				);
+			}
+
 			for (var i in Opts.Config.CurrentSel){
-				if (i !== "enabled" && Opts.Config.CurrentSel[i] !== undefined){
-					if (Object.keys(Opts.Config.CurrentSel[i]).length > 1){
-						continue;
+				if (typeof Opts.Config.CurrentSel[i] !== "object") continue;
+
+				if (!Opts.Config.CurrentSel[i].hasOwnProperty("enabled")){
+					for (var j in Opts.Config.CurrentSel[i]){
+						if (j === "enabled" || Opts.Config.CurrentSel[i][j] === undefined) continue;
+						if (Object.keys(Opts.Config.CurrentSel[i][j]).length > 1) continue;
+
+						var opts = {
+							"type":"checkbox",
+							"id":"c_opt_"+makeRandomID(16),
+							"data-conf":Opts.Config.SelectedOption + "." + i + "." + j + ".enabled"
+						};
+
+						if (Opts.Config.CurrentSel[i][j].enabled === true) opts["checked"] = "checked";
+
+						el.append(makeCheckbox(opts,Opts.Config.SettingName[j] || j));
 					}
 
-					var opts = {
-						"type":"checkbox",
-						"id":"c_opt_"+makeRandomID(16),
-						"data-conf":Opts.Config.SelectedOption + "." + i + ".enabled"
-					};
-					if (Opts.Config.CurrentSel[i].enabled === true){
-						opts["checked"] = "checked";
-					}
-
-					el.append(
-						$("<div/>",{
-							"class":"setting_conf_opt"
-						}).append(
-							$("<label/>",{
-								"for":opts["id"],
-								"class":"checkbox_cont"
-							}).text(Opts.Config.SettingName[i] || i).append(
-								$("<input/>",opts).on("click enter",function(){
-									Opts.Config.SaveConf(this);
-								}),
-								$("<span/>",{"class":"ccheck"})
-							)
-						)
-					);
+					continue;
 				}
+
+				var opts = {
+					"type":"checkbox",
+					"id":"c_opt_"+makeRandomID(16),
+					"data-conf":Opts.Config.SelectedOption + "." + i + ".enabled"
+				};
+
+				if (Opts.Config.CurrentSel[i].enabled === true) opts["checked"] = "checked";
+
+				el.append(makeCheckbox(opts,Opts.Config.SettingName[i] || i));
 			}
 
 			el.append(
-				$("<span/>",{"class":"regular"}).text("Changes to these settings should take place immediately")
+				$("<span/>",{"class":"regular"}).text(lang("advSettingsMsgImmediate"))
 			);
 
 			return el;
@@ -1484,6 +1392,16 @@ var Opts = {
 				var cont = Opts.Config.GetConf();
 				$("#drop_message").empty().append(
 					$("<h1/>").text("Google Header Protection"),
+					cont,
+					Opts.CloseUI(),
+					$("<br/>"),$("<br/>")
+				);
+				Opts.AssignCloseOverlay(true);
+			},
+			CommonTrackingSettings:function(){
+				var cont = Opts.Config.GetConf();
+				$("#drop_message").empty().append(
+					$("<h1/>").text("Common Tracking Protection"),
 					cont,
 					Opts.CloseUI(),
 					$("<br/>"),$("<br/>")
@@ -1714,9 +1632,43 @@ var Opts = {
 		}
 	},
 	Stats:{
+		GraphOptions:{
+			barValueSpacing:10,
+			title:{
+				display:true,
+				fontSize:28,
+				text:lang("miscMsgLoading")
+			},
+			legend: {
+				display: false
+			},
+			scales:{
+				yAxes:[{
+					ticks:{
+						beginAtZero:true,
+						fontSize:20
+					},
+					gridLines: {
+						display:true,
+						color:"#969696"
+					}
+				}],
+				xAxes:[{
+					ticks:{
+						beginAtZero:true,
+						fontSize:20
+					},
+					gridLines: {
+						display:false,
+						color:"#FFFFFF"
+					}
+				}]
+			}
+		},
 		GraphData:undefined,
 		GraphElm:undefined,
 		GraphObj:undefined,
+
 		AssignGraphOptions:function(){
 			$("#stats_download").click(function(){
 				Opts.Stats.ShowDownloadOptions();
@@ -1878,39 +1830,7 @@ var Opts = {
 					labels:[],
 					datasets:{}
 				},
-				options:{
-					barValueSpacing:10,
-					title:{
-						display:true,
-						fontSize:28,
-						text:lang("miscMsgLoading")
-					},
-					legend: {
-						display: false
-					},
-					scales:{
-						yAxes:[{
-							ticks:{
-								beginAtZero:true,
-								fontSize:20
-							},
-							gridLines: {
-								display:true,
-								color:"#969696"
-							}
-						}],
-						xAxes:[{
-							ticks:{
-								beginAtZero:true,
-								fontSize:20
-							},
-							gridLines: {
-								display:false,
-								color:"#FFFFFF"
-							}
-						}]
-					}
-				}
+				options:Opts.Stats.GraphOptions
 			});
 		},
 		ShowDisabled:function(l){
@@ -1951,7 +1871,7 @@ var Opts = {
 					"title":"Download Statistics in JSON format"
 				}).text("JSON").click(function(){Opts.Stats.DownloadStats("json");}),
 				$("<br/>"),$("<br/>"),
-				$("<button/>",{"title":"Close"}).text("Close").click(Opts.CloseOverlay)
+				$("<button/>",{"title":lang("miscCtrlClose")}).text(lang("miscCtrlClose")).on("click enter",Opts.CloseOverlay)
 			);
 			Opts.AssignCloseOverlay(true);
 		},
@@ -1984,7 +1904,7 @@ var Opts = {
 
 					} else if (file === "xml") {
 
-						date = Opts.theDate();
+						date = getDateStrings();
 						returnd = '<?xml version="1.0" encoding="UTF-8"?>\n';
 						returnd += "<tracestats downloaded='" + (date[0] + "-" + date[1] + "-" + date[2]).toString() + "'>";
 
@@ -2006,7 +1926,7 @@ var Opts = {
 
 					} else if (file === "json") {
 
-						date = Opts.theDate();
+						date = getDateStrings();
 						var stats = {
 							"downloaded": (date[0] + "-" + date[1] + "-" + date[2]).toString(),
 							"stats": d
@@ -2027,7 +1947,7 @@ var Opts = {
 			var url = URL.createObjectURL(file);
 
 			// Generate file date
-			var d = Opts.theDate();
+			var d = getDateStrings();
 			var filedate = (d[0] + "_" + d[1] + "_" + d[2]).toString();
 
 			// Download file
@@ -2058,7 +1978,7 @@ var Opts = {
 				),
 				$("<br/>"),$("<br/>"),
 				$("<button/>",{"title":"Confirm deletion"}).text("Confirm").click(Opts.Stats.ConfirmDeleteStats),
-				$("<button/>",{"title":"Close"}).text("Cancel").click(Opts.CloseOverlay)
+				$("<button/>",{"title":lang("miscCtrlClose")}).text(lang("miscCtrlCancel")).on("click enter",Opts.CloseOverlay)
 			);
 			Opts.AssignCloseOverlay(true);
 		},
@@ -2085,15 +2005,39 @@ var Opts = {
 		OpenDialog:function(){
 			var optsCpu = {"type":"checkbox", "id":"hwspoof_use_fakecpu"}, cpuVal = Opts.Config.CurrentSel["hardware"]["hardwareConcurrency"].value;
 			var optsRam = {"type":"checkbox", "id":"hwspoof_use_fakeram"}, ramVal = Opts.Config.CurrentSel["hardware"]["deviceMemory"].value;
-			if (Opts.Config.CurrentSel["hardware"]["hardwareConcurrency"].enabled === true){
-				optsCpu["checked"] = "checked";
-			}
-			if (Opts.Config.CurrentSel["hardware"]["deviceMemory"].enabled === true){
-				optsRam["checked"] = "checked";
-			}
+			var optsVr = {"type":"checkbox", "id":"hwspoof_use_blockvr"};
+			var optsGamepad = {"type":"checkbox", "id":"hwspoof_use_blockgp"};
+
+			if (Opts.Config.CurrentSel["hardware"]["hardwareConcurrency"].enabled === true) optsCpu["checked"] = "checked";
+			if (Opts.Config.CurrentSel["hardware"]["deviceMemory"].enabled === true) optsRam["checked"] = "checked";
+			if (Opts.Config.CurrentSel["hardware"]["hwVrDisplays"].enabled === true) optsVr["checked"] = "checked";
+			if (Opts.Config.CurrentSel["hardware"]["hwGamepads"].enabled === true) optsGamepad["checked"] = "checked";
 
 			$("#drop_message").empty().append(
 				$("<h1/>").text("Hardware Fingerprinting Protection"),
+				$("<div/>").append(
+					$("<div/>",{"class":"setting_conf_opt xregular"}).append(
+						$("<label/>",{
+							"for":optsVr["id"],
+							"class":"checkbox_cont"
+						}).text("Block VR API").append(
+							$("<input/>",optsVr),
+							$("<span/>",{"class":"ccheck"})
+						)
+					)
+				),
+				$("<div/>").append(
+					$("<div/>",{"class":"setting_conf_opt xregular"}).append(
+						$("<label/>",{
+							"for":optsGamepad["id"],
+							"class":"checkbox_cont"
+						}).text("Block Gamepad API").append(
+							$("<input/>",optsGamepad),
+							$("<span/>",{"class":"ccheck"})
+						)
+					)
+				),
+				$("<br/>"),
 				$("<div/>").append(
 					$("<div/>",{"class":"setting_conf_opt xregular"}).append(
 						$("<label/>",{
@@ -2130,7 +2074,7 @@ var Opts = {
 					})
 				),
 				$("<br/>"),$("<br/>"),
-				$("<button/>",{"class":"float_r"}).text("Save").click(Opts.HardwareSpoof.SaveParameters)
+				$("<button/>",{"class":"float_r"}).text(lang("miscCtrlSave")).click(Opts.HardwareSpoof.SaveParameters)
 			);
 			Opts.AssignCloseOverlay(true);
 		},
@@ -2139,6 +2083,8 @@ var Opts = {
 				bg.Prefs.SetMultiple({
 					"Pref_HardwareSpoof.hardware.hardwareConcurrency.enabled": $("#hwspoof_use_fakecpu").is(":checked"),
 					"Pref_HardwareSpoof.hardware.deviceMemory.enabled": $("#hwspoof_use_fakeram").is(":checked"),
+					"Pref_HardwareSpoof.hardware.hwVrDisplays.enabled": $("#hwspoof_use_blockvr").is(":checked"),
+					"Pref_HardwareSpoof.hardware.hwGamepads.enabled": $("#hwspoof_use_blockgp").is(":checked"),
 					"Pref_HardwareSpoof.hardware.hardwareConcurrency.value": $("#hwspoof_val_fakecpu").val(),
 					"Pref_HardwareSpoof.hardware.deviceMemory.value": $("#hwspoof_val_fakeram").val()
 				});
@@ -2232,11 +2178,12 @@ var Opts = {
 			el.append(
 				$("<div/>",{"id":"sr_resolutions"}).append(
 					$("<span/>").text("Use this to specify resolutions that will be provided, one will randomly be chosen at each page reload."),$("<br/>"),
-					$("<div/>",{"id":"sr_currentresolutions"}),
+					$("<div/>",{"id":"sr_currentresolutions","class":"itemlist"}),
 					$("<div/>",{"id":"sr_addtoresolutions"}).append(
 						$("<input/>",{"type":"text","id":"sr_addtoresinput","placeholder":"Resolution to add (Format WxH) e.g. 1920x1080"}),$("<br/>"),$("<br/>"),
 						$("<button/>",{"id":"sr_addtoressubmit","class":"small"}).text("Add Resolution").on("click enter",Opts.ScreenRes.AddNewResolution),$("<span/>").text(" "),
-						$("<button/>",{"id":"sr_addtoressubmit","class":"small"}).text("Add Common Resolutions").on("click enter",Opts.ScreenRes.AddCommonResolutions)
+						$("<button/>",{"class":"small"}).text("Add Common Resolutions").on("click enter",Opts.ScreenRes.AddCommonResolutions),$("<span/>").text(" "),
+						$("<button/>",{"class":"small"}).text("Clear List").on("click enter",Opts.ScreenRes.ClearResolutionsList)
 					)
 				),
 				$("<div/>",{"id":"sr_randoffset"}).append(
@@ -2251,7 +2198,7 @@ var Opts = {
 					$("<button/>",{"id":"sr_updateoffsets","class":"small"}).text("Save Offsets").on("click enter",Opts.ScreenRes.UpdateOffset)
 				),
 				$("<br/>"),$("<button/>",{"id":"sr_togglemode","class":"small"}).text("Change selection method").on("click enter",Opts.ScreenRes.ToggleModeUI),
-				$("<button/>",{"title":"Close","class":"small float_r"}).text("Close").click(Opts.CloseOverlay)
+				$("<button/>",{"title":lang("miscCtrlClose"),"class":"small float_r"}).text(lang("miscCtrlClose")).on("click enter",Opts.CloseOverlay)
 			);
 
 			$("#drop_message").empty().append(
@@ -2318,9 +2265,22 @@ var Opts = {
 			for (var res in common){
 				Opts.Config.CurrentSel.commonResolutions.resolutions.push([parseInt(common[res][0]),parseInt(common[res][1])]);
 			}
+
 			TraceBg(function(bg){
 				bg.Prefs.Set("Pref_ScreenRes.commonResolutions.resolutions",Opts.Config.CurrentSel.commonResolutions.resolutions);
 			});
+
+			Opts.ScreenRes.UpdateResolutions();
+		},
+		ClearResolutionsList:function(){
+			if (!confirm("This will delete all resolutions in the list.\nAre you sure you wish to proceed?")) return;
+
+			Opts.Config.CurrentSel.commonResolutions.resolutions = [];
+
+			TraceBg(function(bg){
+				bg.Prefs.Set("Pref_ScreenRes.commonResolutions.resolutions",[]);
+			});
+
 			Opts.ScreenRes.UpdateResolutions();
 		},
 		UpdateResolutions:function(){
@@ -2334,7 +2294,7 @@ var Opts = {
 			for (var item in r){
 				d.append(
 					$("<div/>",{
-						"class":"sr_cresolution",
+						"class":"itemlist_itm",
 						"data-listid":item,
 						"title":"Click to delete this resolution"
 					}).text(r[item][0] + "x" + r[item][1]).on("click enter",Opts.ScreenRes.RemoveResolution)
@@ -2384,6 +2344,100 @@ var Opts = {
 			setTimeout(function(){
 				$("#sr_updateoffsets").text("Save Offsets");
 			},1000);
+		}
+	},
+	WebGL:{
+		OpenDialog:function(){
+			var el = $("<div/>",{
+				"class":"settings_config_container",
+				"data-parent":Opts.Config.SelectedOption
+			});
+
+			el.append(
+				$("<div/>",{"id":"sr_resolutions"}).append(
+					$("<span/>").text("Below you can add specific GPU models to be selected by Trace, if you don't add any, Trace's built in list will be used."),$("<br/>"),
+					$("<div/>",{"id":"gl_gpulist","class":"itemlist"}),
+					$("<div/>",{"id":"sr_addtoresolutions"}).append(
+						$("<input/>",{"type":"text","id":"gpu_addtolist","placeholder":"GPU Model to add"}),$("<br/>"),$("<br/>"),
+						$("<button/>",{"id":"sr_addtoressubmit","class":"small"}).text("Add GPU").on("click enter",Opts.WebGL.AddNewGPU),$("<span/>").text(" "),
+						$("<button/>",{"id":"sr_addtoressubmit","class":"small"}).text("Import Trace's List").on("click enter",Opts.WebGL.AddTraceList),$("<span/>").text(" "),
+						$("<button/>",{"id":"sr_addtoressubmit","class":"small"}).text("Clear List").on("click enter",Opts.WebGL.ClearList)
+					)
+				),
+				$("<button/>",{"title":lang("miscCtrlClose"),"class":"small float_r"}).text(lang("miscCtrlClose")).on("click enter",Opts.CloseOverlay)
+			);
+
+			$("#drop_message").empty().append(
+				$("<h1/>").text("Configure WebGL Fingerprinting"),
+				el
+			);
+
+			Opts.WebGL.UpdateGPUList();
+
+			Opts.AssignCloseOverlay(true);
+		},
+		UpdateGPUList:function(){
+			var l = Opts.Config.CurrentSel.gpuList.list,
+				d = $("#gl_gpulist");
+			d.empty();
+
+			if (typeof l === "undefined" || l.length === 0){
+				d.append(
+					$("<h2/>").text("No GPUs In List")
+				);
+				return;
+			}
+
+			for (var item in l){
+				d.append(
+					$("<div/>",{
+						"class":"itemlist_itm",
+						"data-listid":item,
+						"title":"Click to delete this GPU"
+					}).text(l[item]).on("click enter",Opts.WebGL.RemoveGPU)
+				);
+			}
+		},
+		RemoveGPU:function(){
+			var id = $(this).data("listid");
+			Opts.Config.CurrentSel.gpuList.list.splice(id,1);
+
+			TraceBg(function(bg){
+				bg.Prefs.Set("Pref_WebGLFingerprint.gpuList.list",Opts.Config.CurrentSel.gpuList.list);
+			});
+			Opts.WebGL.UpdateGPUList();
+		},
+		AddNewGPU:function(){
+			var res = $("#gpu_addtolist").val();
+			Opts.Config.CurrentSel.gpuList.list.push(res);
+
+			TraceBg(function(bg){
+				bg.Prefs.Set("Pref_WebGLFingerprint.gpuList.list",Opts.Config.CurrentSel.gpuList.list);
+			});
+			Opts.WebGL.UpdateGPUList();
+		},
+		AddTraceList:function(){
+			if (!confirm("This will add the entire Trace GPU list.\nAre you sure you wish to proceed?")) return;
+
+			TraceBg(function(bg){
+				for (var item in bg.Vars.gpuModels){
+					Opts.Config.CurrentSel.gpuList.list.push(bg.Vars.gpuModels[item]);
+				}
+				bg.Prefs.Set("Pref_WebGLFingerprint.gpuList.list",Opts.Config.CurrentSel.gpuList.list);
+
+				Opts.WebGL.UpdateGPUList();
+			});
+		},
+		ClearList:function(){
+			if (!confirm("This will delete all GPUs in the list.\nAre you sure you wish to proceed?")) return;
+
+			Opts.Config.CurrentSel.gpuList.list = [];
+
+			TraceBg(function(bg){
+				bg.Prefs.Set("Pref_WebGLFingerprint.gpuList.list",[]);
+			});
+
+			Opts.WebGL.UpdateGPUList();
 		}
 	},
 	Blocklist:{
@@ -2730,7 +2784,7 @@ var Opts = {
 					$("<div/>",{"id":"s_add_perpage","class":"s_protside"}).append($("<h1/>").text(lang("miscMsgLoading")))
 				),
 				$("<br/>"),$("<br/>"),
-				$("<button/>",{"class":"float_r"}).text("Cancel").click(Opts.CloseOverlay),
+				$("<button/>",{"class":"float_r"}).text(lang("miscCtrlCancel")).on("click enter",Opts.CloseOverlay),
 				$("<button/>",{"class":"float_r","title":"Add entry"}).text("Add Domain").click(function(){
 					var d = $("#wle_domainadd").val();
 					Opts.Scope.AddValidation(d,this);
@@ -2756,7 +2810,7 @@ var Opts = {
 							"class":"checkbox_cont xlarge",
 							"style":style,
 							"title":protmsg
-						}).text(Opts.ExecutionOrder.SettingName[dpAllPage[i]] || dpAllPage[i]).append(
+						}).text(SettingNames[dpAllPage[i]] || dpAllPage[i]).append(
 							$("<input/>",{
 								"type":"checkbox",
 								"checked":"checked",
@@ -2777,7 +2831,7 @@ var Opts = {
 							"class":"checkbox_cont xlarge",
 							"style":style,
 							"title":protmsg
-						}).text(Opts.ExecutionOrder.SettingName[dpPerPage[i]] || dpPerPage[i]).append(
+						}).text(SettingNames[dpPerPage[i]] || dpPerPage[i]).append(
 							$("<input/>",{
 								"type":"checkbox",
 								"data-controls":dpPerPage[i]
@@ -2858,7 +2912,7 @@ var Opts = {
 					$("<div/>",{"id":"s_add_perpage","class":"s_protside"}).append($("<h1/>").text(lang("miscMsgLoading")))
 				),
 				$("<br/>"),$("<br/>"),
-				$("<button/>",{"class":"float_r"}).text("Cancel").click(Opts.CloseOverlay),
+				$("<button/>",{"class":"float_r"}).text(lang("miscCtrlCancel")).on("click enter",Opts.CloseOverlay),
 				$("<button/>",{"class":"float_r"}).text("Modify").click(Opts.Scope.DoEditDomain),
 				$("<br/>"),$("<br/>")
 			);
@@ -2867,7 +2921,7 @@ var Opts = {
 			TraceBg(Opts.Scope.UpdateExecs);
 		},
 		UpdateExecs:function(bg){
-			var currData = bg.Whitelist.storedWhitelist[Opts.Scope.CurrentSelect.data("itmkey")];
+			var currData = bg.Whitelist.storedList[Opts.Scope.CurrentSelect.data("itmkey")];
 
 			if (typeof currData.Protections === "undefined"){
 				console.error(currData);
@@ -3032,7 +3086,7 @@ var Opts = {
 
 				function doTheWhitelistParse(bg){
 					var currWl = bg.Whitelist.GetWhitelist();
-					var storWl = Object.keys(bg.Whitelist.storedWhitelist);
+					var storWl = Object.keys(bg.Whitelist.storedList);
 
 					// Get result if there is one
 					for (var i = 0, l = currWl.keys.length;i<l;i++){
@@ -3216,7 +3270,7 @@ var Opts = {
 			}
 		}
 	},
-	BadTopLevelBlock:{
+	BadTLD:{
 		tldPresets:{
 			all:["accountant", "date", "diet", "loan", "mom", "online", "om", "racing", "ren", "stream", "study", "top", "xin", "yokohama"],
 			extended:["asia", "cc", "cf", "christmas", "cricket", "party", "pro", "review", "systems", "trade", "vip", "wang", "zip"],
@@ -3224,7 +3278,7 @@ var Opts = {
 			few:["bid", "click", "country", "download", "faith", "gdn", "gq"]
 		},
 		AssignEvents:function(){
-			$("#adv_settingstld").click(Opts.BadTopLevelBlock.SelectProtectionUI);
+			$("#adv_settingstld").click(Opts.BadTLD.SelectProtectionUI);
 		},
 		SelectProtectionUI:function(){
 			$("#drop_message").empty().append(
@@ -3233,25 +3287,25 @@ var Opts = {
 				$("<div/>",{"id":"adv_tldlist"}),
 				$("<div/>").append(
 					$("<h1/>").text("TLD Presets"),
-					$("<button/>",{"data-selects":"0"}).text("Minimal").on("click enter",Opts.BadTopLevelBlock.SelectPreset),
-					$("<button/>",{"data-selects":"1"}).text("Regular").on("click enter",Opts.BadTopLevelBlock.SelectPreset),
-					$("<button/>",{"data-selects":"2"}).text("Extended").on("click enter",Opts.BadTopLevelBlock.SelectPreset),
-					$("<button/>",{"data-selects":"3"}).text("All Bad TLDs").on("click enter",Opts.BadTopLevelBlock.SelectPreset)
+					$("<button/>",{"data-selects":"0"}).text("Minimal").on("click enter",Opts.BadTLD.SelectPreset),
+					$("<button/>",{"data-selects":"1"}).text("Regular").on("click enter",Opts.BadTLD.SelectPreset),
+					$("<button/>",{"data-selects":"2"}).text("Extended").on("click enter",Opts.BadTLD.SelectPreset),
+					$("<button/>",{"data-selects":"3"}).text("All Bad TLDs").on("click enter",Opts.BadTLD.SelectPreset)
 				),
 				$("<br/>"),$("<br/>"),
-				$("<button/>",{"class":"float_r"}).text("Close").click(Opts.CloseOverlay)
+				$("<button/>",{"class":"float_r"}).text(lang("miscCtrlClose")).on("click enter",Opts.CloseOverlay)
 			);
 			Opts.AssignCloseOverlay(true);
 
 			TraceBg(function(bg){
 				if (bg.Prefs.Current.Pref_WebController.tld.enabled !== true){
 					$("#drop_message").prepend(
-						$("<h1/>",{"class":"setting_disabled"}).text("This setting isn't currently enabled")
+						$("<h1/>",{"class":"setting_disabled"}).text(lang("advSettingsMsgDisabled"))
 					);
 				}
 			});
 
-			Opts.BadTopLevelBlock.LoadTLDs();
+			Opts.BadTLD.LoadTLDs();
 		},
 		SelectPreset:function(){
 			var preset = $(this).data("selects");
@@ -3279,10 +3333,10 @@ var Opts = {
 				"zip":false
 			};
 			var enableList = [];
-			if (preset >= 0) enableList = enableList.concat(Opts.BadTopLevelBlock.tldPresets.few);
-			if (preset >= 1) enableList = enableList.concat(Opts.BadTopLevelBlock.tldPresets.most);
-			if (preset >= 2) enableList = enableList.concat(Opts.BadTopLevelBlock.tldPresets.extended);
-			if (preset === 3) enableList = enableList.concat(Opts.BadTopLevelBlock.tldPresets.all);
+			if (preset >= 0) enableList = enableList.concat(Opts.BadTLD.tldPresets.few);
+			if (preset >= 1) enableList = enableList.concat(Opts.BadTLD.tldPresets.most);
+			if (preset >= 2) enableList = enableList.concat(Opts.BadTLD.tldPresets.extended);
+			if (preset === 3) enableList = enableList.concat(Opts.BadTLD.tldPresets.all);
 
 			for (var tld in enableList){
 				newList[enableList[tld]] = true;
@@ -3291,7 +3345,7 @@ var Opts = {
 			TraceBg(function(bg){
 				bg.Prefs.Set("Pref_WebController.tld.settings",newList);
 			});
-			Opts.BadTopLevelBlock.LoadTLDs();
+			Opts.BadTLD.LoadTLDs();
 		},
 		LoadTLDs:function(){
 			TraceBg(function(bg){
@@ -3305,7 +3359,7 @@ var Opts = {
 							"data-current":s[k[i]],
 							"class":"setting_traffic " + (s[k[i]] === true ? "tld_enabled" : "tld_disabled"),
 							"title":(s[k[i]] === true ? "Enabled" : "Disabled")
-						}).on("click enter",Opts.BadTopLevelBlock.SaveSelection).text(k[i])
+						}).on("click enter",Opts.BadTLD.SaveSelection).text(k[i])
 					);
 				}
 
@@ -3317,11 +3371,11 @@ var Opts = {
 			var tldId = $(this).data("tldid");
 			TraceBg(function(bg){
 				bg.Prefs.Set("Pref_WebController.tld.settings."+tldId,newVal);
-				Opts.BadTopLevelBlock.LoadTLDs();
+				Opts.BadTLD.LoadTLDs();
 			});
 		}
 	},
-	UserInterfaceCustomiser:{
+	UICustomiser:{
 		OptionsInterface:function(){
 			TraceBg(function(bg){
 				Opts.Blocklist.isPremium = (typeof bg.Vars.Premium !== "undefined" ?
@@ -3351,7 +3405,6 @@ var Opts = {
 					$("<option>",{"value":"tracegreyscale"}).text("Trace Greyscale")
 				).on("change",function (){
 					var thatVal = $(this).val();
-					_UserCrashReportService({"UserChoseTheme":thatVal});
 					TraceBg(function(bg){
 						bg.Prefs.Set("Main_Interface.Theme.name",thatVal);
 						reloadTheme();
@@ -3446,7 +3499,7 @@ var Opts = {
 					$("<option/>", {value: "randomise"}).text("Randomise Parameters")
 				),*/
 				$("<br/>"),$("<br/>"),
-				$("<button/>",{"class":"float_r"}).text("Close").click(Opts.CloseOverlay)
+				$("<button/>",{"class":"float_r"}).text(lang("miscCtrlClose")).on("click enter",Opts.CloseOverlay)
 			);
 			Opts.AssignCloseOverlay(true);
 			Opts.URLCleaner.LoadParams();
@@ -3460,7 +3513,7 @@ var Opts = {
 
 				if (bg.Prefs.Current.Pref_WebController.urlCleaner.enabled !== true) {
 					$("#drop_message").prepend(
-						$("<h1/>",{"class":"setting_disabled"}).text("This setting isn't currently enabled")
+						$("<h1/>",{"class":"setting_disabled"}).text(lang("advSettingsMsgDisabled"))
 					);
 				}
 			});
@@ -3588,7 +3641,7 @@ var Opts = {
 					"placeholder":"A",
 					"value":rgba[3]
 				}),
-				$("<button/>",{"class":"float_r"}).text("Save").click(Opts.CanvasRGBA.SaveParameters),
+				$("<button/>",{"class":"float_r"}).text(lang("miscCtrlSave")).click(Opts.CanvasRGBA.SaveParameters),
 				$("<br/>"),$("<br/>")
 			);
 			Opts.AssignCloseOverlay(true);
@@ -3687,8 +3740,8 @@ var Opts = {
 				$("<br/>"),$("<br/>"),
 				$("<button/>").text("Edit cookie list").on("click enter",Opts.CookieEaterUI.List.InitUI),
 				$("<br/>"),$("<br/>"),
-				$("<button/>",{"class":"float_r"}).text("Cancel").click(Opts.CloseOverlay),
-				$("<button/>",{"class":"float_r"}).text("Save & Close").click(Opts.CookieEaterUI.SaveSelection)
+				$("<button/>",{"class":"float_r"}).text(lang("miscCtrlCancel")).on("click enter",Opts.CloseOverlay),
+				$("<button/>",{"class":"float_r"}).text(lang("miscCtrlSaveClose")).click(Opts.CookieEaterUI.SaveSelection)
 			);
 			Opts.AssignCloseOverlay(true);
 
@@ -3870,8 +3923,8 @@ var Opts = {
 					)
 				),*/
 				$("<span/>").text("If you don't select any boxes then the header will never be set."),
-				$("<button/>",{"class":"float_r"}).text("Cancel").click(Opts.CloseOverlay),
-				$("<button/>",{"class":"float_r"}).text("Save & Close").click(Opts.RefererHeader.SaveSelection)
+				$("<button/>",{"class":"float_r"}).text(lang("miscCtrlCancel")).on("click enter",Opts.CloseOverlay),
+				$("<button/>",{"class":"float_r"}).text(lang("miscCtrlSaveClose")).click(Opts.RefererHeader.SaveSelection)
 			);
 			Opts.AssignCloseOverlay(true);
 		},
@@ -3896,9 +3949,12 @@ var Opts = {
 			});
 
 			Opts.CloseOverlay();
-		},
+		}
 	}
 };
+
+backgroundConnectCheck();
+ls.IsSupported();
 
 try{
 	$(document).ready(Opts.WindowLoad);
@@ -3908,10 +3964,9 @@ try{
 }
 
 // Check if is new install
-if(window.location.hash && window.location.hash === "#v2installed") {
+if(window.location.hash && window.location.hash === "#installed") {
 	Opts.NewInstall.ShowInterface();
 } else {
-	$("#ux").removeClass("blurred");
 	if (window.location.hash && window.location.hash.includes("#view")) {
 		Opts.Interface.NavigateFromHash();
 	}

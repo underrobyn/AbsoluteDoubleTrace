@@ -27,7 +27,18 @@ var TPage = {
 		ClientRects:{enabled:true},
 		WebGL:{enabled:true},
 		NativeFunctions:{enabled:false, windowOpen:{enabled:true}},
-		Hardware:{enabled:true,hardware:{enabled:true,hardwareConcurrency:{enabled:true,value:4},deviceMemory:{enabled:true,value:4}}}
+		Hardware:{enabled:true,hardware:{enabled:true,hardwareConcurrency:{enabled:true,value:4},deviceMemory:{enabled:true,value:4},hwVrDisplays:{enabled:true},hwGamepads:{enabled:true}}},
+
+		Pref_CommonTracking:{
+			enabled:false,
+			settings:{
+				piwik:{enabled:false},
+				google:{enabled:true},
+				segment:{enabled:false},
+				countly:{enabled:false},
+				fbevents:{enabled:true}
+			}
+		}
 	},
 
 	protections:{},
@@ -89,7 +100,8 @@ var TPage = {
 			ClientRects:data.prefs.Pref_ClientRects,
 			Hardware:data.prefs.Pref_HardwareSpoof,
 			NativeFunctions:data.prefs.Pref_NativeFunctions,
-			WebGL:data.prefs.Pref_WebGLFingerprint
+			WebGL:data.prefs.Pref_WebGLFingerprint,
+			Pref_CommonTracking:data.prefs.Pref_CommonTracking
 		};
 
 		TPage.runProtections();
@@ -97,10 +109,14 @@ var TPage = {
 
 	/* Depending on what is enabled - run some protections */
 	runProtections:function(){
-		//TPage.protectCommonTracking();
+		//TPage.protectWebFonts();
 
 		if (TPage.Prefs.BlockCanvasFinger.enabled === true && TPage.canExec("Pref_CanvasFingerprint")){
 			TPage.protectCanvasFinger();
+		}
+
+		if (TPage.Prefs.Pref_CommonTracking.enabled === true && TPage.canExec("Pref_CommonTracking")){
+			TPage.protectCommonTracking();
 		}
 
 		if (TPage.Prefs.Hardware.enabled === true && TPage.canExec("Pref_HardwareSpoof")){
@@ -150,7 +166,7 @@ var TPage = {
 			});
 		}
 
-		if (TPage.Prefs.NativeFunctions.enabled === true && TPage.canExec("Pref_NativeFunctions")){
+		if (TPage.Prefs.NativeFunctions.windowOpen.enabled === true && TPage.canExec("Pref_NativeFunctions")){
 			TPage.protectJsVars();
 		}
 
@@ -192,7 +208,7 @@ var TPage = {
 							if (this.src && this.src.indexOf('//') !== -1 && location.host !== this.src.split('/')[2]) return wind.apply(this);
 
 							var frame = wind.apply(this);
-							if (frame && frame !== null) {
+							if (frame) {
 								try {frame.HTMLCanvasElement;}catch(e){}
 								self[funcName](frame,opts);
 							}
@@ -641,10 +657,11 @@ var TPage = {
 		if (TPage.debug <= 2) console.info("%c [Tr]->[NP] Disabled Plugin Tracking.",TPage.css);
 	},
 	protectJsVars:function(){
-		TPage.codePostInject(function(){
-			function disableFunction(frame){
-				if (frame === null) return;
+		TPage.codeNewPreInject(null,
+			function(frame){
 				if (frame.traceDefinedOpener === true) return;
+				if (!frame.window) return;
+				if (!frame.window.open) return;
 
 				//frame["opener"] = null;
 				var windowOpen = frame.window.open;
@@ -662,31 +679,10 @@ var TPage = {
 				});
 
 				frame.traceDefinedOpener = true;
-			}
+			}, null,true
+		);
 
-			disableFunction(window);
-			var wind = HTMLIFrameElement.prototype.__lookupGetter__('contentWindow'),
-				cont = HTMLIFrameElement.prototype.__lookupGetter__('contentDocument');
-
-			Object.defineProperties(HTMLIFrameElement.prototype,{
-				contentWindow:{
-					get:function(){
-						var frame = wind.apply(this);
-						if (this.src && this.src.indexOf('//') !== -1 && location.host !== this.src.split('/')[2]) return frame;
-						disableFunction(frame);
-						return frame;
-					}
-				},
-				contentDocument:{
-					get:function(){
-						if (this.src && this.src.indexOf('//') !== -1 && location.host !== this.src.split('/')[2]) return cont.apply(this);
-						var frame = wind.apply(this);
-						disableFunction(frame);
-						return cont.apply(this);
-					}
-				}
-			});
-		});
+		if (TPage.debug <= 2) console.info("%c [Tr]->[WO] Disabled window.opener Tracking.",TPage.css);
 	},
 	protectNavConnection:function() {
 		var ret = {
@@ -739,16 +735,119 @@ var TPage = {
 
 		if (TPage.debug <= 2) console.info("%c [Tr]->[NP] Disabled localStorage Tracking.",TPage.css);
 	},
+	protectWebFonts:function() {
+		var opts = {
+			blockMeasureText:true,
+			blockSetAttr:true,
+			interceptWriteFuncs:false
+		};
+
+		TPage.codeNewPreInject(
+			function(opts){
+				return JSON.parse(opts);
+			},
+			function(frame,opts){
+				if (frame.traceDefinedFont === true) return;
+
+				if (opts.blockMeasureText && frame.CanvasRenderingContext2D){
+					var measText = frame.CanvasRenderingContext2D.measureText;
+					Object.defineProperty(frame.CanvasRenderingContext2D, "measureText",{
+						enumerable:true,
+						configurable:false,
+						value:function(){
+							console.log(this);
+							console.log(arguments);
+							console.log(measText.apply(this,arguments));
+
+							return measText.apply(this,arguments);
+						}
+					});
+					console.log("[measuretext]")
+				}
+
+				if (opts.blockSetAttr && frame.Element){
+					var setAttr = frame.Element.prototype.setAttribute;
+					Object.defineProperty(frame.Element, "setAttribute",{
+						enumerable:true,
+						configurable:false,
+						value:function(){
+							console.log(this);
+							console.log(arguments);
+							console.log(setAttr.apply(this,arguments));
+
+							return setAttr.apply(this,arguments);
+						}
+					});
+					console.log("[setattr]")
+				}
+
+
+				var setProp = frame.CSSStyleDeclaration.prototype.setProperty;
+				if (frame.CSSStyleDeclaration){
+					Object.defineProperty(frame.CSSStyleDeclaration, "setProperty",{
+						enumerable:true,
+						configurable:false,
+						value:function(){
+							console.log(this);
+							console.log(arguments);
+							console.log(setProp.apply(this,arguments));
+
+							return setProp.apply(this,arguments);
+						}
+					});
+				}
+
+				if (opts.interceptWriteFuncs){
+					var modifyCss = function(node){
+						if (!node) return node;
+
+						// Check for font-family
+						if (node.style && node.style.length){
+							console.log(node.style.length,node);
+						}
+
+						// Call function on children if node has them
+						if(node.childNodes) node.childNodes.forEach(modifyCss);
+
+						return node;
+					};
+
+					var newSetter = function(oldSetter){
+						// This now intercepts the "innerHTML" and "outerHTML" functions
+						return function newInnerHtml(content){
+							var orig = oldSetter.call(this,content);
+
+							modifyCss(this.parentNode);
+
+							return orig;
+						}
+					};
+
+					["innerHTML","outerHTML"].forEach(function(func){
+						// Change setter
+						var prop = Object.getOwnPropertyDescriptor(frame["Element"].prototype,func);
+						prop.configurable = false;
+						prop.set = newSetter(prop.set);
+
+						// Update setter
+						Object.defineProperty(frame["Element"].prototype,func,prop);
+					});
+				}
+
+				frame.traceDefinedFont = true;
+			},"'" + JSON.stringify(opts) + "'",true
+		);
+
+		if (TPage.debug <= 2) console.info("%c [Tr]->[NP] Disabled web font tracking.",TPage.css);
+	},
 	protectWebRTC:function(){
 		// Device enumeration protection
-		/* if (TPage.Prefs.BlockWebRTC.deviceEnumeration.enabled === true){
+		if (TPage.Prefs.BlockWebRTC.deviceEnumeration.enabled === true){
 			TPage.codeNewPreInject(
 				function(opts){
-					return opts;
+					return JSON.parse(opts);
 				},
 				function(frame,opts) {
-					opts = JSON.parse(opts);
-
 					if (frame.traceDefinedDeviceEnum === true) return;
 					if (!frame.navigator) return;
 
@@ -766,12 +865,27 @@ var TPage = {
 						});
 					}
 
+					if (frame.MediaStreamTrack){
+						Object.defineProperties(frame.MediaStreamTrack, {
+							"getSources":{
+								enumerable:true,
+								configurable:false,
+								value:undefined
+							},
+							"getMediaDevices":{
+								enumerable:true,
+								configurable:false,
+								value:undefined
+							}
+						});
+					}
+
 					frame.traceDefinedDeviceEnum = true;
 				},"'" + JSON.stringify(TPage.Prefs.BlockWebRTC.deviceEnumeration) + "'",true
 			);
 
 			if (TPage.debug <= 2) console.info("%c [Tr]->[WR] WebRTC Device Enumeration.",TPage.css);
-		} */
+		}
 
 		var opts = {
 			wrtcPeerConnection:{enabled:TPage.Prefs.BlockWebRTC.wrtcPeerConnection.enabled},
@@ -1007,6 +1121,11 @@ var TPage = {
 						configurable:false,
 						value:undefined
 					},
+					"getUserAgent":{
+						enumerable:false,
+						configurable:false,
+						value:undefined
+					},
 					"vendor": {
 						enumerable: true,
 						configurable: false,
@@ -1056,7 +1175,9 @@ var TPage = {
 			TPage.Prefs.Hardware.hardware.hardwareConcurrency.enabled,
 			TPage.Prefs.Hardware.hardware.hardwareConcurrency.value,
 			TPage.Prefs.Hardware.hardware.deviceMemory.enabled,
-			TPage.Prefs.Hardware.hardware.deviceMemory.value
+			TPage.Prefs.Hardware.hardware.deviceMemory.value,
+			TPage.Prefs.Hardware.hardware.hwVrDisplays.enabled,
+			TPage.Prefs.Hardware.hardware.hwGamepads.enabled
 		];
 
 		TPage.codeNewPreInject(
@@ -1080,6 +1201,25 @@ var TPage = {
 						enumerable:true,
 						configurable:false,
 						value:opts[3] || 6
+					});
+				}
+				if (opts[4] === true){
+					Object.defineProperty(frame.navigator, "getVRDisplays",{
+						enumerable:false,
+						configurable:false,
+						value:undefined
+					});
+					Object.defineProperty(frame.navigator, "activeVRDisplays",{
+						enumerable:false,
+						configurable:false,
+						value:undefined
+					});
+				}
+				if (opts[5] === true){
+					Object.defineProperty(frame.navigator, "getGamepads",{
+						enumerable:false,
+						configurable:false,
+						value:undefined
 					});
 				}
 
@@ -1294,11 +1434,7 @@ var TPage = {
 		if (TPage.debug <= 2) console.info("%c [Tr]->[GL] Modified WebGL Information.",TPage.css);
 	},
 	protectCanvasFinger:function(){
-		/*
-			Function causes CSP errors, need to pass CSP information to
-			function or change header to allow the code to be injected.
-		*/
-
+		// TODO: Fix CSP errors
 		var opts = {
 			"rgba":[0,0,0,0],
 			"extra":false

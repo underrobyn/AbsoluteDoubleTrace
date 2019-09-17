@@ -45,16 +45,20 @@ var Simple = {
 			"Pref_HardwareSpoof.hardware.enabled":true,
 			"Pref_HardwareSpoof.hardware.deviceMemory.enabled":true,
 			"Pref_HardwareSpoof.hardware.hardwareConcurrency.enabled":true,
+			"Pref_HardwareSpoof.hardware.hwVrDisplays.enabled":true,
+			"Pref_HardwareSpoof.hardware.hwGamepads.enabled":true,
 			"Pref_ScreenRes.enabled":true,
 			"Pref_ScreenRes.randomOpts.enabled":true,
 			"Pref_ScreenRes.modifyDepths.enabled":true,
 			//"Pref_ScreenRes.modifyPixelRatio.enabled":true,
 			"Pref_WebRTC.enabled":true,
-			"Pref_WebRTC.wrtcInternal.enabled":true,
+			"Pref_WebRTC.wrtcInternal.enabled":true
 		},
 		high:{
 			"Pref_CanvasFingerprint.enabled":true,
 			"Pref_ClientRects.enabled":true,
+			"Pref_CommonTracking.enabled":true,
+			"Pref_CommonTracking.settings.countly.enabled":true,
 			"Pref_GoogleHeader.enabled":true,
 			"Pref_GoogleHeader.rmChromeUMA.enabled":true,
 			"Pref_GoogleHeader.rmChromeVariations.enabled":true,
@@ -62,16 +66,20 @@ var Simple = {
 			"Pref_WebGLFingerprint.enabled":true,
 			"Pref_WebRTC.wrtcPeerConnection.enabled":true,
 			"Pref_WebRTC.wrtcDataChannel.enabled":true,
-			"Pref_WebRTC.wrtcRtpReceiver.enabled":true,
+			"Pref_WebRTC.wrtcRtpReceiver.enabled":true
 		},
 		extreme:{
 			"Pref_GoogleHeader.rmClientData.enabled":true,
 			"Pref_NetworkInformation.enabled":true,
+			"Pref_CommonTracking.settings.piwik.enabled":true,
+			"Pref_CommonTracking.settings.google.enabled":true,
+			"Pref_CommonTracking.settings.segment.enabled":true,
+			"Pref_CommonTracking.settings.fbevents.enabled":true,
 			"Pref_ReferHeader.enabled":true,
 			"Pref_ReferHeader.httpHeader.allowSameHost.enabled":true,
 			"Pref_ReferHeader.httpHeader.allowSameDomain.enabled":false,
 			"Pref_ReferHeader.httpHeader.allowThirdParty.enabled":false,
-			"Pref_ReferHeader.httpHeader.onlySecureOrigins.enabled":true,
+			"Pref_ReferHeader.httpHeader.onlySecureOrigins.enabled":true
 		}
 	},
 
@@ -98,6 +106,12 @@ var Simple = {
 			case "update":
 				Simple.handleUpdate(data);
 				break;
+			case "dashboard":
+				Simple.sendDashboardUpdate(data);
+				break;
+			case "site-list":
+				Simple.sendSiteListUpdate(data);
+				break;
 			default:
 				Simple.sendError("Unknown request sent to background page");
 				break;
@@ -121,6 +135,8 @@ var Simple = {
 			return;
 		}
 
+		console.log(req);
+
 		switch (req.name){
 			case "protection-level":
 				Simple.updateProtectionLevel(req);
@@ -130,6 +146,15 @@ var Simple = {
 				break;
 			case "web-controller":
 				Simple.updateWebSettings(req);
+				break;
+			case "site-add":
+				Simple.updateSiteAdd(req);
+				break;
+			case "site-remove":
+				Simple.updateSiteRemove(req);
+				break;
+			case "site-protection-level":
+				Simple.updateSiteProtectionLevel(req);
 				break;
 			default:
 				Simple.sendError("Unknown update method");
@@ -186,19 +211,100 @@ var Simple = {
 		Prefs.SetMultiple(updates);
 	},
 
-	updateProtectionLevel:function(req){
-		if (!req.level) return;
+	sendDashboardUpdate:function(){
+		Simple.send({
+			"response":"update",
 
-		Simple.zeroCurrent();
-		Simple.setPreset(req.level);
+			"paused":Vars.paused,
+			"pause_end":Vars.pauseEnd,
+
+			"premium":Vars.Premium === "",
+
+			"presets_enabled":Prefs.Current.Main_Simple.presets.enabled,
+			"preset":Prefs.Current.Main_Simple.presets.global
+		});
 	},
 
-	updatePause:function(req){
+	sendSiteListUpdate:function(){
+		var decWl = Whitelist.storedList;
+		var decKeys = Object.keys(decWl);
+		var sendWl = {};
 
+		for (var i = 0;i<decKeys.length;i++){
+			sendWl[decKeys[i]] = {
+				name:Simple.cleanEntryName(decKeys[i]),
+				preset:decWl[decKeys[i]].PresetLevel
+			};
+		}
+
+		Simple.send({
+			"response":"site-list",
+			"list":sendWl
+		})
+	},
+
+	cleanEntryName:function(dirty){
+		return dirty.replace(/\*/g,"");
+	},
+
+	updateProtectionLevel:function(req){
+		if (!req.level || !req.preset) return;
+
+		// Update settings
+		if (req.preset !== "custom"){
+			Simple.zeroCurrent();
+			Simple.setPreset(req.preset);
+		}
+
+		Prefs.SetMultiple({
+			"Main_Simple.presets.enabled":req.preset !== "custom",
+			"Main_Simple.presets.global":req.level
+		});
+
+		Simple.sendDashboardUpdate();
+	},
+
+	updatePause:function(){
+		var newState = !Vars.paused;
+
+		Vars.paused = newState;
+		if (newState) Vars.pauseEnd = 99999;
+
+		Simple.sendDashboardUpdate();
 	},
 
 	updateWebSettings:function(req){
 
+	},
+
+	updateSiteProtectionLevel:function(req){
+		// TODO: Maybe retain current protection template
+		var siteKey = req.entryid;
+		var template = new ProtectionTemplate(false);
+		template.PresetLevel = req.level;
+
+		Whitelist.RemoveItem(siteKey,function(){
+			Whitelist.AddItem(siteKey,template,Simple.sendSiteListUpdate);
+		});
+	},
+
+	updateSiteAdd:function(req){
+		/*try {
+			// Check for "http" in string, if not add it as URL won't process...
+			var entryParsed = new URL(req.entryid);
+		} catch (e){
+
+		}*/
+
+		var siteKey = "*" + req.entryid + "*";
+		var template = new ProtectionTemplate(false);
+		template.PresetLevel = req.level;
+
+		Whitelist.EditItem(siteKey,template,Simple.sendSiteListUpdate);
+	},
+
+	updateSiteRemove:function(req){
+		Whitelist.RemoveItem(req.entryid,Simple.sendSiteListUpdate);
 	}
 
 };

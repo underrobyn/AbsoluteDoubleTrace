@@ -57,7 +57,7 @@ var Trace = {
 				Vars.s.set({"trace_installdate":Stats.GenTime()[0]});
 				Stats.SaveStats();
 				Web.BlocklistLoader(true);
-				chrome.tabs.create({url:"/html/options.html#v2installed"});
+				chrome.tabs.create({url:"/html/options.html#installed"});
 			} else if (details.reason && details.reason === "update") {
 				if (Trace.DEBUG) console.info("[mangd]-> Updated from: " + details.previousVersion);
 			}
@@ -166,6 +166,10 @@ var Trace = {
 			Tabs.TabInfo = Prefs.Current.Main_Trace.TabStats.enabled;
 			Trace.DEBUG = Prefs.Current.Main_Trace.DebugApp.enabled;
 
+			Vars.simpleUi = Prefs.Current.Main_Simple.enabled;
+			Vars.usePresets = Prefs.Current.Main_Simple.presets.enabled;
+			Vars.preset = Prefs.Current.Main_Simple.presets.global;
+
 			// Tell users that they can debug trace if they wish
 			if (Trace.DEBUG === false){
 				console.log("%cYou can see more debug messages by running this code: (function(){Prefs.Set('Main_Trace.DebugApp.enabled',true);window.location.reload();})();",'color:#fff;background-color:#1a1a1a;font-size:1.2em;padding:5px;');
@@ -179,7 +183,7 @@ var Trace = {
 				Stats.LoadStats();
 
 			// Load statistics into program
-			if (Prefs.Current.Main_Trace.ProtectionSessions.enabled === true)
+			if (Vars.pSessions === true)
 				Trace.f.GenerateSession();
 
 			// Assign keyboard shortcuts
@@ -343,7 +347,18 @@ var Trace = {
 		ChooseGPU:function(){
 			if (Prefs.Current.Pref_WebGLFingerprint.enabled === false) return;
 
-			Vars.gpuChose = rA(Vars.gpuModels);
+			var gpuStr = rA(Vars.gpuModels);
+			if (Prefs.Current.Pref_WebGLFingerprint.gpuList.list.length !== 0){
+				gpuStr = rA(Prefs.Current.Pref_WebGLFingerprint.gpuList.list);
+			}
+
+			var addDirectX = rA([0,1,2,3]);
+
+			if (addDirectX === 0) gpuStr += gpuDirect2;
+			if (addDirectX === 1) gpuStr += gpuDirect3;
+			if (addDirectX === 2) gpuStr += gpuDirect5;
+
+			Vars.gpuChose = gpuStr;
 		},
 
 		ChooseUserAgent:function(){

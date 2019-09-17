@@ -4,6 +4,7 @@ var Whitelist = {
 		"Pref_BatteryApi":true,
 		"Pref_CanvasFingerprint":true,
 		"Pref_ClientRects":true,
+		"Pref_CommonTracking":true,
 		"Pref_CookieEater":true,
 		"Pref_ETagTrack":true,
 		"Pref_GoogleHeader":true,
@@ -20,25 +21,34 @@ var Whitelist = {
 		"Pref_WebGLFingerprint":true
 	},
 
-	tempWhitelist:{
+	tempList:{
 		"search":[],
 		"keys":[],
 		"values":[]
 	},
 	useTempWl:false,
 
-	storedWhitelist:{},
-	decodedWhitelist:{
+	storedList:{},
+	decodedList:{
 		"keys":[],
 		"values":[]
 	},
 	wlEnabled:true,
+
+	// Thanks to https://gist.github.com/donmccurdy/6d073ce2c6f3951312dfa45da14a420f
+	wildcardToRegExp:function(s){
+		return new RegExp('^' + s.split(/\*+/).map(Whitelist.regExpEscape).join('.*') + '$');
+	},
+	regExpEscape:function(s){
+		return s.replace(/[|\\{}()[\]^$+*?.]/g, '\\$&');
+	},
 
 	NewWhitelistFormat:function(old){
 		console.log("Saved new whitelist format");
 		var trNewWl = {};
 		for (var i = 0, l = Object.keys(old).length;i<l;i++){
 			trNewWl["*"+Object.keys(old)[i]+"*"] = {
+				"PresetLevel":null,
 				"SiteBlocked":false,	// Allow access to the site
 				"InitRequests":true,	// Allow the site to make requests to sites in the blocklist
 				"Protections":Whitelist.whitelistDefaults		// Object of protections to change on the site
@@ -47,36 +57,36 @@ var Whitelist = {
 		return trNewWl;
 	},
 	GetStoredWhitelist:function(cb){
-		delete Whitelist.storedWhitelist;
+		delete Whitelist.storedList;
 
-		Whitelist.storedWhitelist = {};
+		Whitelist.storedList = {};
 		Vars.s.get(["WebData_Whitelist","Main_PageList"],function(s){
 			if ((typeof s.Main_PageList === "undefined" || s.Main_PageList === null) && typeof s.WebData_Whitelist !== "object"){
 				// If new whitelist isn't set and old one isn't either save a blank one
 				Whitelist.SaveWhitelist();
 			} else if (typeof s.WebData_Whitelist === "object") {
 				// If old whitelist is set convert to new format
-				Whitelist.storedWhitelist = Whitelist.NewWhitelistFormat(s.WebData_Whitelist);
+				Whitelist.storedList = Whitelist.NewWhitelistFormat(s.WebData_Whitelist);
 				Vars.s.remove(["WebData_Whitelist"]);
 				Whitelist.SaveWhitelist();
 				if (cb) cb(true);
 			} else {
 				// If new whitelist is there, set it.
-				Whitelist.storedWhitelist = s.Main_PageList;
+				Whitelist.storedList = s.Main_PageList;
 			}
 			// Load Whitelist
 			Whitelist.LoadWhitelist(cb);
 		});
 	},
 	LoadWhitelist:function(cb){
-		delete Whitelist.decodedWhitelist;
-		Whitelist.decodedWhitelist = {
+		delete Whitelist.decodedList;
+		Whitelist.decodedList = {
 			"keys":[],
 			"values":[]
 		};
 
-		var keys = Object.keys(Whitelist.storedWhitelist);
-		var vals = Object.values(Whitelist.storedWhitelist);
+		var keys = Object.keys(Whitelist.storedList);
+		var vals = Object.values(Whitelist.storedList);
 		var defKeys = Object.keys(Whitelist.whitelistDefaults);
 		var decoded = {
 			"keys":[],
@@ -85,7 +95,7 @@ var Whitelist = {
 		var l = keys.length;
 
 		for (var i = 0;i<l;i++){
-			decoded["keys"].push(Utils.wildcardToRegExp(keys[i]));
+			decoded["keys"].push(Whitelist.wildcardToRegExp(keys[i]));
 
 			if (typeof vals[i] !== "object"){
 				continue;
@@ -102,14 +112,14 @@ var Whitelist = {
 						}
 					}
 					vals[i].Protections = repairedProts;
-					Whitelist.storedWhitelist[keys[i]].Protections = repairedProts;
+					Whitelist.storedList[keys[i]].Protections = repairedProts;
 					Whitelist.UpdateStorage();
 				}
 
 				// Add settings preset key if not exists
 				if (vals[i].PresetLevel === undefined){
 					vals[i].PresetLevel = null;
-					Whitelist.storedWhitelist[keys[i]].PresetLevel = null;
+					Whitelist.storedList[keys[i]].PresetLevel = null;
 					Whitelist.UpdateStorage();
 				}
 			} catch(e){
@@ -121,7 +131,7 @@ var Whitelist = {
 			decoded["values"].push(vals[i]);
 		}
 
-		Whitelist.decodedWhitelist = decoded;
+		Whitelist.decodedList = decoded;
 		Whitelist.wlEnabled = l !== 0;
 
 		if (Trace.DEBUG) console.log("[plstd]-> Decoded pagelist!");
@@ -130,14 +140,14 @@ var Whitelist = {
 	SaveWhitelist:function(cb){
 		if (Trace.DEBUG) console.log("[plstd]-> Saving pagelist!");
 		Vars.s.set({
-			"Main_PageList":Whitelist.storedWhitelist
+			"Main_PageList":Whitelist.storedList
 		},function(){
 			Whitelist.LoadWhitelist(cb);
 		});
 	},
 	UpdateStorage:function(cb){
 		Vars.s.set({
-			"Main_PageList":Whitelist.storedWhitelist
+			"Main_PageList":Whitelist.storedList
 		},function(){
 			window.location.reload();
 			if (cb) cb();
@@ -150,14 +160,14 @@ var Whitelist = {
 			"exportTime":(new Date).toString(),
 			"traceVersion":chrome.runtime.getManifest().version || null,
 			"traceBrowser":navigator.userAgent || "Unknown.",
-			"entries":Whitelist.storedWhitelist
+			"entries":Whitelist.storedList
 		};
 
 		cb(exportObj);
 	},
 	WhitelistImport:function(entries,cb){
 		// Remove memory references
-		var curr = JSON.parse(JSON.stringify(Whitelist.storedWhitelist));
+		var curr = JSON.parse(JSON.stringify(Whitelist.storedList));
 		var fMem = JSON.parse(JSON.stringify(entries));
 
 		var keys = Object.keys(fMem);
@@ -175,30 +185,30 @@ var Whitelist = {
 			console.log("[plstd]-> Imported Entry:",keys[i]);
 		}
 
-		Whitelist.storedWhitelist = curr;
+		Whitelist.storedList = curr;
 
 		if (cb) cb();
 	},
 	ReturnWhitelist:function(callback){
-		callback(Whitelist.storedWhitelist);
+		callback(Whitelist.storedList);
 	},
 	GetWhitelist:function(){
-		if (!Whitelist.useTempWl) return Whitelist.decodedWhitelist;
+		if (!Whitelist.useTempWl) return Whitelist.decodedList;
 
 		// Merge temporary whitelist with main whitelist
 		return {
 			"keys":[].concat(
-				Whitelist.decodedWhitelist.keys,
-				Whitelist.tempWhitelist.keys
+				Whitelist.decodedList.keys,
+				Whitelist.tempList.keys
 			),
 			"values":[].concat(
-				Whitelist.decodedWhitelist.values,
-				Whitelist.tempWhitelist.values
+				Whitelist.decodedList.values,
+				Whitelist.tempList.values
 			)
 		};
 	},
 	EmptyList:function(){
-		Whitelist.storedWhitelist = {};
+		Whitelist.storedList = {};
 		Whitelist.SaveWhitelist();
 	},
 	EditItem:function(removeItem,addItem,newObject,cb){
@@ -212,11 +222,11 @@ var Whitelist = {
 		// this needs to stay as a variable statement to do some memory assignment trickery in firefox to fix issue #4
 		var newSafeObject = JSON.parse(JSON.stringify(newObject));
 
-		Whitelist.storedWhitelist[item] = newSafeObject;
+		Whitelist.storedList[item] = newSafeObject;
 		Whitelist.SaveWhitelist(cb);
 	},
 	RemoveItem:function(item,cb){
-		delete Whitelist.storedWhitelist[item];
+		delete Whitelist.storedList[item];
 		if (cb) Whitelist.SaveWhitelist(cb);
 	},
 	AddTempItem:function(item,cb){
@@ -228,9 +238,9 @@ var Whitelist = {
 		template.tempEntry = true;
 
 		// Update temp whitelist
-		Whitelist.tempWhitelist.search.push(item);
-		Whitelist.tempWhitelist.keys.push(Utils.wildcardToRegExp(item));
-		Whitelist.tempWhitelist.values.push(template);
+		Whitelist.tempList.search.push(item);
+		Whitelist.tempList.keys.push(Whitelist.wildcardToRegExp(item));
+		Whitelist.tempList.values.push(template);
 
 		// Allow Trace to see temp whitelist
 		Whitelist.useTempWl = true;
@@ -239,21 +249,21 @@ var Whitelist = {
 		if (cb) cb();
 	},
 	RemoveTempItem:function(item,cb){
-		var index = Whitelist.tempWhitelist.search.indexOf(item);
+		var index = Whitelist.tempList.search.indexOf(item);
 
 		if (index === -1) return;
 
-		Whitelist.tempWhitelist.search.splice(index,1);
-		Whitelist.tempWhitelist.keys.splice(index,1);
-		Whitelist.tempWhitelist.values.splice(index,1);
+		Whitelist.tempList.search.splice(index,1);
+		Whitelist.tempList.keys.splice(index,1);
+		Whitelist.tempList.values.splice(index,1);
 
-		console.log(Whitelist.tempWhitelist.keys.length);
-		Whitelist.useTempWl = Whitelist.tempWhitelist.keys.length !== 0;
+		console.log(Whitelist.tempList.keys.length);
+		Whitelist.useTempWl = Whitelist.tempList.keys.length !== 0;
 
 		if (Trace.DEBUG) console.log("[tmpwd]-> Removed %s from the temporary whitelist",item);
 		if (cb) cb();
 	},
-	CheckWhitelist:function(url,protection){
+	CheckList:function(url,protection){
 		// Check if protection can run on all pages
 		var globalAllow = Prefs.Current.Main_ExecutionOrder.AllPage.indexOf(protection) !== -1;
 

@@ -375,6 +375,43 @@ var WebBlocker = {
 		file:[],
 		query:[]
 	},
+
+	// Thanks to https://github.com/Olical/binary-search/blob/master/src/binarySearch.js
+	arraySearch:function(list,item){
+		var min = 0, max = list.length - 1, guess;
+
+		var bitwise = (max <= 2147483647);
+		if (bitwise) {
+			while (min <= max) {
+				guess = (min + max) >> 1;
+				if (list[guess] === item) {
+					return guess;
+				} else {
+					if (list[guess] < item) {
+						min = guess + 1;
+					} else {
+						max = guess - 1;
+					}
+				}
+			}
+		} else {
+			while (min <= max) {
+				guess = Math.floor((min + max) / 2);
+				if (list[guess] === item) {
+					return guess;
+				} else {
+					if (list[guess] < item) {
+						min = guess + 1;
+					} else {
+						max = guess - 1;
+					}
+				}
+			}
+		}
+
+		return -1;
+	},
+
 	PingBlocker:function(d){
 		// Check if Trace is paused
 		if (Vars.paused !== false) return {cancel:false};
@@ -499,7 +536,7 @@ var WebBlocker = {
 		// Check for TLD block
 		if (WebBlocker.validate.tld === true){
 			var toplevel = domain.split(".").reverse()[0];
-			if (Utils.arraySearch(WebBlocker.blocked.tld,toplevel) !== -1){
+			if (WebBlocker.arraySearch(WebBlocker.blocked.tld,toplevel) !== -1){
 				blockType = 1;
 			}
 		}
@@ -508,14 +545,14 @@ var WebBlocker = {
 		if (blockType === 0){
 			// Check for Domain block
 			if (WebBlocker.validate.domain === true) {
-				if (Utils.arraySearch(WebBlocker.blocked.domain, domain) !== -1) {
+				if (WebBlocker.arraySearch(WebBlocker.blocked.domain, domain) !== -1) {
 					blockType = 2;
 				}
 			}
 
 			// Check for Host block
 			if (WebBlocker.validate.host === true){
-				if (Utils.arraySearch(WebBlocker.blocked.host,host) !== -1) {
+				if (WebBlocker.arraySearch(WebBlocker.blocked.host,host) !== -1) {
 					blockType = 3;
 				}
 			}
@@ -524,7 +561,7 @@ var WebBlocker = {
 			var cleanURL = request.url.replace(/#[^#]*$/,"").replace(/\?[^\?]*$/,"");
 			if (WebBlocker.validate.url === true){
 				var url = cleanURL.split("://")[1];
-				if (Utils.arraySearch(WebBlocker.blocked.url,url) !== -1){
+				if (WebBlocker.arraySearch(WebBlocker.blocked.url,url) !== -1){
 					blockType = 4;
 				}
 			}
@@ -533,7 +570,7 @@ var WebBlocker = {
 			if (WebBlocker.validate.file === true){
 				var file = cleanURL.split("/").pop();
 				if (file.length !== 0){
-					if (Utils.arraySearch(WebBlocker.blocked.file,file) !== -1){
+					if (WebBlocker.arraySearch(WebBlocker.blocked.file,file) !== -1){
 						blockType = 5;
 					}
 				}

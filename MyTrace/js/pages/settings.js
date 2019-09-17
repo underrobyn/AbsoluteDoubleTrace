@@ -1,51 +1,133 @@
 /*
  * 	Trace options page script
- * 	Copyright AbsoluteDouble 2018
+ * 	Copyright AbsoluteDouble 2018 - 2019
  * 	Written by Jake Mcneill
  * 	https://absolutedouble.co.uk/
  */
-
-var showErr = function(m){
-	document.getElementById("e_msg").style.display = "block";
-	document.getElementById("fail_reason").innerText = m;
-};
-
-if (typeof $ !== "function" || typeof jQuery !== "function") {
-	showErr("jQuery Library failed to load.");
-}
-if (typeof window.JSON !== "object"){
-	showErr("JSON Library failed to load.");
-}
-
-// A general fix for browser that use window.browser instead of window.chrome
-if (!window.chrome.hasOwnProperty("extension")) window.chrome = (function (){ return window.msBrowser || window.browser || window.chrome; })();
 
 var sTrace = {
 	debug:false,
 	port:null,
 
 	start:function(){
+		sTrace.setupPort();
+		sTrace.ui.createStructure();
+
+		if (window.location.hash && window.location.hash === "#installed"){
+			sTrace.welcome.init();
+		}
+
+		sTrace.send({"request":"dashboard"});
+	},
+
+	setupPort:function(){
 		sTrace.port = chrome.runtime.connect({
 			name:"background-msg"
 		});
 		sTrace.port.onMessage.addListener(sTrace.recieve);
 
-		sTrace.send({
-			"request":"connect"
-		});
-
-		sTrace.ui.createStructure();
+		sTrace.send({"request":"connect"});
 	},
 
 	recieve:function(data){
-		console.log(data);
+		switch (data.response){
+			case "connected":
+				sTrace.debug = data.debug;
+				break;
+			case "update":
+				sTrace.update.dashboard(data);
+				break;
+			case "site-list":
+				sTrace.update.siteList(data);
+				break;
+			case "error":
+				console.error(data);
+				break;
+			default:
+				console.error("Unknown response:",data.response);
+				break;
+		}
 	},
 
 	send:function(data){
 		sTrace.port.postMessage(data);
 	},
 
+	update:{
+
+		dashboard:function(data){
+			console.log(data);
+
+			sTrace.ui.pauseState(data.paused,data.pause_end);
+			sTrace.ui.selectedCard(data.preset);
+		},
+
+		siteList:function(data){
+			$("#sites_list").empty().append(
+				sTrace.ui.createSiteAdd()
+			);
+
+			var wl = data.list;
+			var wlKeys = Object.keys(wl).sort();
+			for (var i = 0;i<wlKeys.length;i++){
+				$("#sites_list").append(
+					sTrace.ui.createSiteEntry(wlKeys[i],wl[wlKeys[i]].name,wl[wlKeys[i]].preset)
+				);
+			}
+		}
+
+	},
+
+	welcome:{
+
+		init:function(){
+			var freshInstall = function(){
+				$("#overlay_message").fadeOut(300);
+				setTimeout(function(){
+					$("#ux").removeClass("blurred");
+				},10);
+
+				window.location.hash = '#';
+			};
+
+			$("#ux").addClass("blurred");
+			$("#overlay_message").slideDown(300);
+			$("#overlay_close").on("click enter",freshInstall);
+
+			if (ls.supported === true){
+				ls.Store("showSettingsTutorial",true);
+				ls.Store("showRequestTutorial",true);
+				ls.Store("showScopeTutorial",true);
+				ls.Store("hasAskedForFeedback",false);
+			}
+
+			$(window).click(function(e){
+				if ($(e.target)[0].id === "overlay_message"){
+					freshInstall();
+				}
+			});
+		}
+
+	},
+
 	ui:{
+
+		sliderPresets:[
+			"none",
+			"low",
+			"medium",
+			"high",
+			"extreme",
+			"custom"
+		],
+		sliderLevels:[
+			lang("mainSiteListSliderNone"),
+			lang("mainSiteListSliderLow"),
+			lang("mainSiteListSliderMedium"),
+			lang("mainSiteListSliderHigh"),
+			lang("mainSiteListSliderExtreme"),
+			lang("mainSiteListSliderCustom")
+		],
 
 		createStructure:function(){
 			// Create navigation bar
@@ -56,28 +138,28 @@ var sTrace = {
 					"data-load":"protection"
 				}).text(
 					lang("mainNavProtection")
-				).on("click enter",sTrace.ui.navEvent),
+				).on("click enter",sTrace.events.nav),
 				$("<div/>",{
 					"class":"nav_item",
 					"tabindex":"1",
 					"data-load":"sites"
 				}).text(
 					lang("mainNavSiteList")
-				).on("click enter",sTrace.ui.navEvent),
+				).on("click enter",sTrace.events.nav),
 				$("<div/>",{
 					"class":"nav_item",
 					"tabindex":"1",
 					"data-load":"advanced"
 				}).text(
 					lang("mainNavAdvanced")
-				).on("click enter",sTrace.ui.navEvent),
+				).on("click enter",sTrace.events.nav),
 				$("<div/>",{
 					"class":"nav_item",
 					"tabindex":"1",
 					"data-load":"about"
 				}).text(
 					lang("mainNavAbout")
-				).on("click enter",sTrace.ui.navEvent)
+				).on("click enter",sTrace.events.nav)
 			);
 
 			// Create page headers
@@ -103,21 +185,21 @@ var sTrace = {
 				$("<div/>",{"class":"card_desc"}).text(lang("mainCardDescDisabled")),
 				$("<div/>",{"class":"card_bottom"}).append(
 					$("<div/>",{"class":"card_control"}).text(lang("mainCardCtrlDisabled"))
-				).on("click enter",sTrace.ui.cardEvent)
+				).on("click enter",sTrace.events.card)
 			);
 			$("#prot_web").append(
 				$("<h3/>",{"class":"card_title"}).text(lang("mainCardTitleWeb")),
 				$("<div/>",{"class":"card_desc"}).text(lang("mainCardDescWeb")),
 				$("<div/>",{"class":"card_bottom"}).append(
 					$("<div/>",{"class":"card_control"}).text(lang("mainCardCtrlWeb"))
-				).on("click enter",sTrace.ui.cardEvent)
+				).on("click enter",sTrace.events.card)
 			);
 			$("#prot_premium").append(
 				$("<h3/>",{"class":"card_title"}).text(lang("mainCardTitlePremium")),
 				$("<div/>",{"class":"card_desc"}).text(lang("mainCardDescPremium")),
 				$("<div/>",{"class":"card_bottom"}).append(
 					$("<div/>",{"class":"card_control"}).text(lang("mainCardCtrlPremium"))
-				).on("click enter",sTrace.ui.cardEvent)
+				).on("click enter",sTrace.events.card)
 			);
 
 			// Protection levels
@@ -125,29 +207,61 @@ var sTrace = {
 				$("<h3/>",{"class":"card_title"}).text(lang("mainCardTitleLow")),
 				$("<div/>",{"class":"card_desc"}).text(lang("mainCardDescLow")),
 				$("<div/>",{"class":"card_bottom"}).append(
-					$("<div/>",{"class":"card_control"}).text(lang("mainCardCtrlLow"))
-				).on("click enter",sTrace.ui.cardEvent)
+					$("<div/>",{"class":"card_control"}).text(lang("mainCardCtrlSelect"))
+				).on("click enter",sTrace.events.card)
 			);
 			$("#prot_med").append(
 				$("<h3/>",{"class":"card_title"}).text(lang("mainCardTitleMedium")),
 				$("<div/>",{"class":"card_desc"}).text(lang("mainCardDescMedium")),
 				$("<div/>",{"class":"card_bottom"}).append(
-					$("<div/>",{"class":"card_control"}).text(lang("mainCardCtrlMedium"))
-				).on("click enter",sTrace.ui.cardEvent)
+					$("<div/>",{"class":"card_control"}).text(lang("mainCardCtrlSelect"))
+				).on("click enter",sTrace.events.card)
 			);
 			$("#prot_high").append(
 				$("<h3/>",{"class":"card_title"}).text(lang("mainCardTitleHigh")),
 				$("<div/>",{"class":"card_desc"}).text(lang("mainCardDescHigh")),
 				$("<div/>",{"class":"card_bottom"}).append(
-					$("<div/>",{"class":"card_control"}).text(lang("mainCardCtrlHigh"))
-				).on("click enter",sTrace.ui.cardEvent)
+					$("<div/>",{"class":"card_control"}).text(lang("mainCardCtrlSelect"))
+				).on("click enter",sTrace.events.card)
 			);
 			$("#prot_extreme").append(
 				$("<h3/>",{"class":"card_title"}).text(lang("mainCardTitleExtreme")),
 				$("<div/>",{"class":"card_desc"}).text(lang("mainCardDescExtreme")),
 				$("<div/>",{"class":"card_bottom"}).append(
-					$("<div/>",{"class":"card_control"}).text(lang("mainCardCtrlExtreme"))
-				).on("click enter",sTrace.ui.cardEvent)
+					$("<div/>",{"class":"card_control"}).text(lang("mainCardCtrlSelect"))
+				).on("click enter",sTrace.events.card)
+			);
+			$("#prot_custom").append(
+				$("<h3/>",{"class":"card_title"}).text(lang("mainCardTitleCustom")),
+				$("<div/>",{"class":"card_desc"}).text(lang("mainCardDescCustom")),
+				$("<div/>",{"class":"card_bottom"}).append(
+					$("<div/>",{"class":"card_control"}).text(lang("mainCardCtrlSelect"))
+				).on("click enter",sTrace.events.card)
+			);
+		},
+
+		createSiteAdd:function(){
+			return $("<div/>",{"id":"sites_new","class":"list_item"}).append(
+				$("<div/>",{"class":"list_title"}).append(
+					$("<input/>",{
+						"type":"text",
+						"id":"site_add",
+						"placeholder":lang("mainSiteListAddPlaceholder")
+					})
+				),
+				$("<div/>",{"class":"list_protection"}).append(
+					$("<span/>",{"id":"sites_new_slider","class":"list_rangetext"}).text(lang("mainSiteListSliderMedium")),
+					$("<input/>",{
+						"type":"range",
+						"id":"site_add_level",
+						"min":0,
+						"max":4,
+						"value":2
+					}).on("change",sTrace.events.updateAddSlider)
+				),
+				$("<div/>",{"class":"list_ctrl"}).append(
+					$("<button/>",{"class":"list_button"}).text("Add Site").on("click enter",sTrace.events.addSite)
+				)
 			);
 		},
 
@@ -156,30 +270,63 @@ var sTrace = {
 				$("<input/>",{
 					"type":"text",
 					"placeholder":lang("mainSiteListSearchPlaceholder")
-				}).on("keyup",sTrace.ui.siteListSearchEvent)
+				}).on("keyup",sTrace.events.siteListSearch)
 			);
 
-			$("#sites_new").append(
+			$("#sites_list").append(
+				sTrace.ui.createSiteAdd()
+			);
+		},
+
+		createSiteEntry:function(entryid,entry,preset){
+			return $("<div/>",{"class":"list_item","data-entryid":entryid,"data-search":entry}).append(
 				$("<div/>",{"class":"list_title"}).append(
-					$("<input/>",{
-						"type":"text",
-						"placeholder":lang("mainSiteListAddPlaceholder")
-					})
+					$("<span/>").text(entry)
 				),
 				$("<div/>",{"class":"list_protection"}).append(
-					$("<span/>",{"class":"list_rangetext"}).text(lang("mainSiteListSliderMedium")),
+					$("<span/>",{"class":"list_rangetext"}).text(
+						sTrace.ui.sliderLevels[preset] || sTrace.ui.sliderLevels[2]
+					),
 					$("<input/>",{
 						"type":"range",
 						"min":0,
 						"max":4,
-						"value":2
-					})
+						"value":(preset === null ? 2 : preset)
+					}).on("change",sTrace.events.updateExistingSlider)
+				),
+				$("<div/>",{"class":"list_ctrl"}).append(
+					$("<button/>",{"class":"list_button"}).text("Remove Site").on("click enter",sTrace.events.removeSite)
 				)
-			)
+			);
 		},
 
-		navEvent:function(){
-			var load = "#" + $(this).data("load");
+		selectedCard:function(preset){
+			let currPreset = sTrace.ui.sliderPresets[preset];
+
+			$(".card_active div.card_control").text(lang("mainCardCtrlSelect"));
+			$(".card_active").addClass("card_standard").removeClass("card_active");
+
+			$("[data-card='" + currPreset + "']").addClass("card_active").removeClass("card_standard");
+			$("[data-card='" + currPreset + "'] div.card_control").text(
+				lang("mainCardCtrlSelected")
+			);
+		},
+
+		pauseState:function(paused,pauseEnd){
+			$("[data-card='pause'] div.card_control").text(
+				paused ? lang("mainCardCtrlUnpause") : lang("mainCardCtrlPause")
+			);
+		},
+
+		premiumState:function(active){
+
+		}
+
+	},
+
+	events:{
+		nav:function(){
+			let load = "#" + $(this).data("load");
 
 			switch(load){
 				case "#protection":
@@ -187,6 +334,9 @@ var sTrace = {
 					break;
 				case "#sites":
 					document.title = "Trace | Site List";
+					sTrace.send({
+						"request":"site-list"
+					});
 					break;
 				case "#advanced":
 					chrome.tabs.create({url:"/html/options.html"});
@@ -202,8 +352,8 @@ var sTrace = {
 			$(load).removeClass("hidden");
 		},
 
-		cardEvent:function(){
-			var card = $($(this).parent()).data("card");
+		card:function(){
+			let card = $($(this).parent()).data("card");
 
 			switch (card){
 				case "pause":
@@ -213,19 +363,18 @@ var sTrace = {
 					});
 					break;
 				case "web":
-					sTrace.send({
-						"request":"update",
-						"name":"web-controller"
-					});
+					chrome.tabs.create({url:"/html/options.html#view=wrc"});
 					break;
 				case "low":
 				case "medium":
 				case "high":
 				case "extreme":
+				case "custom":
 					sTrace.send({
 						"request":"update",
 						"name":"protection-level",
-						"level":card
+						"preset":card,
+						"level":sTrace.ui.sliderPresets.indexOf(card)
 					});
 					break;
 				default:
@@ -233,12 +382,66 @@ var sTrace = {
 			}
 		},
 
-		siteListSearchEvent:function(){
-			console.log($(this).val())
-		}
+		// Site list functions
+		siteListSearch:function(){
+			let searchTerm = $(this).val();
 
+			$("div.list_item").each(function(){
+				if (!$(this).data("search")) return;
+
+				let searchId = $(this).data("search");
+				if (searchId.indexOf(searchTerm) === -1){
+					$(this).hide();
+				} else {
+					$(this).show();
+				}
+			});
+		},
+
+		addSite:function(){
+			let entryText = $("#site_add").val();
+			let entryLevel = parseInt($("#site_add_level").val());
+
+			sTrace.send({
+				"request":"update",
+				"name":"site-add",
+				"entryid":entryText,
+				"level":entryLevel
+			});
+		},
+
+		removeSite:function(){
+			let entryid = $($($(this).parent()).parent()).data("entryid");
+
+			sTrace.send({
+				"request":"update",
+				"name":"site-remove",
+				"entryid":entryid
+			});
+		},
+
+		updateAddSlider:function(){
+			let newVal = parseInt($(this).val());
+			$("#sites_new_slider").text(sTrace.ui.sliderLevels[newVal]);
+		},
+
+		updateExistingSlider:function(){
+			let entryid = $($($(this).parent()).parent()).data("entryid");
+			let newVal = parseInt($(this).val());
+
+			$("div.list_item[data-entryid='" + entryid + "'] span.list_rangetext").text(sTrace.ui.sliderLevels[newVal]);
+
+			sTrace.send({
+				"request":"update",
+				"name":"site-protection-level",
+				"entryid":entryid,
+				"level":newVal
+			});
+		}
 	}
 
 };
+
+ls.IsSupported();
 
 sTrace.start();

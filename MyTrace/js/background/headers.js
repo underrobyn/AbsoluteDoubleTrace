@@ -63,7 +63,7 @@ var Headers = {
 			if (details.frameId < 0) return;
 			if (details.url.substring(0,4).toLowerCase() !== "http") return;
 
-			if (!Whitelist.CheckWhitelist(details.url,"Pref_CookieEater")) return;
+			if (!Whitelist.CheckList(details.url,"Pref_CookieEater")) return;
 
 			var cookieList = Trace.g.CookieEater.GetList();
 			var method = "fp_method";
@@ -120,7 +120,7 @@ var Headers = {
 			if (details.frameId < 0) return;
 			if (details.url.substring(0,4).toLowerCase() !== "http") return;
 
-			if (!Whitelist.CheckWhitelist(details.url,"Pref_CookieEater")) return;
+			if (!Whitelist.CheckList(details.url,"Pref_CookieEater")) return;
 
 			var cookieList = Trace.g.CookieEater.GetList();
 			var method = "fp_method";
@@ -188,7 +188,7 @@ var Headers = {
 			if (details.frameId < 0) return;
 			if (details.url.substring(0,4).toLowerCase() !== "http") return;
 
-			if (!Whitelist.CheckWhitelist(details.url,"Pref_ETagTrack")) return;
+			if (!Whitelist.CheckList(details.url,"Pref_ETagTrack")) return;
 
 			for (var i=0;i<details.responseHeaders.length;++i){
 				var headerName = details.responseHeaders[i].name.toString().toLowerCase();
@@ -240,7 +240,7 @@ var Headers = {
 				return {requestHeaders:details.requestHeaders};
 			}
 
-			if (!Whitelist.CheckWhitelist(details.url,"Pref_GoogleHeader")) return;
+			if (!Whitelist.CheckList(details.url,"Pref_GoogleHeader")) return;
 
 			for (var i=0;i<details.requestHeaders.length;++i) {
 				var headerName = details.requestHeaders[i].name.toString().toLowerCase();
@@ -306,7 +306,7 @@ var Headers = {
 				return {requestHeaders:details.requestHeaders};
 			}
 
-			if (!Whitelist.CheckWhitelist(details.url,"Pref_IPSpoof")) return;
+			if (!Whitelist.CheckList(details.url,"Pref_IPSpoof")) return;
 
 			// Attempt forge IP
 			if (Prefs.Current.Pref_IPSpoof.useClientIP.enabled === true){
@@ -366,7 +366,7 @@ var Headers = {
 				return {requestHeaders:details.requestHeaders};
 			}
 
-			if (!Whitelist.CheckWhitelist(details.url,"Pref_ReferHeader")) return;
+			if (!Whitelist.CheckList(details.url,"Pref_ReferHeader")) return;
 
 			var s = Prefs.Current.Pref_ReferHeader.httpHeader;
 
@@ -455,7 +455,7 @@ var Headers = {
 				return {requestHeaders:details.requestHeaders};
 			}
 
-			if (!Whitelist.CheckWhitelist(details.url,"Pref_UserAgent")) return;
+			if (!Whitelist.CheckList(details.url,"Pref_UserAgent")) return;
 
 			for (var i=0;i<details.requestHeaders.length;++i){
 				var headerName = details.requestHeaders[i].name.toString().toLowerCase();

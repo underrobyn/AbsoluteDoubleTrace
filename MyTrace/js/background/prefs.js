@@ -182,7 +182,10 @@ var Prefs = {
 			}
 		},
 		"Pref_WebGLFingerprint":{
-			"enabled":false
+			"enabled":false,
+			"gpuList":{
+				"list":[]
+			}
 		},
 		"Pref_NativeFunctions":{
 			"enabled":false,
@@ -221,6 +224,12 @@ var Prefs = {
 				"deviceMemory":{
 					"enabled":true,
 					"value":4
+				},
+				"hwVrDisplays":{
+					"enabled":true
+				},
+				"hwGamepads":{
+					"enabled":true
 				}
 			}
 		},
@@ -437,6 +446,7 @@ var Prefs = {
 			}
 		},
 		"Main_Trace":{
+			// TODO: figure out what to do with this useless key
 			"AdvancedUi":{
 				"enabled":false
 			},
@@ -471,7 +481,7 @@ var Prefs = {
 			"enabled":false,
 			"presets":{
 				"enabled":true,
-				"global":"medium"
+				"global":2
 			}
 		},
 		"Main_ExecutionOrder":{
@@ -484,6 +494,7 @@ var Prefs = {
 				"Pref_NativeFunctions",
 				"Pref_NetworkInformation",
 				"Pref_ClientRects",
+				"Pref_CommonTracking",
 				"Pref_HardwareSpoof",
 				"Pref_ScreenRes",
 				"Pref_PluginHide",
@@ -692,12 +703,18 @@ var Prefs = {
 		});
 	},
 	TakeAction:function(setting,val){
+		// TODO: Use switch statement here
 		if (Trace.DEBUG) console.info("[prefd]-> Updating",setting,"to",val);
 
 		// Toggle debug messages
 		if (setting === "Main_Trace.DebugApp"){
 			Trace.DEBUG = val;
 		}
+
+		// Simple UI preferences
+		if (setting === "Main_Simple.enabled")			Vars.simpleUi = val;
+		if (setting === "Main_Simple.presets.enabled") 	Vars.usePresets = val;
+		if (setting === "Main_Simple.presets.global") 	Vars.preset = val;
 
 		// Toggle web-rtc protection
 		if (setting === "Pref_WebRTC.wrtcInternal.enabled" || setting === "Pref_WebRTC"){

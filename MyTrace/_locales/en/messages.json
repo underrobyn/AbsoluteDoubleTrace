@@ -14,34 +14,55 @@
 
 
 	"miscMsgOffline":{
-		"message":"No internet connection available",
-		"description":""
+		"message":"No internet connection available"
 	},
 	"miscMsgLoading":{
-		"message":"Loading...",
-		"description":""
+		"message":"Loading..."
+	},
+	"miscMsgSaving":{
+		"message":"Saving..."
+	},
+	"miscMsgSending":{
+		"message":"Sending..."
 	},
 	"miscMsgUnblockOrigin":{
-		"message":"Unblock the Origin URL: ",
-		"description":""
+		"message":"Unblock the Origin URL: "
 	},
 	"miscMsgUnblockPath":{
-		"message":"Unblock the URL path: ",
-		"description":""
+		"message":"Unblock the URL path: "
 	},
 	"miscMsgUnblockHost":{
-		"message":"Unblock the Host URL: ",
-		"description":""
+		"message":"Unblock the Host URL: "
 	},
 	"miscMsgUnblockRoot":{
-		"message":"Unblock the Root Domain: ",
-		"description":""
+		"message":"Unblock the Root Domain: "
 	},
 	"miscCtrlApplyEntry":{
-		"message":"Apply",
-		"description":""
+		"message":"Apply"
+	},
+	"miscCtrlCancel":{
+		"message":"Cancel"
+	},
+	"miscCtrlClose":{
+		"message":"Close"
+	},
+	"miscCtrlOkay":{
+		"message":"Okay"
+	},
+	"miscCtrlSave":{
+		"message":"Save"
+	},
+	"miscCtrlSaveClose":{
+		"message":"Save & Close"
 	},
 
+
+	"advHomeMsgWelcomeLong":{
+		"message":"Welcome to the Trace Dashboard!"
+	},
+	"advHomeMsgWelcomeShort":{
+		"message":"Trace Dashboard"
+	},
 
 	"advOverlayCtrlClose":{
 		"message":"Close",
@@ -81,6 +102,15 @@
 		"message":"Disabled",
 		"description":"setting enabled/disabled toggle"
 	},
+	"advSettingsMsgDisabled":{
+		"message":"This setting isn't currently enabled"
+	},
+	"advSettingsMsgSwitch":{
+		"message":"When the switch is green, the protection is enabled."
+	},
+	"advSettingsMsgImmediate":{
+		"message":"Changes to these settings should take place immediately"
+	},
 
 	"advStatsGraphTodayTotal":{
 		"message":"Today's total statistics",
@@ -89,6 +119,19 @@
 	"advStatsGraphTodayType":{
 		"message":"Today's total statistics",
 		"description":"title of graph"
+	},
+
+	"advBackupMsgTitle":{
+		"message":"Backup/Restore Settings"
+	},
+	"advBackupCtrlCreate":{
+		"message":"Download Backup"
+	},
+	"advRestoreMsgTitle":{
+		"message":"Restore a backup"
+	},
+	"advRestoreMsgInvalid":{
+		"message":"This file isn't a valid Trace Backup."
 	},
 
 
@@ -135,132 +178,126 @@
   	},
 
   	"mainCardTitleDisabled": {
-	  	"message":"No Protection",
-	  	"description":""
+	  	"message":"No Protection"
 	},
   	"mainCardTitleWeb": {
-	  	"message":"Website Blocking",
-	  	"description":""
+	  	"message":"Website Blocking"
 	},
   	"mainCardTitlePremium": {
-	  	"message":"Trace Premium",
-	  	"description":""
+	  	"message":"Trace Premium"
 	},
   	"mainCardTitleLow": {
-	  	"message":"Minimum",
-	  	"description":""
+	  	"message":"Minimum"
 	},
   	"mainCardTitleMedium": {
-	  	"message":"Standard",
-	  	"description":""
+	  	"message":"Standard"
 	},
   	"mainCardTitleHigh": {
-	  	"message":"High",
-	  	"description":""
+	  	"message":"High"
 	},
   	"mainCardTitleExtreme": {
-	  	"message":"Extreme",
-	  	"description":""
+	  	"message":"Extreme"
+	},
+  	"mainCardTitleCustom": {
+	  	"message":"Custom"
 	},
 
   	"mainCardDescDisabled": {
-	  	"message":"All of Trace's protections will be disabled. When you restart your browser they will be turned back on.",
-	  	"description":""
+	  	"message":"When paused, all of Trace's protections will be disabled. When you restart your browser they will be turned back on."
 	},
   	"mainCardDescWeb": {
-	  	"message":"This will enable Trace to block trackers, malicious domains and clean URLs of tracking information.",
-	  	"description":""
+	  	"message":"This will enable Trace to block trackers, malicious domains and clean URLs of tracking information."
 	},
   	"mainCardDescPremium": {
-	  	"message":"Get access to Premium blocklists and support Trace's development by buying Trace Premium.",
-	  	"description":""
+	  	"message":"Get access to Premium blocklists and support Trace's development by buying Trace Premium."
 	},
   	"mainCardDescLow": {
-	  	"message":"Lowest level of tracking protection.",
-	  	"description":""
+	  	"message":"Lowest level of tracking protection. Better than nothing?"
 	},
   	"mainCardDescMedium": {
-	  	"message":"Default level of tracking protection, includes all the protections from 'Minimum'.",
-	  	"description":""
+	  	"message":"Default level of tracking protection."
 	},
   	"mainCardDescHigh": {
-	  	"message":"A heightened level of tracking protection, includes all the protections from 'Minimum' and 'Standard'. Websites may break some times as a result of some protections here.",
-	  	"description":""
+	  	"message":"A heightened level of tracking protection. Websites may break some times as a result of some protections here."
 	},
   	"mainCardDescExtreme": {
-	  	"message":"The highest level of tracking protection Trace can offer. All protections are enabled which can cause websites to break, use of the Site List is advised.",
-	  	"description":""
+	  	"message":"A very high level of tracking protection. Almost all protections are enabled, which can cause websites to break."
+	},
+  	"mainCardDescCustom": {
+	  	"message":"Control each Trace setting individually, including ones that are not included in these presets."
 	},
 
-  	"mainCardCtrlDisabled": {
-	  	"message":"Activate",
-	  	"description":""
+  	"mainCardCtrlPause": {
+	  	"message":"Pause"
+	},
+  	"mainCardCtrlUnpause": {
+	  	"message":"Unpause"
 	},
   	"mainCardCtrlWeb": {
-	  	"message":"Configure",
-	  	"description":""
+	  	"message":"Configure"
 	},
   	"mainCardCtrlPremium": {
-	  	"message":"Options",
-	  	"description":""
+	  	"message":"Options"
 	},
-  	"mainCardCtrlLow": {
-	  	"message":"Select",
-	  	"description":""
+  	"mainCardCtrlSelect": {
+	  	"message":"Select"
 	},
-  	"mainCardCtrlMedium": {
-	  	"message":"Select",
-	  	"description":""
-	},
-  	"mainCardCtrlHigh": {
-	  	"message":"Select",
-	  	"description":""
-	},
-  	"mainCardCtrlExtreme": {
-	  	"message":"Select",
-	  	"description":""
+  	"mainCardCtrlSelected": {
+	  	"message":"Selected"
 	},
 
   	"mainSiteListSearchPlaceholder": {
-	  	"message":"Search...",
-	  	"description":""
+	  	"message":"Search..."
 	},
   	"mainSiteListAddPlaceholder": {
-	  	"message":"Add URL to list",
-	  	"description":""
+	  	"message":"Add URL to list"
+	},
+  	"mainSiteListSliderNone": {
+	  	"message":"Current Setting: None"
+	},
+  	"mainSiteListSliderLow": {
+	  	"message":"Current Setting: Low"
 	},
   	"mainSiteListSliderMedium": {
-	  	"message":"Current Setting: Medium",
-	  	"description":""
+	  	"message":"Current Setting: Medium"
+	},
+  	"mainSiteListSliderHigh": {
+	  	"message":"Current Setting: High"
+	},
+  	"mainSiteListSliderExtreme": {
+	  	"message":"Current Setting: Extreme"
+	},
+  	"mainSiteListSliderCustom": {
+	  	"message":"Current Setting: Custom"
 	},
 
 
 	"popMiscMsgUnsupported":{
-		"message":"Unsupported URL",
-		"description":""
+		"message":"Unsupported URL"
 	},
 	"popNavCtrlPause":{
-		"message":"Pause Trace",
-		"description":""
+		"message":"Pause Trace"
 	},
 	"popNavCtrlUnpause":{
-		"message":"Unpause Trace",
-		"description":""
+		"message":"Unpause Trace"
 	},
 	"popNavCtrlWhitelist":{
-		"message":"Temporarily Whitelist",
-		"description":""
+		"message":"Temporarily Whitelist"
 	},
 	"popNavCtrlUnwhitelist":{
-		"message":"Unwhitelist",
-		"description":""
+		"message":"Unwhitelist"
 	},
 	"popHomeMsgNoHeaderEnabled":{
-		"message":"No Header Protections Enabled",
-		"description":""
+		"message":"No Header Protections Enabled"
 	},
 	"popHomeMsgNoHeaderUsed":{
-		"message":"No Header Protections Used In This Tab",
-		"description":""
+		"message":"No Header Protections Used In This Tab"
+	},
+
+	"popReportMsgSuccess":{
+		"message":"Report Successful"
+	},
+	"popReportMsgFail":{
+		"message":"Report Sending Failed"
 	}
 }

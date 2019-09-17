@@ -17,7 +17,7 @@
 	<body>
 
 		<!--
-			Trace Version 2.3.11
+			Trace Version 2.4
 			By Jake Mcneill
 
 			Website:	https://absolutedouble.co.uk/
@@ -47,37 +47,10 @@
 							<li>WebRTC Protection</li>
 							<li>Error Reporting</li>
 						</ul>
-						<div id="newuser_protections" class="hidden">
-							<h2 class="regular">Apply extra protections (Optional):</h2>
-							<div class="prot_config">
-								<span>Simple</span>
-								<ul>
-									<li>getClientRects Protection</li>
-									<li>E-Tag Header Protection</li>
-								</ul><br/>
-								<button class="small" id="prot_sim">Apply (Recommended)</button>
-							</div>
-							<div class="prot_config">
-								<span>Advanced</span>
-								<ul>
-									<li>Google Header Protection</li>
-									<li>Audio Fingerprinting Protection</li>
-								</ul><br/>
-								<button class="small" id="prot_adv">Apply (Useful)</button>
-							</div>
-							<div class="prot_config">
-								<span>Expert</span>
-								<ul>
-									<li>URL Cleaner</li>
-									<li>'Referer' Header Protection</li>
-								</ul><br/>
-								<button class="small" id="prot_exp">Apply (Breaks Things)</button>
-							</div>
-						</div>
-						<a href="#" id="newuser_prots" class="dark">Apply Extra Protections</a> |
 						<a href="https://github.com/jake-cryptic/AbsoluteDoubleTrace/" title="GitHub Source" class="dark">Source Code</a> |
 						<a href="https://absolutedouble.co.uk/trace/information.html" title="Change log" class="dark">Changelog</a> |
-						<a href="https://absolutedouble.co.uk/trace/faq.html" title="FAQ" class="dark">Frequently Asked Questions</a>
+						<a href="https://absolutedouble.co.uk/trace/faq.html" title="FAQ" class="dark">Frequently Asked Questions</a> |
+						<a href="https://t.me/trace_extension" title="Trace Telegram Channel" class="dark">Telegram Channel</a>
 					</div>
 				</div>
 			</div>
@@ -88,7 +61,7 @@
 			<p id="fail_reason">Unknown.</p>
 		</div>
 
-		<div id="ux" class="blurred">
+		<div id="ux">
 			<nav id="nav">
 				<div class="side_el" tabindex="1" data-load="home">Dashboard</div>
 				<div class="side_el" tabindex="1" data-load="statistics">Statistics</div>
@@ -264,7 +237,7 @@
 										</td>
 									</tr>
 									<tr id="row_hardwarespoof">
-										<td class="setting_info" tabindex="0" data-info="info_hardwarespoof">Hardware Fingerprint Protection</td>
+										<td class="setting_info" tabindex="0" data-info="info_hardwarespoof">Hardware Fingerprint Protection <strong>(Updated!)</strong></td>
 										<td class="setting_toggle" tabindex="0" data-toggle="Pref_HardwareSpoof">Fetching Status...</td>
 										<td class="setting_config" tabindex="0" data-config="Pref_HardwareSpoof">Configure</td>
 									</tr>
@@ -277,8 +250,8 @@
 									</tr>
 									<tr id="row_webglfinger">
 										<td class="setting_info" tabindex="0" data-info="info_webglfinger">WebGL Fingerprinting Protection <strong>(Beta)</strong></td>
-										<td class="setting_toggle" tabindex="0" data-toggle="Pref_WebGLFingerprint" colspan="2">Fetching Status...</td>
-										<!--<td class="setting_config" tabindex="0" data-config="Pref_WebGLFingerprint">Configure</td>-->
+										<td class="setting_toggle" tabindex="0" data-toggle="Pref_WebGLFingerprint">Fetching Status...</td>
+										<td class="setting_config" tabindex="0" data-config="Pref_WebGLFingerprint">Configure</td>
 									</tr>
 									<tr id="info_webglfinger" class="hiddensettinginfo">
 										<td colspan="3">
@@ -322,6 +295,17 @@
 									</tr>
 								</thead>
 								<tbody id="settings_straceadvanced">
+									<tr id="row_commontracking">
+										<td class="setting_info" tabindex="0" data-info="info_commontracking">Common Tracking Protection <strong>(New!)</strong></td>
+										<td class="setting_toggle" tabindex="0" data-toggle="Pref_CommonTracking">Fetching Status...</td>
+										<td class="setting_config" tabindex="0" data-config="Pref_CommonTracking">Configure</td>
+									</tr>
+									<tr id="info_commontracking" class="hiddensettinginfo">
+										<td colspan="3">
+											<span>Common Javascript Tracking Library Protection</span><br />
+											Trace will spoof the functions of common tracking libraries in order to prevent them from functioning.
+										</td>
+									</tr>
 									<tr id="row_refererheader">
 										<td class="setting_info" tabindex="0" data-info="info_refererheader">Referer Controller</td>
 										<td class="setting_toggle" tabindex="0" data-toggle="Pref_ReferHeader">Fetching Status...</td>
@@ -741,6 +725,7 @@
 		<script src="../js/libraries/Chart.min.js"></script>
 		<script src="../js/common/data.js"></script>
 		<script src="../js/common/shared.js"></script>
+		<script src="../js/common/ux.js"></script>
 		<script src="../js/pages/options.js" defer></script>
 
 	</body>
