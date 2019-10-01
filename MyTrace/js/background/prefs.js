@@ -510,10 +510,14 @@ var Prefs = {
 		}
 	},
 	Current:{},
+
+	// Storage Type
+	s:(/Edge/.test(navigator.userAgent) ? browser.storage.local : chrome.storage.local),
+
 	SetDefaults:function(apply,cb){
 		Trace.Notify("Setting new default settings...","prefd");
 
-		Vars.s.set(Prefs.Defaults);
+		Prefs.s.set(Prefs.Defaults);
 
 		if (apply && cb){
 			Prefs.NewLoad(cb);
@@ -523,7 +527,7 @@ var Prefs = {
 		if (!window.chrome.storage) alert("Trace encountered an error: Couldn't access Storage API.");
 
 		if (Trace.DEBUG) console.info("[prefd]-> Trace[0] is loading your settings.");
-		Vars.s.get(["tracenewprefs"],function(s){
+		Prefs.s.get(["tracenewprefs"],function(s){
 			if (typeof s.tracenewprefs !== "boolean"){
 				Prefs.SetDefaults(true,cb);
 			} else {
@@ -535,7 +539,7 @@ var Prefs = {
 		if (!window.chrome.storage) alert("Trace encountered an error: Couldn't access Storage API.");
 
 		if (Trace.DEBUG) console.info("[prefd]-> Trace[1] is loading your settings.");
-		Vars.s.get(
+		Prefs.s.get(
 			[
 				"Pref_WebController",
 				"Pref_CanvasFingerprint",
@@ -623,7 +627,7 @@ var Prefs = {
 
 				if (changes === true){
 					console.log("[prefd]-> Preferences repaired and saved.");
-					Vars.s.set(prefs);
+					Prefs.s.set(prefs);
 				}
 
 				if (typeof prefs.Pref_WebController.installCodes.a00000003 === "undefined"){
@@ -652,7 +656,7 @@ var Prefs = {
 			data[setting]["enabled"] = !Prefs.Current[setting]["enabled"];
 		}
 
-		Vars.s.set(data,function(){
+		Prefs.s.set(data,function(){
 			Prefs.TakeAction(setting,(setting.includes(".") ? Prefs.Current[sett[0]][sett[1]]["enabled"]: data[setting]));
 			if (cb) cb();
 		});
@@ -698,7 +702,7 @@ var Prefs = {
 			data[sett[0]][sett[1]][sett[2]][sett[3]][sett[4]] = deadSafe;
 		}
 
-		Vars.s.set(data,function(){
+		Prefs.s.set(data,function(){
 			Prefs.TakeAction(setting,deadSafe);
 		});
 	},
@@ -812,10 +816,10 @@ var Prefs = {
 		}
 	},
 	CreateBackup:function(cb){
-		Vars.s.get(null, function(items) {
+		Prefs.s.get(null, function(items) {
 			var backupObj = {
 				"compat":1,
-				"maxStoreSize":Vars.s.QUOTA_BYTES || 0,
+				"maxStoreSize":Prefs.s.QUOTA_BYTES || 0,
 				"backupTime":(new Date).toString(),
 				"version":chrome.runtime.getManifest().version || null,
 				"browser":navigator.userAgent || "Unknown.",
@@ -842,7 +846,7 @@ var Prefs = {
 		});
 	},
 	EchoStorage:function(){
-		Vars.s.get(null, function(items) {
+		Prefs.s.get(null, function(items) {
 			console.log(items);
 		});
 	},

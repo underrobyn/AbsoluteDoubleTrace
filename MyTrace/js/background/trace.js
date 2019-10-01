@@ -54,7 +54,7 @@ var Trace = {
 			// If this is a new install, open welcome page and set default settings
 			if (details.reason && details.reason === "install"){
 				Prefs.SetDefaults();
-				Vars.s.set({"trace_installdate":Stats.GenTime()[0]});
+				Prefs.s.set({"trace_installdate":Stats.GenTime()[0]});
 				Stats.SaveStats();
 				Web.BlocklistLoader(true);
 				chrome.tabs.create({url:"/html/options.html#installed"});
@@ -286,7 +286,7 @@ var Trace = {
 				Prefs.Current.Main_ExecutionOrder[goto].push(prot);
 
 			// Save data
-			Vars.s.set({
+			Prefs.s.set({
 				"Main_ExecutionOrder":Prefs.Current.Main_ExecutionOrder
 			},function(){
 				if (cb) cb();
@@ -470,6 +470,7 @@ var Trace = {
 			Prefs.Current.Main_Trace.PremiumCode = "";
 		},
 		HandleCsUpdate:function(req){
+			//console.log(req);
 			return;
 			if (req.update !== "ran") return;
 			if (Trace.DEBUG) console.log("[csupd]-> Protection updated");
@@ -695,4 +696,8 @@ chrome.runtime.onMessage.addListener(Trace.a.ContentTalk);
 Trace.a.AssignRuntime();
 
 // Start Protection
-Trace.f.StartTrace();
+try {
+	Trace.f.StartTrace();
+} catch(e){
+	setTimeout(Trace.f.StartTrace,500);
+}

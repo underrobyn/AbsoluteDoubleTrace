@@ -59,7 +59,7 @@ var Stats = {
 		];
 	},
 	SaveStats:function(cb){
-		Vars.s.set({
+		Prefs.s.set({
 			"stats_db":Stats.Current,
 			"stats_main":Stats.Main
 		},function(){
@@ -67,7 +67,7 @@ var Stats = {
 		});
 	},
 	LoadStats:function(){
-		Vars.s.get(
+		Prefs.s.get(
 			["stats_db", "stats_main"],
 			function(s){
 				var forceStatSave = false;
@@ -123,7 +123,7 @@ var Stats = {
 		Stats.SaveStats(cb);
 	},
 	MainText:function(cb){
-		Vars.s.get("trace_installdate",function(s){
+		Prefs.s.get("trace_installdate",function(s){
 			var d = [], installDate = "today.";
 			if (typeof s.trace_installdate === "string"){
 				installDate = s.trace_installdate;

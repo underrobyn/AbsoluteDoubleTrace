@@ -1130,7 +1130,7 @@ var Opts = {
 			data = Opts.Backup.Data.data;
 
 			TraceBg(function(bg){
-				bg.Vars.s.set(data,function(){
+				bg.Prefs.s.set(data,function(){
 					bg.window.location.reload();
 					window.location.href = "#backupRestored";
 					window.location.reload(true);

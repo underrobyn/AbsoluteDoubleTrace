@@ -60,14 +60,14 @@ var Whitelist = {
 		delete Whitelist.storedList;
 
 		Whitelist.storedList = {};
-		Vars.s.get(["WebData_Whitelist","Main_PageList"],function(s){
+		Prefs.s.get(["WebData_Whitelist","Main_PageList"],function(s){
 			if ((typeof s.Main_PageList === "undefined" || s.Main_PageList === null) && typeof s.WebData_Whitelist !== "object"){
 				// If new whitelist isn't set and old one isn't either save a blank one
 				Whitelist.SaveWhitelist();
 			} else if (typeof s.WebData_Whitelist === "object") {
 				// If old whitelist is set convert to new format
 				Whitelist.storedList = Whitelist.NewWhitelistFormat(s.WebData_Whitelist);
-				Vars.s.remove(["WebData_Whitelist"]);
+				Prefs.s.remove(["WebData_Whitelist"]);
 				Whitelist.SaveWhitelist();
 				if (cb) cb(true);
 			} else {
@@ -139,14 +139,14 @@ var Whitelist = {
 	},
 	SaveWhitelist:function(cb){
 		if (Trace.DEBUG) console.log("[plstd]-> Saving pagelist!");
-		Vars.s.set({
+		Prefs.s.set({
 			"Main_PageList":Whitelist.storedList
 		},function(){
 			Whitelist.LoadWhitelist(cb);
 		});
 	},
 	UpdateStorage:function(cb){
-		Vars.s.set({
+		Prefs.s.set({
 			"Main_PageList":Whitelist.storedList
 		},function(){
 			window.location.reload();
@@ -156,7 +156,7 @@ var Whitelist = {
 	WhitelistExport:function(cb){
 		var exportObj = {
 			"fileCompat":1,
-			"maxStoreSize":Vars.s.QUOTA_BYTES || 0,
+			"maxStoreSize":Prefs.s.QUOTA_BYTES || 0,
 			"exportTime":(new Date).toString(),
 			"traceVersion":chrome.runtime.getManifest().version || null,
 			"traceBrowser":navigator.userAgent || "Unknown.",

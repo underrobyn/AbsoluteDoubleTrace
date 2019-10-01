@@ -580,13 +580,13 @@ var TPage = {
 								list[i] = updatedRect(rects[krect[i]],false,false);
 							}
 
-							window.top.postMessage("trace-protection::ran::clientrects::get", '*');
+							window.top.postMessage("trace-protection::ran::clientrects::" + el + "get", '*');
 							return list;
 						}
 					});
 					Object.defineProperty(frame[el].prototype.getClientRects, "toString",{
 						value:function(){
-							window.top.postMessage("trace-protection::ran::clientrects::getstring", '*');
+							window.top.postMessage("trace-protection::ran::clientrects::" + el + "getstring", '*');
 							return "getClientRects() { [native code] }";
 						}
 					});
@@ -601,14 +601,14 @@ var TPage = {
 
 							if (location.host.includes("google")) return rect;
 
-							window.top.postMessage("trace-protection::ran::clientrectsbounding::get", '*');
+							window.top.postMessage("trace-protection::ran::clientrectsbounding::" + el + "get", '*');
 
 							return updatedRect(rect,true,true);
 						}
 					});
 					Object.defineProperty(frame[el].prototype.getBoundingClientRect, "toString",{
 						value:function(){
-							window.top.postMessage("trace-protection::ran::clientrectsbounding::getstring", '*');
+							window.top.postMessage("trace-protection::ran::clientrectsbounding::" + el + "getstring", '*');
 							return "getBoundingClientRect() { [native code] }";
 						}
 					});

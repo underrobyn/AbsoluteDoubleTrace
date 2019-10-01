@@ -44,7 +44,7 @@ var Web = {
 					return;
 				}
 
-				Vars.s.get([
+				Prefs.s.get([
 					"WebCache_Version"
 				],function(v){
 					if (typeof(v.WebCache_Version) !== "number"){
@@ -218,7 +218,7 @@ var Web = {
 	BlocklistCache:function(ver){
 		Trace.Notify("Using WebCache. Cache version: " + ver[0] + "; Server Version: " + ver[1],"cachd");
 
-		Vars.s.get([
+		Prefs.s.get([
 			"WebCache_Type",
 			"WebCache_Data"
 		],function(r){
@@ -237,7 +237,7 @@ var Web = {
 		}
 
 		// Put database in localstorage
-		Vars.s.set({
+		Prefs.s.set({
 			"WebCache_Version":db.list_version || 0,
 			"WebCache_Type":db.list_type || "Unknown",
 			"WebCache_Data":{
@@ -252,7 +252,7 @@ var Web = {
 		});
 	},
 	ClearDomainCache:function(){
-		Vars.s.set({
+		Prefs.s.set({
 			"WebCache_Version":0,
 			"WebCache_Type":"",
 			"WebCache_Data":{

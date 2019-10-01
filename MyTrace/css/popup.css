@@ -18,6 +18,8 @@ body {
 	background:linear-gradient(to top, #c66a57, #bb7783, #6607cd);
 }
 
+.hidden {display: none;}
+
 #ux{
 	top: 0;
 	margin: 0;
@@ -197,6 +199,10 @@ a{
 	margin-bottom:5px;
 	background-color:rgba(0,0,0,0.2);
 }
+#whitelist_prots_list h2 {
+	margin:0.5rem 0;
+	font-size:1.7em;
+}
 .xlarge {
 	font-size:1.7em !important;
 }
@@ -206,6 +212,14 @@ a{
 .ccheck {
 	top:2px !important;
 	left:4px !important;
+}
+.spanlink {
+	color:#eee;
+	text-decoration:underline;
+	cursor:pointer;
+}
+.spanlink:hover, .spanlink:focus {
+	color:#ddd;
 }
 
 #current_section{

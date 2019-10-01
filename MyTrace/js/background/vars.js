@@ -22,9 +22,6 @@ var Vars = {
 	GPUInterval:1,
 	FakeIPInterval:1,
 
-	// Storage type
-	s:(/Edge/.test(navigator.userAgent) ? browser.storage.local : chrome.storage.local),
-
 	// Blocklist URLs
 	blocklistURL:"https://trace-extension.absolutedouble.co.uk/app/weblist.php",
 	blocklistFallback:"https://raw.githubusercontent.com/jake-cryptic/hmfp_lists/master/fallback.json",

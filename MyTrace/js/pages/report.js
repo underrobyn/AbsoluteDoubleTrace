@@ -242,7 +242,7 @@ var TPop = {
 					cList += " home_sect_hide";
 				} else {
 					if (data.data.headers[TPop.home.text.hTypes[i]] === 0){
-						cList += " home_sect_fade";
+						cList += " hidden"; // home_sect_fade
 					}
 					hTot++;
 				}
@@ -295,10 +295,10 @@ var TPop = {
 			for (var i = 0;i<TPop.home.text.hTypes.length;i++){
 				var cList = "home_sect_r";
 				if (prefs[TPop.home.text.hPrefs[i]].enabled !== true){
-					cList += " home_sect_fade";
+					cList += " hidden"; // home_sect_fade
 				} else {
 					if (data.data.headers[TPop.home.text.hTypes[i]] === 0){
-						cList += " home_sect_fade";
+						cList += " hidden"; // home_sect_fade
 					}
 					hTot++;
 				}
@@ -351,7 +351,7 @@ var TPop = {
 		}
 	},
 	sendPageReport:function(){
-		var user_text = $("#user_message").val();
+		let user_text = $("#user_message").val();
 		var rep_msg = $("#report_msg");
 		if (!navigator.onLine){
 			rep_msg.empty().append(
@@ -360,7 +360,7 @@ var TPop = {
 			return;
 		}
 
-		var dataStr = "type=report";
+		let dataStr = "type=report";
 		dataStr += "&url=" + btoa(TPop.wlData.currentOpenURL);
 		dataStr += "&msg=" + btoa(user_text);
 		dataStr += "&ver=" + btoa(chrome.runtime.getManifest().version);
@@ -502,9 +502,20 @@ var TPop = {
 			w.empty();
 
 			if (dpAllPage.length !== 0){
-				w.append($("<h2/>").text("Applies to all pages"));
-				for (var i = 0;i<dpAllPage.length;i++){
-					var style = "", protmsg = "When checked, this setting is allowed to run", enabledStatus = "";
+				w.append(
+					$("<h2/>").append(
+						$("<span/>").text("Applies to all pages "),
+						$("<span/>",{"class":"spanlink"}).text("(Check all)").on("click enter",function(){
+							TPop.scope.checkExecs("allpage");
+						})
+					)
+				);
+
+				for (let i = 0;i<dpAllPage.length;i++){
+					let style = "",
+						protmsg = "When checked, this setting is allowed to run",
+						enabledStatus = "";
+
 					if (bg.Prefs.Current[dpAllPage[i]].enabled !== true) {
 						style = "cursor:not-allowed";
 						enabledStatus = " (Disabled)";
@@ -521,7 +532,8 @@ var TPop = {
 								$("<input/>",{
 									"type":"checkbox",
 									"checked":"checked",
-									"data-controls":dpAllPage[i]
+									"data-controls":dpAllPage[i],
+									"data-cat":"allpage"
 								}),
 								$("<span/>",{"class":"ccheck"})
 							)
@@ -531,9 +543,20 @@ var TPop = {
 			}
 
 			if (dpPerPage.length !== 0){
-				w.append($("<h2/>").text("Applies to some pages"));
-				for (var i = 0;i<dpPerPage.length;i++){
-					var style = "", protmsg = "When checked, this setting is allowed to run", enabledStatus = "";
+				w.append(
+					$("<h2/>").append(
+						$("<span/>").text("Applies to some pages "),
+						$("<span/>",{"class":"spanlink"}).text("(Check all)").on("click enter",function(){
+							TPop.scope.checkExecs("perpage");
+						})
+					)
+				);
+
+				for (let i = 0;i<dpPerPage.length;i++){
+					let style = "",
+						protmsg = "When checked, this setting is allowed to run",
+						enabledStatus = "";
+
 					if (bg.Prefs.Current[dpPerPage[i]].enabled !== true) {
 						style = "cursor:not-allowed";
 						enabledStatus = " (Disabled)";
@@ -549,7 +572,8 @@ var TPop = {
 							}).text((SettingNames[dpPerPage[i]] || dpPerPage[i]) + enabledStatus).append(
 								$("<input/>",{
 									"type":"checkbox",
-									"data-controls":dpPerPage[i]
+									"data-controls":dpPerPage[i],
+									"data-cat":"perpage"
 								}),
 								$("<span/>",{"class":"ccheck"})
 							)
@@ -572,6 +596,11 @@ var TPop = {
 
 			$("#s_prot_blocksite").attr("checked",currData.SiteBlocked);
 			$("#s_prot_initreqs").attr("checked",currData.InitRequests);
+		},
+		checkExecs:function(which){
+			$("input[data-cat='" + which + "'").each(function(){
+				$(this).attr("checked",true);
+			});
 		},
 		createOpts:function(){
 			var el = $("#page_form");
@@ -708,6 +737,4 @@ var TPop = {
 	}
 };
 
-$(document).ready(function(){
-	TPop.init();
-});
+$(document).ready(TPop.init);
