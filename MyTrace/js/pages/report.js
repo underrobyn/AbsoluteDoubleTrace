@@ -228,7 +228,7 @@ var TPop = {
 				rEl.append(
 					$("<div/>",{
 						"class":"home_sect_r","id":"home_upd_r"+TPop.home.text.rTypes[i]
-					}).text(TPop.home.text.rNames[i] + ": " + data.data.webRequests[TPop.home.text.rTypes[i]]).contextmenu(TPop.createUriList)
+					}).text(TPop.home.text.rNames[i] + ": " + data.data.webRequests[TPop.home.text.rTypes[i]]).contextmenu(TPop.home.createUriList)
 				);
 				rTotal += data.data.webRequests[TPop.home.text.rTypes[i]];
 			}
@@ -310,10 +310,12 @@ var TPop = {
 			if (hTot === 0) msg = lang("popHomeMsgNoHeaderEnabled");
 			if (hTotal === 0) msg = lang("popHomeMsgNoHeaderUsed");
 			$("#home_headers_title").text(msg);
-			//TPop.createUriList(data,tab);
+
+			//TPop.home.createUriList(data,tab);
 		},
 		createUriList:function(data,tab){
 			console.log(data);
+			console.log(tab);
 		}
 	},
 

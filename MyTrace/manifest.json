@@ -7,7 +7,7 @@
 	"description":"__MSG_addon_description__",
 	"default_locale": "en",
 	"minimum_chrome_version":"32",
-	"version":"2.4.1",
+	"version":"2.4.2",
   	"homepage_url":"https://absolutedouble.co.uk/trace/",
   	"options_page":"html/options.html",
   	"incognito":"spanning",

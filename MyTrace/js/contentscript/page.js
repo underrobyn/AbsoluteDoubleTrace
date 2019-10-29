@@ -115,9 +115,9 @@ var TPage = {
 			TPage.protectCanvasFinger();
 		}
 
-		if (TPage.Prefs.Pref_CommonTracking.enabled === true && TPage.canExec("Pref_CommonTracking")){
+		/*if (TPage.Prefs.Pref_CommonTracking.enabled === true && TPage.canExec("Pref_CommonTracking")){
 			TPage.protectCommonTracking();
-		}
+		}*/
 
 		if (TPage.Prefs.Hardware.enabled === true && TPage.canExec("Pref_HardwareSpoof")){
 			TPage.protectDeviceHardware();
@@ -590,6 +590,8 @@ var TPage = {
 							return "getClientRects() { [native code] }";
 						}
 					});
+
+					if (el === "Element") return; // Temp fix for website lag
 
 					// getBoundingClientRect
 					var boundingRects = frame[el].prototype.getBoundingClientRect;
