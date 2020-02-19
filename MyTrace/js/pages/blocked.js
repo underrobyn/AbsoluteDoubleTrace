@@ -1,6 +1,6 @@
 /*
  * 	Trace blocked page script
- * 	Copyright AbsoluteDouble 2018 - 2019
+ * 	Copyright AbsoluteDouble 2018 - 2020
  * 	Written by Jake Mcneill
  * 	https://absolutedouble.co.uk/
  */
@@ -119,7 +119,7 @@ var tBlock = {
 						"placeholder":"Origin URL",
 						"value":tBlock.whitelistData["origin"]
 					}),
-					$("<button/>").text(lang("miscCtrlApplyEntry")).on("click enter",function(){tBlock.whitelistURL("origin");}),$("<br />")
+					$("<button/>").text(lang("miscCtrlApplyEntry")).on("click enter",function(e){e.preventDefault();tBlock.whitelistURL("origin");}),$("<br />")
 				)
 			);
 		}
@@ -134,7 +134,7 @@ var tBlock = {
 						"placeholder":"URL pathname",
 						"value":tBlock.whitelistData["path"]
 					}),
-					$("<button/>").text(lang("miscCtrlApplyEntry")).on("click enter",function(){tBlock.whitelistURL("path");}),$("<br />")
+					$("<button/>").text(lang("miscCtrlApplyEntry")).on("click enter",function(e){e.preventDefault();tBlock.whitelistURL("path");}),$("<br />")
 				)
 			);
 		}
@@ -149,7 +149,7 @@ var tBlock = {
 						"placeholder":"Hostname",
 						"value":tBlock.whitelistData["host"]
 					}),
-					$("<button/>").text(lang("miscCtrlApplyEntry")).on("click enter",function(){tBlock.whitelistURL("host");}),$("<br />")
+					$("<button/>").text(lang("miscCtrlApplyEntry")).on("click enter",function(e){e.preventDefault();tBlock.whitelistURL("host");}),$("<br />")
 				)
 			);
 		}
@@ -164,7 +164,7 @@ var tBlock = {
 						"placeholder":"Root Domain Name",
 						"value":tBlock.whitelistData["root"]
 					}),
-					$("<button/>").text(lang("miscCtrlApplyEntry")).on("click enter",function(){tBlock.whitelistURL("root");})
+					$("<button/>").text(lang("miscCtrlApplyEntry")).on("click enter",function(e){e.preventDefault();tBlock.whitelistURL("root");})
 				)
 			);
 		}
