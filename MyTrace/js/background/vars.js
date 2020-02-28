@@ -10,9 +10,6 @@ var Vars = {
 	usePresets:false,
 	preset:2,
 
-	// UI setting
-	simpleUi:false,
-
 	// Trace pausing
 	paused:false,
 	pauseEnd:0,
@@ -21,6 +18,8 @@ var Vars = {
 	UserAgentInterval:1,
 	GPUInterval:1,
 	FakeIPInterval:1,
+
+	uninstallUrl:"https://absolutedouble.co.uk/trace/extension-uninstall?e=",
 
 	// Blocklist URLs
 	blocklistURL:"https://trace-extension.absolutedouble.co.uk/app/weblist.php",
@@ -70,17 +69,14 @@ var Vars = {
 		},
 		"wb":{
 			"chrome":{
+				"80":"AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.116 Safari/537.36",
 				"77":"AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3833.0 Safari/537.36",
 				"76":"AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.132 Safari/537.36",
-				"75":"AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.80 Safari/537.36",
-				"74":"AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36",
-				"73":"AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.86 Safari/537.36"
 			},
 			"firefox":{
+				"73":"Gecko/20100101 Firefox/73.0",
 				"69":"Gecko/20100101 Firefox/69.0",
-				"68":"Gecko/20100101 Firefox/68.0",
-				"67":"Gecko/20100101 Firefox/67.0",
-				"66":"Gecko/20100101 Firefox/66.0"
+				"68":"Gecko/20100101 Firefox/68.0"
 			},
 			"vivaldi":{
 				"2.70":"AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.137 Safari/537.36 Vivaldi/2.7.1628.33",
@@ -91,11 +87,11 @@ var Vars = {
 				"54":"AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.87 Safari/537.36 OPR/54.0.2952.54"
 			},
 			"edge":{
+				"cr80":"AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.0 Safari/537.36 Edg/80.0.300.0",
 				"cr78":"AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.0 Safari/537.36 Edg/78.0.277.0",
 				"cr77":"AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3843.0 Safari/537.36 Edg/77.0.219.0",
 				"17":"AppleWebKit/537.36 (KHTML, like Gecko) Chrome/64.0.3282.140 Safari/537.36 Edge/17.17134",
-				"15":"AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2743.116 Safari/537.36 Edge/15.15063",
-				"14":"AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36 Edge/14.14359"
+				"15":"AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2743.116 Safari/537.36 Edge/15.15063"
 			},
 			"safari":{
 				"12.1":"AppleWebKit/605.1.15 (KHTML, like Gecko) Version/12.1.2 Safari/605.1.15",
@@ -107,9 +103,6 @@ var Vars = {
 	},
 
 	gpuModels: [
-		'AMD Radeon HD 6290 Graphics',
-		'AMD Radeon HD 6310 Graphics',
-		'AMD Radeon HD 6320 Graphics',
 		'AMD Radeon HD 6350',
 		'AMD Radeon HD 6450',
 		'AMD Radeon HD 6800 Series',
@@ -125,29 +118,64 @@ var Vars = {
 		'AMD Radeon R9 200 Series',
 		'AMD Radeon R9 300 Series',
 		'AMD Radeon R9 400 Series',
+
+		// AMD 5000 series
+		'AMD Radeon RX 5500 XT',
+		'AMD Radeon RX 5600 XT',
+		'AMD Radeon RX 5700 XT',
+
+		'AMD Radeon(TM) Vega 8 Graphics',
 		'AMD Radeon(TM) HD 6480G',
 		'AMD Radeon(TM) HD 6520G',
 		'ATI Mobility Radeon HD 4250',
 		'ATI Mobility Radeon HD 5470',
 		'ATI Mobility Radeon HD 5650',
-		'ATI Radeon 3000 Graphics',
-		'ATI Radeon HD 3200 Graphics',
-		'ATI Radeon HD 3800 Series',
 		'ATI Radeon HD 4200',
 		'ATI Radeon HD 4300/4500 Series',
 		'ATI Radeon HD 4600 Series',
 		'ATI Radeon HD 5470',
 		'ATI Radeon HD 5570',
 		'ATI Radeon HD 5670',
-		'Mobile Intel(R) 4 Series Express Chipset Family',
-		'Mobile Intel(R) 965 Express Chipset Family',
-		'Intel(R) HD Graphics 2000',
-		'Intel(R) HD Graphics 3000',
-		'Intel(R) HD Graphics 4000',
-		'Intel(R) HD Graphics 5000',
-		'Intel(R) HD Graphics 6000',
 		'Intel(R) HD Graphics',
 		'Intel(R) HD Graphics Family',
+
+		// 2nd Gen Intel processors
+		'Intel(R) HD Graphics 2000',
+		'Intel(R) HD Graphics 3000',
+
+		// 3rd Gen Intel processors
+		'Intel(R) HD Graphics 2500',
+		'Intel(R) HD Graphics 4000',
+
+		// 4th Gen Intel processors
+		'Intel(R) HD Graphics 4200',
+		'Intel(R) HD Graphics 4400',
+		'Intel(R) HD Graphics 4600',
+		'Intel(R) HD Graphics 5000',
+
+		// 5th Gen Intel processors
+		'Intel(R) HD Graphics 5300',
+		'Intel(R) HD Graphics 5500',
+		'Intel(R) HD Graphics 6000',
+		'Intel(R) HD Graphics 6100',
+		'Intel(R) HD Graphics 6200',
+
+		// 7th Gen Intel processors
+		'Intel(R) HD Graphics 610',
+		'Intel(R) HD Graphics 615',
+		'Intel(R) HD Graphics 620',
+		'Intel(R) HD Graphics 630',
+
+		// 8th Gen Intel processors
+		'Intel(R) UHD Graphics 610',
+		'Intel(R) UHD Graphics 615',
+		'Intel(R) UHD Graphics 617',
+		'Intel(R) UHD Graphics 620',
+		'Intel(R) UHD Graphics 630',
+
+		// Legacy Intel graphics
+		'Mobile Intel(R) 4 Series Express Chipset Family',
+		'Mobile Intel(R) 965 Express Chipset Family',
 		'Intel(R) Q35 Express Chipset Family',
 		'Intel(R) Q45/Q43 Express Chipset',
 		'Intel(R) Q965/Q963 Express Chipset Family',
@@ -156,9 +184,11 @@ var Vars = {
 		'Intel(R) G33/G31 Express Chipset Family',
 		'Intel(R) G41 Express Chipset',
 		'Intel(R) G45/G43 Express Chipset',
+
 		'Intel(R) Graphics Media Accelerator 3150',
 		'Intel(R) Graphics Media Accelerator 3600 Series',
 		'Intel(R) Graphics Media Accelerator HD',
+
 		'NVIDIA GeForce 8400 GS',
 		'NVIDIA GeForce 9200',
 		'NVIDIA GeForce 9500 GT',
@@ -197,7 +227,7 @@ var Vars = {
 	gpuChose:"Intel(R) HD Graphics",
 
 	// Current UA settings
-	useragent:"Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:57.0) Gecko/20100101 Firefox/57.0",
-	oscpu:"Windows NT 6.1; Win64; x64; rv:57.0",
+	useragent:"Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:73.0) Gecko/20100101 Firefox/73.0",
+	oscpu:"Windows NT 10.0; Win64; x64; rv:73.0",
 	platform:"Win32"
 };

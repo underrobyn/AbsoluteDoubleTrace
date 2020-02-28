@@ -1,24 +1,26 @@
 /*
  * 	Trace popup script
- * 	Copyright AbsoluteDouble 2018 - 2019
+ * 	Copyright AbsoluteDouble 2018 - 2020
  * 	Written by Jake Mcneill
  * 	https://absolutedouble.co.uk/
  */
 
-var TPop = {
+let TPop = {
 
 	DEBUG:false,
-	wlData:{
-		"currentOpenURL":""
-	},
+
+	currentOpenURL:"",
+	wlData:{},
+
 	currentStatistics:{"code":0,"media":0,"webpage":0,"other":0},
+
 	prefs:{},
 	reloadInt:null,
 
 	init:function(){
 		TPop.reloadInt = setInterval(function(){TPop.loadThisTab("update");},1000);
 
-		chrome.runtime.getBackgroundPage(function(bg){
+		TraceBg(function(bg){
 			if (typeof bg === "undefined") {
 				chrome.runtime.reload();
 			}
@@ -29,35 +31,18 @@ var TPop = {
 		TPop.getCurrentURL();
 		TPop.loadThisTab("create");
 		TPop.loadPrefs();
-		TPop.Auth.Init();
 
-		if (/Firefox|Edge/.test(navigator.userAgent)) {
+		Auth.Init();
+
+		if (/Firefox/.test(navigator.userAgent)) {
 			$("body").css("font-size", "0.8em");
 		}
 	},
 
-	Auth:{
-		Channel:null,
-		Init:function(){
-			if ('BroadcastChannel' in self) {
-				// Start Authentication Channel
-				TPop.Auth.Channel = new BroadcastChannel('TraceAuth');
-			}
-
-			return true;
-		},
-		SafePost:function(data){
-			if ('BroadcastChannel' in self) {
-				if (typeof TPop.Auth.Channel !== null){
-					TPop.Auth.Channel.postMessage(data);
-				}
-			}
-		}
-	},
 	assignEvents:function(){
 		$(".section_toggle").each(function(){
 			$(this).on("click enter",function(){
-				var sel = $(this).data("opens");
+				let sel = $(this).data("opens");
 
 				if (sel !== "home") $("#current_section").addClass("padded_sect");
 				if (sel !== "home" && TPop.reloadInt) clearInterval(TPop.reloadInt);
@@ -82,12 +67,12 @@ var TPop = {
 		});
 	},
 	loadPrefs:function() {
-		chrome.runtime.getBackgroundPage(function (bg) {
+		TraceBg(function (bg) {
 			TPop.prefs = bg.Prefs.Current;
 		});
 	},
 	loadThisTab:function(type){
-		chrome.runtime.getBackgroundPage(function(bg){
+		TraceBg(function(bg){
 			chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
 				var currTab = tabs[0];
 				if (currTab) {
@@ -104,39 +89,34 @@ var TPop = {
 	getCurrentURL:function(){
 		// This function gets the current URL and stores it in the main object in multiple forms
 		chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-			var currTab = tabs[0];
+			let currTab = tabs[0];
 			if (currTab) {
-				TPop.wlData.currentOpenURL = currTab.url;
+				TPop.currentOpenURL = currTab.url;
 			}
 
-			if (!TPop.wlData.currentOpenURL){
-				TPop.wlData.currentOpenURL = false;
-			} else {
-				TPop.updateUrlInfo();
+			if (!TPop.currentOpenURL || typeof TPop.currentOpenURL !== "string"){
+				TPop.currentOpenURL = false;
 			}
 
 			// Make sure its a URL we are allowed to interact with and that the URL object can decode
-			if (TPop.wlData.currentOpenURL.substring(0,4).toLowerCase() !== "http" || !TPop.wlData.currentOpenURL.includes("://")){
-				TPop.wlData.currentOpenURL = false;
+			if (TPop.currentOpenURL.substring(0,4).toLowerCase() !== "http" || !TPop.currentOpenURL.includes("://")){
+				TPop.currentOpenURL = false;
 			}
+
+			TPop.updateUrlInfo();
 		});
 	},
 
 	updateUrlInfo:function(){
-		if (typeof TPop.wlData.currentOpenURL !== "string") return;
-
-		var url = new URL(TPop.wlData.currentOpenURL);
-		TPop.wlData["origin"] = url.origin + "/*";
-		TPop.wlData["path"] = "*" + url + "*";
-		TPop.wlData["host"] = "*" + extractHostname(TPop.wlData.currentOpenURL) + "*";
-		TPop.wlData["root"] = "*" + extractRootDomain(TPop.wlData.currentOpenURL) + "*";
+		if (!TPop.currentOpenURL) return;
+		TPop.wlData = getURLComponents(TPop.currentOpenURL);
 	},
 
 	updatePauseState:function(uiOnly){
 		uiOnly = uiOnly || false;
-		chrome.runtime.getBackgroundPage(function(bg){
-			var state = bg.Vars.paused;
-			var newState = state;
+		TraceBg(function(bg){
+			let state = bg.Vars.paused;
+			let newState = state;
 
 			if (!uiOnly){
 				newState = !state;
@@ -152,10 +132,10 @@ var TPop = {
 	},
 	updateTempWlState:function(uiOnly){
 		uiOnly = uiOnly || false;
-		chrome.runtime.getBackgroundPage(function(bg){
-			var tempCheck = TPop.wlData["root"];
-			var state = bg.Whitelist.tempList.search.indexOf(tempCheck) !== -1;
-			var newState = state;
+		TraceBg(function(bg){
+			let tempCheck = TPop.wlData["root"];
+			let state = bg.Whitelist.tempList.search.indexOf(tempCheck) !== -1;
+			let newState = state;
 
 			if (!uiOnly){
 				newState = !state;
@@ -176,19 +156,15 @@ var TPop = {
 		});
 	},
 
-	openTab:function(page){
-		if (/Chrome/.test(navigator.userAgent)){
-			chrome.tabs.create({url:"html/"+page});
-		} else {
-			chrome.tabs.create({url:page});
-		}
-		window.close();
-	},
 	settingsWindow:function(){
-		TPop.openTab("options.html");
+		TraceBg(function(bg){
+			bg.Trace.f.OpenSettingsPage();
+		});
 	},
 	gotoWhitelist:function(){
-		TPop.openTab("options.html#view=whitelist");
+		TraceBg(function(bg){
+			bg.Trace.f.OpenSettingsPage("whitelist");
+		});
 	},
 
 	home:{
@@ -207,7 +183,7 @@ var TPop = {
 			}
 
 			// Create main element
-			var el = $("<div/>",{"class":"home_section"});
+			let el = $("<div/>",{"class":"home_section"});
 
 			// Create pause and temp whitelist buttons
 			el.append(
@@ -222,9 +198,9 @@ var TPop = {
 			if (TPop.DEBUG === true) el.append($("<h2/>").text("TabID: "+tab.id));
 
 			// Web requests section
-			var	rTotal = 0, rEl = $("<div/>",{"class":"home_sect_d","id":"home_data_requests"});
+			let	rTotal = 0, rEl = $("<div/>",{"class":"home_sect_d","id":"home_data_requests"});
 
-			for (var i = 0;i<TPop.home.text.rTypes.length;i++){
+			for (let i = 0;i<TPop.home.text.rTypes.length;i++){
 				rEl.append(
 					$("<div/>",{
 						"class":"home_sect_r","id":"home_upd_r"+TPop.home.text.rTypes[i]
@@ -235,9 +211,9 @@ var TPop = {
 			el.append($("<div/>",{"class":"home_sect_t","id":"home_requests_title","data-opens":"#home_data_requests"}).text("Web Requests (" + rTotal + " blocked)"),rEl);
 
 			// HTTP Header section
-			var hTotal = 0, hEl = $("<div/>",{"class":"home_sect_d","id":"home_data_headers"}), hTot = 0;
-			for (var i = 0;i<TPop.home.text.hTypes.length;i++){
-				var cList = "home_sect_r";
+			let hTotal = 0, hEl = $("<div/>",{"class":"home_sect_d","id":"home_data_headers"}), hTot = 0;
+			for (let i = 0;i<TPop.home.text.hTypes.length;i++){
+				let cList = "home_sect_r";
 				if (prefs[TPop.home.text.hPrefs[i]].enabled !== true){
 					cList += " home_sect_hide";
 				} else {
@@ -255,7 +231,7 @@ var TPop = {
 				hTotal += data.data.headers[TPop.home.text.hTypes[i]];
 			}
 
-			var msg = "Headers (" + hTotal + " modified)";
+			let msg = "Headers (" + hTotal + " modified)";
 			if (hTot === 0) msg = lang("popHomeMsgNoHeaderEnabled");
 			if (hTotal === 0) msg = lang("popHomeMsgNoHeaderUsed");
 
@@ -284,7 +260,7 @@ var TPop = {
 		updateSection:function(data,tab,prefs){
 			// Web requests section
 			var	rTotal = 0;
-			for (var i = 0;i<TPop.home.text.rTypes.length;i++){
+			for (let i = 0;i<TPop.home.text.rTypes.length;i++){
 				$("#home_upd_r"+TPop.home.text.rTypes[i]).text(TPop.home.text.rNames[i] + ": " + data.data.webRequests[TPop.home.text.rTypes[i]]);
 				rTotal += data.data.webRequests[TPop.home.text.rTypes[i]];
 			}
@@ -292,7 +268,7 @@ var TPop = {
 
 			// HTTP Header section
 			var hTotal = 0, hTot = 0;
-			for (var i = 0;i<TPop.home.text.hTypes.length;i++){
+			for (let i = 0;i<TPop.home.text.hTypes.length;i++){
 				var cList = "home_sect_r";
 				if (prefs[TPop.home.text.hPrefs[i]].enabled !== true){
 					cList += " hidden"; // home_sect_fade
@@ -343,13 +319,13 @@ var TPop = {
 			)
 		);
 
-		if (TPop.wlData.currentOpenURL === false){
+		if (TPop.currentOpenURL === false){
 			$("#page_form").empty().append(
 				$("<h1/>").text(lang("popMiscMsgUnsupported")),
 				$("<span/>").text("You can only send reports about pages that are http or https")
 			);
 		} else {
-			$("#report_url").val(TPop.wlData.currentOpenURL);
+			$("#report_url").val(TPop.currentOpenURL);
 		}
 	},
 	sendPageReport:function(){
@@ -363,7 +339,7 @@ var TPop = {
 		}
 
 		let dataStr = "type=report";
-		dataStr += "&url=" + btoa(TPop.wlData.currentOpenURL);
+		dataStr += "&url=" + btoa(TPop.currentOpenURL);
 		dataStr += "&msg=" + btoa(user_text);
 		dataStr += "&ver=" + btoa(chrome.runtime.getManifest().version);
 		dataStr += "&brw=" + btoa(navigator.userAgent);
@@ -421,13 +397,13 @@ var TPop = {
 			}
 		});
 	},
-	
+
 	scope:{
 		createPanel:function(){
 			// Start writing the UI
 			$("#current_section").empty().append($("<div/>",{"id":"page_form"}));
 
-			if (TPop.wlData.currentOpenURL === false || TPop.wlData.currentOpenURL === null){
+			if (TPop.currentOpenURL === false || TPop.currentOpenURL === null){
 				$("#page_form").empty().append(
 					$("<h1/>").text(lang("popMiscMsgUnsupported")),
 					$("<span/>").text("You can only whitelist pages that are http or https")
@@ -436,13 +412,14 @@ var TPop = {
 			}
 
 			// Check if hostname is affected by the whitelist
-			chrome.runtime.getBackgroundPage(function(bg){
+			TraceBg(function(bg){
 				var decWl = bg.Whitelist.decodedList;
 				var stoWl = bg.Whitelist.storedList;
 				var entriesApply = 0;
 
-				for (var i = 0, l = decWl.keys.length;i<l;i++){
-					if (decWl.keys[i].test(TPop.wlData.currentOpenURL) !== true) continue;
+				for (let i = 0, l = decWl.keys.length;i<l;i++){
+
+					if (decWl.keys[i].test(TPop.currentOpenURL) !== true) continue;
 
 					// Log number of entries that apply but only allow editing the first (Temp fix)
 					entriesApply++;
@@ -452,11 +429,17 @@ var TPop = {
 					TPop.wlData.entry = decWl.keys[i];
 				}
 
-				// Update the UI
-				if (entriesApply !== 0) TPop.scope.createEditor(bg,entriesApply);
-			});
+				console.log(entriesApply);
+				console.log(decWl);
+				console.log(stoWl);
 
-			TPop.scope.createOpts();
+				// Update the UI
+				if (entriesApply !== 0) {
+					TPop.scope.createEditor(bg,entriesApply);
+				} else {
+					TPop.scope.createOpts();
+				}
+			});
 		},
 		createEditor:function(bg,entriesApply){
 			var entriesWarning = $("<span/>",{
@@ -473,7 +456,7 @@ var TPop = {
 						$("<label/>",{
 							"for":"s_prot_blocksite",
 							"class":"checkbox_cont xlarge"
-						}).text("Block access to this site").append(
+						}).text(lang("miscMsgWhitelistBlockSite")).append(
 							$("<input/>",{"id":"s_prot_blocksite","type":"checkbox"}),
 							$("<span/>",{"class":"ccheck"})
 						)
@@ -482,7 +465,7 @@ var TPop = {
 						$("<label/>",{
 							"for":"s_prot_initreqs",
 							"class":"checkbox_cont xlarge"
-						}).text("Allow this site to make requests to blocked sites").append(
+						}).text(lang("miscMsgWhitelistAllowInitReq")).append(
 							$("<input/>",{"id":"s_prot_initreqs","type":"checkbox","checked":"checked"}),
 							$("<span/>",{"class":"ccheck"})
 						)
@@ -497,91 +480,50 @@ var TPop = {
 			TPop.scope.updateExecs(bg);
 		},
 		createExecs:function(bg){
-			var dpAllPage = bg.Prefs.Current.Main_ExecutionOrder.AllPage || [];
-			var dpPerPage = bg.Prefs.Current.Main_ExecutionOrder.PerPage || [];
-			var w = $("#whitelist_prots_list");
+			let $cont = $("#whitelist_prots_list");
+			let allProts = Object.keys(bg.Whitelist.whitelistDefaults);
 
-			w.empty();
+			$cont.empty().append(
+				$("<h2/>").append(
+					$("<button/>").text("Enable All").on("click enter",function(){
+						TPop.scope.checkExecs("allpage",true);
+					}),
+					$("<span/>").text(" "),
+					$("<button/>").text("Disable All").on("click enter",function(){
+						TPop.scope.checkExecs("allpage",false);
+					})
+				)
+			);
 
-			if (dpAllPage.length !== 0){
-				w.append(
-					$("<h2/>").append(
-						$("<span/>").text("Applies to all pages "),
-						$("<span/>",{"class":"spanlink"}).text("(Check all)").on("click enter",function(){
-							TPop.scope.checkExecs("allpage");
-						})
+			for (let i = 0;i<allProts.length;i++){
+				let style = "",
+					protmsg = "When checked, this setting is allowed to run",
+					enabledStatus = "";
+
+				// TODO: Sort this later
+				/*if (bg.Prefs.Current[allProts[i]].enabled !== true) {
+					style = "cursor:not-allowed";
+					enabledStatus = " (Disabled)";
+					protmsg = " This setting is disabled fully. Go to the Trace settings page to enable it.";
+				}*/
+
+				$cont.append(
+					$("<div/>",{
+						"data-protid":allProts[i],
+						"class":"setting_traffic traffic_enabled",
+						"title":protmsg,
+						"style":style
+					}).on("click enter",function(){
+						if ($(this).hasClass("traffic_enabled")){
+							$(this).removeClass("traffic_enabled").addClass("traffic_disabled").attr("title",lang("miscCtrlDisabled")).find(".traffic_txt").text(lang("miscCtrlDisabled"));
+						} else {
+							$(this).removeClass("traffic_disabled").addClass("traffic_enabled").attr("title",lang("miscCtrlEnabled")).find(".traffic_txt").text(lang("miscCtrlEnabled"));
+						}
+					}).append(
+						$("<span/>",{"class":"fullwidthtext"}).text(SettingNames[allProts[i]] || allProts[i]),
+						$("<span/>",{"class":"fullwidthtext traffic_txt"}).text("Disabled")
 					)
 				);
-
-				for (let i = 0;i<dpAllPage.length;i++){
-					let style = "",
-						protmsg = "When checked, this setting is allowed to run",
-						enabledStatus = "";
-
-					if (bg.Prefs.Current[dpAllPage[i]].enabled !== true) {
-						style = "cursor:not-allowed";
-						enabledStatus = " (Disabled)";
-						protmsg = "This setting is disabled fully. Go to the Trace settings page to enable it.";
-					}
-
-					w.append(
-						$("<div/>",{"class":"setting_conf_opt"}).append(
-							$("<label/>",{
-								"class":"checkbox_cont xlarge",
-								"style":style,
-								"title":protmsg
-							}).text((SettingNames[dpAllPage[i]] || dpAllPage[i]) + enabledStatus).append(
-								$("<input/>",{
-									"type":"checkbox",
-									"checked":"checked",
-									"data-controls":dpAllPage[i],
-									"data-cat":"allpage"
-								}),
-								$("<span/>",{"class":"ccheck"})
-							)
-						)
-					);
-				}
-			}
-
-			if (dpPerPage.length !== 0){
-				w.append(
-					$("<h2/>").append(
-						$("<span/>").text("Applies to some pages "),
-						$("<span/>",{"class":"spanlink"}).text("(Check all)").on("click enter",function(){
-							TPop.scope.checkExecs("perpage");
-						})
-					)
-				);
-
-				for (let i = 0;i<dpPerPage.length;i++){
-					let style = "",
-						protmsg = "When checked, this setting is allowed to run",
-						enabledStatus = "";
-
-					if (bg.Prefs.Current[dpPerPage[i]].enabled !== true) {
-						style = "cursor:not-allowed";
-						enabledStatus = " (Disabled)";
-						protmsg = "This setting is disabled fully. Go to the Trace settings page to enable it.";
-					}
-
-					w.append(
-						$("<div/>",{"class":"setting_conf_opt"}).append(
-							$("<label/>",{
-								"class":"checkbox_cont xlarge",
-								"style":style,
-								"title":protmsg
-							}).text((SettingNames[dpPerPage[i]] || dpPerPage[i]) + enabledStatus).append(
-								$("<input/>",{
-									"type":"checkbox",
-									"data-controls":dpPerPage[i],
-									"data-cat":"perpage"
-								}),
-								$("<span/>",{"class":"ccheck"})
-							)
-						)
-					);
-				}
 			}
 		},
 		updateExecs:function(bg){
@@ -592,104 +534,70 @@ var TPop = {
 				alert("Error with whitelist entry.");
 			}
 
-			$("input[data-controls]").each(function() {
-				$(this).attr("checked",currData.Protections[$(this).data("controls")]);
+			$("div[data-protid]").each(function() {
+				if (!currData.Protections[$(this).data("protid")]){
+					$(this).removeClass("traffic_enabled").addClass("traffic_disabled").attr("title",lang("miscCtrlDisabled")).find(".traffic_txt").text(lang("miscCtrlDisabled"));
+				} else {
+					$(this).removeClass("traffic_disabled").addClass("traffic_enabled").attr("title",lang("miscCtrlEnabled")).find(".traffic_txt").text(lang("miscCtrlEnabled"));
+				}
 			});
 
 			$("#s_prot_blocksite").attr("checked",currData.SiteBlocked);
 			$("#s_prot_initreqs").attr("checked",currData.InitRequests);
 		},
-		checkExecs:function(which){
-			$("input[data-cat='" + which + "'").each(function(){
-				$(this).attr("checked",true);
-			});
+		checkExecs:function(which,setTo){
+			if (setTo) {
+				$("div[data-protid]").removeClass("traffic_disabled").addClass("traffic_enabled").attr("title", lang("miscCtrlEnabled")).find(".traffic_txt").text(lang("miscCtrlEnabled"));
+			} else {
+				$("div[data-protid]").removeClass("traffic_enabled").addClass("traffic_disabled").attr("title",lang("miscCtrlDisabled")).find(".traffic_txt").text(lang("miscCtrlDisabled"));
+			}
 		},
 		createOpts:function(){
-			var el = $("#page_form");
+			let el = $("#page_form"),
+				wld = TPop.wlData;
 
-			if (typeof TPop.wlData["origin"] === "string"){
+			["origin","path","host","root"].forEach(function(part){
+				if (typeof wld[part] !== "string") return;
+
+				// Check for duplicated UI elements
+				if (part !== "root" && wld[part] === wld.root) return;
+				if (part !== "origin" && (wld[part].substring(1) === wld.origin && wld.origin.substring(0,4) === "http")) return;
+
+				// Check for valid path UI element
+				if (part === "path" && (wld.path === "*/*" || wld.path.split("/").length < 4)) return;
+
 				el.append(
-					$("<label/>",{"for":"url_origin"}).text(lang("miscMsgUnblockOrigin")),
+					$("<label/>",{"for":"url_" + part}).text(lang("miscMsgUnblock" + part.capitalize())),
 					$("<form/>").append(
 						$("<input/>",{
 							"type":"text",
-							"name":"url_origin",
-							"id":"url_origin",
-							"placeholder":"Origin URL",
-							"readonly":true,
-							"value":TPop.wlData["origin"]
+							"name":"url_" + part,
+							"id":"url_" + part,
+							"placeholder":part,
+							"value":wld[part]
 						}),
-						$("<button/>",{"data-type":"origin"}).text(lang("miscCtrlApplyEntry")).on("click enter",TPop.scope.submitEntry),$("<br />")
+						$("<button/>",{"data-part":part}).text(lang("miscCtrlApplyEntry")).on("click enter",TPop.scope.submitEntry),$("<br />")
 					)
 				);
-			}
-			if (typeof TPop.wlData["path"] === "string" && TPop.wlData["path"] !== "*/*" && TPop.wlData["path"].split("/").length > 4){
-				el.append(
-					$("<label/>",{"for":"url_path"}).text(lang("miscMsgUnblockPath")),
-					$("<form/>").append(
-						$("<input/>",{
-							"type":"text",
-							"name":"url_path",
-							"id":"url_path",
-							"placeholder":"URL pathname",
-							"readonly":true,
-							"value":TPop.wlData["path"]
-						}),
-						$("<button/>",{"data-type":"path"}).text(lang("miscCtrlApplyEntry")).on("click enter",TPop.scope.submitEntry),$("<br />")
-					)
-				);
-			}
-			if (typeof TPop.wlData["host"] === "string" && TPop.wlData.host !== TPop.wlData.root){
-				el.append(
-					$("<label/>",{"for":"url_host"}).text(lang("miscMsgUnblockHost")),
-					$("<form/>").append(
-						$("<input/>",{
-							"type":"text",
-							"name":"url_host",
-							"id":"url_host",
-							"placeholder":"Hostname",
-							"readonly":true,
-							"value":TPop.wlData["host"]
-						}),
-						$("<button/>",{"data-type":"host"}).text(lang("miscCtrlApplyEntry")).on("click enter",TPop.scope.submitEntry),$("<br />")
-					)
-				);
-			}
-			if (typeof TPop.wlData["root"] === "string"){
-				el.append(
-					$("<label/>",{"for":"url_root"}).text(lang("miscMsgUnblockRoot")),
-					$("<form/>").append(
-						$("<input/>",{
-							"type":"text",
-							"name":"url_root",
-							"id":"url_root",
-							"placeholder":"Root Domain Name",
-							"readonly":true,
-							"value":TPop.wlData["root"]
-						}),
-						$("<button/>",{"data-type":"root"}).text(lang("miscCtrlApplyEntry")).on("click enter",TPop.scope.submitEntry),$("<br />")
-					)
-				);
-			}
+			});
 		},
 		submitEntry:function(e){
 			e.preventDefault();
 			var that = $(this);
 
 			that.text("Applying...");
-			console.log("Calling addNewEntry("+that.data("type")+")");
 
-			TPop.scope.addNewEntry(that.data("type"),function(){
+			TPop.scope.addNewEntry(that.data("part"),function(){
 				that.text("Applied!");
 
-				TPop.Auth.SafePost({action:"ReloadWhitelist"});
+				Auth.SafePost({action:"ReloadList"});
 				setTimeout(TPop.scope.createPanel,1500);
 			});
 		},
 		addNewEntry:function(type,callback){
 			var url = TPop.wlData[type];
 
-			chrome.runtime.getBackgroundPage(function(bg){
+			TraceBg(function(bg){
 				bg.Whitelist.AddItem(url,ProtectionTemplate(false),callback);
 			});
 		},
@@ -697,12 +605,12 @@ var TPop = {
 			var that = $(this);
 			that.text("Removing...");
 
-			chrome.runtime.getBackgroundPage(function(bg){
+			TraceBg(function(bg){
 				bg.Whitelist.RemoveItem(TPop.wlData.txtEntry,function(){
 					$("#current_section .msg").html("<strong>Action Completed!</strong>");
 					$("#user_in").empty().html("<span class='msg'><br />" + TPop.wlData.txtEntry + "<br /> Has been removed from the list.<br /><br />Reload page to apply action</span>");
 
-					TPop.Auth.SafePost({action:"ReloadWhitelist"});
+					Auth.SafePost({action:"ReloadList"});
 					setTimeout(TPop.scope.createPanel,2000);
 				});
 			});
@@ -723,16 +631,17 @@ var TPop = {
 			scopeData["InitRequests"] = $("#s_prot_initreqs").is(":checked");
 
 			// Update protection object
-			$("input[data-controls]").each(function() {
-				scopeData["Protections"][$(this).data("controls")] = $(this).is(":checked");
+			$("div[data-protid]").each(function() {
+				scopeData["Protections"][$(this).data("protid")] = $(this).hasClass("traffic_enabled");
+				console.log($(this).data("protid"),"set to",$(this).hasClass("traffic_enabled"));
 			});
 
-			chrome.runtime.getBackgroundPage(function(bg){
+			TraceBg(function(bg){
 				bg.Whitelist.EditItem(item,item,scopeData,function(){
 					setTimeout(function(){
 						that.text("Save Entry");
 					},500);
-					TPop.Auth.SafePost({action:"ReloadWhitelist"});
+					Auth.SafePost({action:"ReloadList"});
 				});
 			});
 		}

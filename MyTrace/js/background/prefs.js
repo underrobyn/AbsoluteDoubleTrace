@@ -184,7 +184,26 @@ var Prefs = {
 		"Pref_WebGLFingerprint":{
 			"enabled":false,
 			"gpuList":{
+				"enabled":true,
 				"list":[]
+			},
+			"parameters":{
+				"enabled":true,
+				"list":{
+					"MAX_TEXTURE_SIZE":13,
+					"MAX_VIEWPORT_DIMS":14,
+					"RED_BITS":3,
+					"GREEN_BITS":3,
+					"BLUE_BITS":3,
+					"ALPHA_BITS":3,
+					"STENCIL_BITS":3,
+					"MAX_RENDERBUFFER_SIZE":14,
+					"MAX_CUBE_MAP_TEXTURE_SIZE":14,
+					"MAX_VERTEX_ATTRIBS":4,
+					"MAX_TEXTURE_IMAGE_UNITS":4,
+					"MAX_VERTEX_TEXTURE_IMAGE_UNITS":4,
+					"MAX_VERTEX_UNIFORM_VECTORS":12
+				}
 			}
 		},
 		"Pref_NativeFunctions":{
@@ -325,40 +344,52 @@ var Prefs = {
 			}
 		},
 		"Pref_NetworkInformation":{
-			"enabled":false,
-			"customNet":{
-				"enabled":false,
-				"info":{
-					"downlink":7.5,
-					"effectiveType":"4g",
-					"onchange":null,
-					"rtt":100
-				}
-			}
+			"enabled":false
 		},
 		"Pref_ScreenRes":{
 			"enabled":false,
 			"randomOpts":{
-				"enabled":true,
+				"enabled":false,
 				"values":[-50,50]
 			},
 			"commonResolutions":{
-				"enabled":false,
-				"resolutions":[]
+				"enabled":true,
+				"resolutions":[
+					[1920,1080,24],
+					[1920,1280,24],
+					[1920,1440,24]
+				]
 			},
+
+			// TODO: Add options to change this
 			"modifyDepths":{
-				"enabled":false,
-				"values":[16,24,32]
+				"enabled":true
 			},
 			"modifyPixelRatio":{
 				"enabled":false
 			}
 		},
 		"Pref_BatteryApi":{
-			"enabled":false
+			"enabled":true
 		},
 		"Pref_ClientRects":{
-			"enabled":true
+			"enabled":true,
+			"element":{
+				"getclientrects":{
+					"enabled":true
+				},
+				"getboundingclientrects":{
+					"enabled":false
+				}
+			},
+			"range":{
+				"getclientrects":{
+					"enabled":true
+				},
+				"getboundingclientrects":{
+					"enabled":true
+				}
+			}
 		},
 		"Pref_PluginHide":{
 			"enabled":false
@@ -478,9 +509,9 @@ var Prefs = {
 			"PremiumCode":""
 		},
 		"Main_Simple":{
-			"enabled":false,
+			"enabled":true,
 			"presets":{
-				"enabled":true,
+				"enabled":false,
 				"global":2
 			}
 		},
@@ -512,60 +543,35 @@ var Prefs = {
 	Current:{},
 
 	// Storage Type
-	s:(/Edge/.test(navigator.userAgent) ? browser.storage.local : chrome.storage.local),
+	s:(!!chrome.storage ? chrome.storage.local : browser.storage.local),
 
-	SetDefaults:function(apply,cb){
+	SetDefaults:function(cb){
 		Trace.Notify("Setting new default settings...","prefd");
 
 		Prefs.s.set(Prefs.Defaults);
 
-		if (apply && cb){
-			Prefs.NewLoad(cb);
-		}
+		if (cb) cb();
 	},
+
+	Migrations:function(prefs){
+		let changes = false;
+		for (let i in prefs["Pref_ScreenRes"]["commonResolutions"]["resolutions"]){
+			let that = prefs["Pref_ScreenRes"]["commonResolutions"]["resolutions"][i];
+			if (that.length === 3) continue;
+
+			changes = true;
+			prefs["Pref_ScreenRes"]["commonResolutions"]["resolutions"][i][2] = 24;
+		}
+
+		return [prefs,changes];
+	},
+
 	Load:function(cb){
 		if (!window.chrome.storage) alert("Trace encountered an error: Couldn't access Storage API.");
 
-		if (Trace.DEBUG) console.info("[prefd]-> Trace[0] is loading your settings.");
-		Prefs.s.get(["tracenewprefs"],function(s){
-			if (typeof s.tracenewprefs !== "boolean"){
-				Prefs.SetDefaults(true,cb);
-			} else {
-				Prefs.NewLoad(cb);
-			}
-		});
-	},
-	NewLoad:function(cb){
-		if (!window.chrome.storage) alert("Trace encountered an error: Couldn't access Storage API.");
-
-		if (Trace.DEBUG) console.info("[prefd]-> Trace[1] is loading your settings.");
+		if (Trace.DEBUG) console.info("[prefd]-> Trace is loading your settings.");
 		Prefs.s.get(
-			[
-				"Pref_WebController",
-				"Pref_CanvasFingerprint",
-				"Pref_AudioFingerprint",
-				"Pref_WebGLFingerprint",
-				"Pref_HardwareSpoof",
-				"Pref_CookieEater",
-				"Pref_CommonTracking",
-				"Pref_ReferHeader",
-				"Pref_GoogleHeader",
-				"Pref_ETagTrack",
-				"Pref_PingBlock",
-				"Pref_NetworkInformation",
-				"Pref_NativeFunctions",
-				"Pref_ScreenRes",
-				"Pref_BatteryApi",
-				"Pref_ClientRects",
-				"Pref_PluginHide",
-				"Pref_UserAgent",
-				"Pref_WebRTC",
-				"Pref_IPSpoof",
-				"Main_Interface",
-				"Main_Trace",
-				"Main_Simple",
-				"Main_ExecutionOrder"
-			],
+			Object.keys(Prefs.Defaults),
 			function(prefs){
 				// Check that there are settings
 				if (Object.keys(prefs).length === 0){
@@ -573,15 +579,15 @@ var Prefs = {
 				}
 
 				// Fix broken preferences
-				var changes = false;
-				for (var k in Prefs.Defaults){
+				let changes = false;
+				for (let k in Prefs.Defaults){
 					if (typeof prefs[k] !== typeof Prefs.Defaults[k]){
 						prefs[k] = Prefs.Defaults[k];
 						changes = true;
 						console.log("[PrefRepair]->",k);
 					}
 
-					for (var j in Prefs.Defaults[k]){
+					for (let j in Prefs.Defaults[k]){
 						if (typeof prefs[k][j] !== typeof Prefs.Defaults[k][j]) {
 							prefs[k][j] = Prefs.Defaults[k][j];
 							changes = true;
@@ -589,7 +595,7 @@ var Prefs = {
 						}
 
 						if (typeof Prefs.Defaults[k][j] === "object"){
-							for (var i in Prefs.Defaults[k][j]){
+							for (let i in Prefs.Defaults[k][j]){
 								if (k === "Main_ExecutionOrder") continue;
 
 								if (typeof prefs[k][j][i] !== typeof Prefs.Defaults[k][j][i]) {
@@ -599,7 +605,7 @@ var Prefs = {
 								}
 
 								if (typeof Prefs.Defaults[k][j][i] === "object"){
-									for (var h in Prefs.Defaults[k][j][i]){
+									for (let h in Prefs.Defaults[k][j][i]){
 										if (typeof prefs[k][j][i][h] !== typeof Prefs.Defaults[k][j][i][h]) {
 											prefs[k][j][i][h] = Prefs.Defaults[k][j][i][h];
 											changes = true;
@@ -612,11 +618,11 @@ var Prefs = {
 					}
 				}
 
-				var currProts = [], defProts = [];
+				let currProts = [], defProts = [];
 				currProts = currProts.concat(prefs.Main_ExecutionOrder.AllPage,prefs.Main_ExecutionOrder.PerPage);
 				defProts = defProts.concat(Prefs.Defaults.Main_ExecutionOrder.AllPage,Prefs.Defaults.Main_ExecutionOrder.PerPage);
 				if (currProts.length < defProts.length){
-					for (var p = 0;p<defProts.length;p++){
+					for (let p = 0;p<defProts.length;p++){
 						if (currProts.indexOf(defProts[p]) === -1) {
 							console.log("[PrefRepair]-> Fixing Main_ExecutionOrder",defProts[p]);
 							prefs.Main_ExecutionOrder.PerPage.push(defProts[p]);
@@ -625,6 +631,15 @@ var Prefs = {
 					}
 				}
 
+				// Perform setting migrations
+				let migration = Prefs.Migrations(prefs);
+				if (migration[1] === true) {
+					console.log("[prefd]-> Preference migration occurred");
+					prefs = migration[0];
+					changes = true;
+				}
+
+				// Check if we need to save preferences
 				if (changes === true){
 					console.log("[prefd]-> Preferences repaired and saved.");
 					Prefs.s.set(prefs);
@@ -646,8 +661,45 @@ var Prefs = {
 			}
 		);
 	},
+
+	ChangeExecOrder:function(prot,cb){
+		let current = "AllPage", goto = "PerPage", duplicate = false, inArr = false;
+		if (Prefs.Current.Main_ExecutionOrder.AllPage.indexOf(prot) !== -1){
+			console.log("All:",prot);
+			inArr = true;
+		}
+		if (Prefs.Current.Main_ExecutionOrder.PerPage.indexOf(prot) !== -1){
+			console.log("Per:",prot);
+			current = "PerPage";
+			goto = "AllPage";
+
+			if (inArr === true) duplicate = true;
+		}
+
+		console.log("[execd]-> Moving %s to %s",prot,goto);
+
+		// Remove item
+		let index = Prefs.Current.Main_ExecutionOrder[current].indexOf(prot);
+		Prefs.Current.Main_ExecutionOrder[current].splice(index,1);
+
+		// Add item
+		if (!duplicate)
+			Prefs.Current.Main_ExecutionOrder[goto].push(prot);
+
+		// Save data
+		Prefs.s.set({
+			"Main_ExecutionOrder":Prefs.Current.Main_ExecutionOrder
+		},function(){
+			if (cb) cb();
+		});
+	},
+
+	ReturnExecOrder:function(cb){
+		cb(Prefs.Current.Main_ExecutionOrder);
+	},
+
 	ToggleSetting:function(setting,cb){
-		var data = Prefs.Current;
+		let data = Prefs.Current;
 
 		if (setting.includes(".")){
 			var sett = setting.split(".");
@@ -661,9 +713,10 @@ var Prefs = {
 			if (cb) cb();
 		});
 	},
+
 	GetSetting:function(setting){
-		var data = Prefs.Current;
-		var sett = setting.split(".");
+		let data = Prefs.Current;
+		let sett = setting.split(".");
 
 		if (sett.length === 1) {
 			return data[setting];
@@ -679,16 +732,23 @@ var Prefs = {
 
 		return null;
 	},
-	SetMultiple:function(settings){
-		var keys = Object.keys(settings);
-		for (var i = 0, l = keys.length;i<l;i++){
-			Prefs.Set(keys[i],settings[keys[i]]);
+
+	DisablePresetMode:function(){
+		Vars.usePresets = false;
+		Prefs.Set("Main_Simple.presets.enabled", false);
+	},
+
+	SetMultiple:function(settings,disablePresets = true){
+		let keys = Object.keys(settings);
+		for (let i = 0, l = keys.length;i<l;i++){
+			Prefs.Set(keys[i],settings[keys[i]],disablePresets);
 		}
 	},
-	Set:function(setting,val){
-		var data = Prefs.Current;
-		var sett = setting.split(".");
-		var deadSafe = JSON.parse(JSON.stringify(val));
+
+	Set:function(setting,val,disablePresets = true){
+		let data = Prefs.Current;
+		let sett = setting.split(".");
+		let deadSafe = JSON.parse(JSON.stringify(val));
 
 		if (sett.length === 1) {
 			data[setting] = deadSafe;
@@ -703,118 +763,135 @@ var Prefs = {
 		}
 
 		Prefs.s.set(data,function(){
-			Prefs.TakeAction(setting,deadSafe);
+			Prefs.TakeAction(setting,deadSafe,disablePresets);
 		});
 	},
-	TakeAction:function(setting,val){
-		// TODO: Use switch statement here
+
+	TakeAction:function(setting,val,disablePresets = true){
 		if (Trace.DEBUG) console.info("[prefd]-> Updating",setting,"to",val);
 
-		// Toggle debug messages
-		if (setting === "Main_Trace.DebugApp"){
-			Trace.DEBUG = val;
+		if (!strMatchesItemInArr(setting,["Main_Trace","Main_Simple"]) && Vars.usePresets === true && disablePresets){
+			Prefs.DisablePresetMode();
 		}
 
-		// Simple UI preferences
-		if (setting === "Main_Simple.enabled")			Vars.simpleUi = val;
-		if (setting === "Main_Simple.presets.enabled") 	Vars.usePresets = val;
-		if (setting === "Main_Simple.presets.global") 	Vars.preset = val;
+		switch (setting){
+			// Toggle debug messages
+			case "Main_Trace.DebugApp":				Trace.DEBUG = val;			break;
 
-		// Toggle web-rtc protection
-		if (setting === "Pref_WebRTC.wrtcInternal.enabled" || setting === "Pref_WebRTC"){
-			Trace.f.ToggleWebRtc();
-		}
+			// Toggle browser notifications
+			case "Main_Trace.BrowserNotifications":	Vars.bNotifications = val;	break;
 
-		// Toggle domain blocking protection
-		if (setting === "Pref_WebController" || setting === "Pref_WebController.enabled"){
-			if (val.enabled){
-				Web.BlocklistLoader(false);
-				WebBlocker.AssignChecker();
-			} else {
-				WebBlocker.RemoveChecker();
-			}
-		}
+			// Toggle error reporting
+			case "Main_Trace.ErrorReporting":		Vars.eReporting = val;		break;
 
-		// Toggle Coookie Eater protection
-		if (setting === "Pref_CookieEater"){
-			if (val.enabled){
-				Headers.Cookie.Start();
-			} else {
-				Headers.Cookie.Stop();
-			}
-		}
+			// Update current premium code
+			case "Main_Trace.PremiumCode":			Vars.Premium = val;			break;
 
-		// Toggle E-Tag protection
-		if (setting === "Pref_ETagTrack"){
-			if (val.enabled){
-				Headers.Etag.Start();
-			} else {
-				Headers.Etag.Stop();
-			}
-		}
+			// Simple UI preferences
+			case "Main_Simple":
+			case "Main_Simple.enabled":
+				Simple.handleUiChange();
+				break;
+			case "Main_Simple.presets.enabled":
+				Vars.usePresets = val;
+				Simple.sendDashboardUpdate();
+				break;
+			case "Main_Simple.presets.global":
+				Vars.preset = val;
+				Simple.sendDashboardUpdate();
+				break;
 
-		// Toggle Google Header overall protection
-		if (setting === "Pref_GoogleHeader"){
-			if (val.enabled){
-				Headers.Google.Start();
-			} else {
-				Headers.Google.Stop();
-			}
-		}
+			// Toggle Coookie Eater protection
+			case "Pref_CookieEater":
+				if (val.enabled){
+					Headers.Cookie.Start();
+				} else {
+					Headers.Cookie.Stop();
+				}
+				break;
 
-		// Toggle Google Header overall protection
-		if (setting === "Pref_ReferHeader"){
-			if (val.enabled){
-				Headers.Referer.Start();
-			} else {
-				Headers.Referer.Stop();
-			}
-		}
+			// Toggle E-Tag protection
+			case "Pref_ETagTrack":
+				if (val.enabled){
+					Headers.Etag.Start();
+				} else {
+					Headers.Etag.Stop();
+				}
+				break;
 
-		// Toggle user-agent randomiser background task
-		if (setting === "Pref_UserAgent"){
-			Trace.f.ToggleUserAgentRandomiser(false);
-			if (val.enabled){
-				Headers.UserAgent.Start();
-			} else {
-				Headers.UserAgent.Stop();
-			}
-		}
+			// Toggle Google Header overall protection
+			case "Pref_GoogleHeader":
+				if (val.enabled){
+					Headers.Google.Start();
+				} else {
+					Headers.Google.Stop();
+				}
+				break;
 
-		// Toggle user-agent randomiser background task
-		if (setting === "Pref_WebGLFingerprint"){
-			Trace.f.ToggleGPURandomiser(false);
-		}
+			// Toggle Referer Header web protection
+			case "Pref_ReferHeader":
+				if (val.enabled){
+					Headers.Referer.Start();
+				} else {
+					Headers.Referer.Stop();
+				}
+				break;
 
-		if (setting === "Pref_PingBlock.pingRequest.enabled" || setting === "Pref_PingBlock"){
-			Web.ToggleBlockPings();
-		}
+			// Toggle ping protections
+			case "Pref_PingBlock":
+			case "Pref_PingBlock.pingRequest.enabled":
+				Web.ToggleBlockPings();
+				break;
 
-		// Load IPSpoof settings
-		if (setting.includes("Pref_IPSpoof")){
-			Trace.i.ToggleIPSpoof(false);
-		}
+			// Toggle user-agent randomiser background task
+			case "Pref_UserAgent":
+				Alarms.Toggle.UserAgentRandomiser(false);
+				if (val.enabled){
+					Headers.UserAgent.Start();
+				} else {
+					Headers.UserAgent.Stop();
+				}
+				break;
 
-		// Load BadTLD settings
-		if (setting === "Pref_WebController.tld" || setting === "Pref_WebController.tld.level"){
-			Trace.g.BadTopLevelDomain.ToggleProtection();
-		}
+			// Toggle domain blocking protection
+			case "Pref_WebController":
+			case "Pref_WebController.enabled":
+				if (val.enabled){
+					Web.BlocklistLoader(false);
+					WebBlocker.AssignChecker();
+				} else {
+					WebBlocker.RemoveChecker();
+				}
+				break;
 
-		// Toggle error reporting
-		if (setting === "Main_Trace.ErrorReporting"){
-			Vars.eReporting = val;
-		}
+			// Toggle domain tld protection
+			case "Pref_WebController.tld":
+			case "Pref_WebController.tld.level":
+				Trace.g.BadTopLevelDomain.ToggleProtection();
+				break;
 
-		// Toggle browser notifications
-		if (setting === "Main_Trace.BrowserNotifications"){
-			Vars.bNotifications = val;
-		}
+			// Toggle WebGL background task
+			case "Pref_WebGLFingerprint":
+				Alarms.Toggle.GPURandomiser(false);
+				break;
 
-		// Update current premium code
-		if (setting === "Main_Trace.PremiumCode"){
-			Vars.Premium = val;
+			// Toggle web-rtc protection
+			case "Pref_WebRTC":
+			case "Pref_WebRTC.wrtcInternal.enabled":
+				Trace.f.ToggleWebRtc();
+				break;
+
+			default:
+				// IPSpoof settings
+				if (setting.includes("Pref_IPSpoof")){
+					Trace.i.ToggleIPSpoof(false);
+				} else {
+					//if (Trace.DEBUG) console.info("[prefd]-> No action to take for", setting);
+				}
+				break;
 		}
 	},
+
 	CreateBackup:function(cb){
 		Prefs.s.get(null, function(items) {
 			var backupObj = {
@@ -828,8 +905,8 @@ var Prefs = {
 				},
 				"data":{}
 			};
-			var k = Object.keys(items);
-			for (var i = 0, l = k.length;i<l;i++){
+			let k = Object.keys(items);
+			for (let i = 0, l = k.length;i<l;i++){
 				//if (k[i].substr(0,4) === "Pref" || k[i].substr(0,4) === "Main" || k[i].substr(0,4) === "stats"){
 				if (k[i].substr(0,4) !== "WebC") {
 					backupObj["data"][k[i]] = items[k[i]];
@@ -845,6 +922,7 @@ var Prefs = {
 			cb(backupObj);
 		});
 	},
+
 	EchoStorage:function(){
 		Prefs.s.get(null, function(items) {
 			console.log(items);
@@ -852,7 +930,7 @@ var Prefs = {
 	},
 	ClearStorage:function(){
 		chrome.storage.local.clear(function() {
-			var error = chrome.runtime.lastError;
+			let error = chrome.runtime.lastError;
 			if (error) {
 				console.error(error);
 			}

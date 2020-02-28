@@ -1,5 +1,16 @@
 var Headers = {
 
+	Execute:function(start){
+		let call = start ? "Start" : "Stop";
+
+		if (Prefs.Current.Pref_CookieEater.enabled === true) Headers.Cookie[call]();
+		if (Prefs.Current.Pref_ETagTrack.enabled === true) Headers.Etag[call]();
+		if (Prefs.Current.Pref_GoogleHeader.enabled === true) Headers.Google[call]();
+		if (Prefs.Current.Pref_ReferHeader.enabled === true) Headers.Referer[call]();
+		if (Prefs.Current.Pref_UserAgent.enabled === true) Headers.UserAgent[call]();
+		if (Prefs.Current.Pref_IPSpoof.enabled === true) Headers.IPSpoof[call]();
+	},
+
 	Helpers:{
 		// URL that made the request (Cross browser solution)
 		getInitiator:function(request){
@@ -10,8 +21,8 @@ var Headers = {
 			return "";
 		},
 		isRequestThirdParty:function(request){
-			var reqUrl = extractRootDomain(request.url);
-			var reqIni = extractRootDomain(Headers.Helpers.getInitiator(request));
+			let reqUrl = extractRootDomain(request.url);
+			let reqIni = extractRootDomain(Headers.Helpers.getInitiator(request));
 
 			return reqIni !== reqUrl;
 		}
@@ -73,13 +84,12 @@ var Headers = {
 			}
 
 			// Loop each header
-			for (var i=0;i<details.requestHeaders.length;++i){
-				var headerName = details.requestHeaders[i].name.toString().toLowerCase();
+			for (let i=0;i<details.requestHeaders.length;++i){
+				let headerName = details.requestHeaders[i].name.toString().toLowerCase();
 
 				if (headerName !== "cookie") continue;
 
 				var cp = new CookieParser(details.requestHeaders[i].value);
-				var os = details.requestHeaders[i].value;
 
 				if (settings[method] === "removeall"){
 					details.requestHeaders.splice(i,1);
@@ -130,8 +140,8 @@ var Headers = {
 			}
 
 			// Loop each header
-			for (var i=0;i<details.responseHeaders.length;++i){
-				var headerName = details.responseHeaders[i].name.toString().toLowerCase();
+			for (let i=0;i<details.responseHeaders.length;++i){
+				let headerName = details.responseHeaders[i].name.toString().toLowerCase();
 
 				// Remove bad response headers
 				if (headerName !== "set-cookie") continue;
@@ -190,8 +200,8 @@ var Headers = {
 
 			if (!Whitelist.CheckList(details.url,"Pref_ETagTrack")) return;
 
-			for (var i=0;i<details.responseHeaders.length;++i){
-				var headerName = details.responseHeaders[i].name.toString().toLowerCase();
+			for (let i=0;i<details.responseHeaders.length;++i){
+				let headerName = details.responseHeaders[i].name.toString().toLowerCase();
 
 				// Skip headers that aren't etag
 				if (headerName !== "etag") continue;
@@ -227,52 +237,25 @@ var Headers = {
 			// Check if Trace is paused
 			if (Vars.paused !== false) return;
 
-			var opts = Prefs.Current.Pref_GoogleHeader;
+			let opts = Prefs.Current.Pref_GoogleHeader,
+				badHeaders = [];
+
+			if (opts.rmChromeConnected.enabled === true) 	badHeaders.push("x-chrome-connected");
+			if (opts.rmChromeUMA.enabled === true) 			badHeaders.push("x-chrome-uma-enabled");
+			if (opts.rmChromeVariations.enabled === true) 	badHeaders.push("x-chrome-variations");
+			if (opts.rmClientData.enabled === true) 		badHeaders.push("x-client-data");
 
 			// Check if we have any modifications to make, if not then don't waste resources
-			var ghm = (
-				(opts.rmChromeConnected.enabled === true) ||
-				(opts.rmChromeUMA.enabled === true) ||
-				(opts.rmChromeVariations.enabled === true) ||
-				(opts.rmClientData.enabled === true)
-			);
-			if (opts.enabled !== true && ghm !== true) {
+			if (opts.enabled !== true || badHeaders.length === 0 || !Whitelist.CheckList(details.url,"Pref_GoogleHeader")) {
 				return {requestHeaders:details.requestHeaders};
 			}
 
-			if (!Whitelist.CheckList(details.url,"Pref_GoogleHeader")) return;
+			for (let i=0;i<details.requestHeaders.length;++i) {
+				let headerName = details.requestHeaders[i].name.toString().toLowerCase();
 
-			for (var i=0;i<details.requestHeaders.length;++i) {
-				var headerName = details.requestHeaders[i].name.toString().toLowerCase();
-
-				if (opts.rmChromeConnected.enabled === true) {
-					if (headerName === "x-chrome-connected") {
-						console.log("Removed x-c-c");
-						details.requestHeaders.splice(i, 1);
-						Tabs.LogHeaders(details.tabId,"google");
-						continue;
-					}
-				}
-				if (opts.rmChromeUMA.enabled === true) {
-					if (headerName === "x-chrome-uma-enabled") {
-						details.requestHeaders.splice(i, 1);
-						Tabs.LogHeaders(details.tabId,"google");
-						continue;
-					}
-				}
-				if (opts.rmChromeVariations.enabled === true) {
-					if (headerName === "x-chrome-variations") {
-						console.log("Removed x-c-v");
-						details.requestHeaders.splice(i, 1);
-						Tabs.LogHeaders(details.tabId,"google");
-						continue;
-					}
-				}
-				if (opts.rmClientData.enabled === true) {
-					if (headerName === "x-client-data") {
-						details.requestHeaders.splice(i, 1);
-						Tabs.LogHeaders(details.tabId,"google");
-					}
+				if (badHeaders.indexOf(headerName) !== -1) {
+					details.requestHeaders.splice(i, 1);
+					Tabs.LogHeaders(details.tabId,"google");
 				}
 			}
 
@@ -368,11 +351,11 @@ var Headers = {
 
 			if (!Whitelist.CheckList(details.url,"Pref_ReferHeader")) return;
 
-			var s = Prefs.Current.Pref_ReferHeader.httpHeader;
+			let s = Prefs.Current.Pref_ReferHeader.httpHeader;
 
 			// Loop each header
-			for (var i=0;i<details.requestHeaders.length;++i){
-				var headerName = details.requestHeaders[i].name.toString().toLowerCase();
+			for (let i=0;i<details.requestHeaders.length;++i){
+				let headerName = details.requestHeaders[i].name.toString().toLowerCase();
 
 				if (headerName !== "referer") continue;
 
@@ -388,10 +371,10 @@ var Headers = {
 				}
 
 				// Break out of loop if these conditions are met
-				var headerVal = details.requestHeaders[i].value.toString();
-				var hostname = extractHostname(headerVal);
-				var sameHost = hostname === extractHostname(details.url);
-				var sameRoot = extractRootDomain(headerVal) === extractRootDomain(details.url);
+				let headerVal = details.requestHeaders[i].value.toString();
+				let hostname = extractHostname(headerVal);
+				let sameHost = hostname === extractHostname(details.url);
+				let sameRoot = extractRootDomain(headerVal) === extractRootDomain(details.url);
 
 				if (sameHost){
 					if (s.allowSameHost.enabled){
@@ -457,8 +440,8 @@ var Headers = {
 
 			if (!Whitelist.CheckList(details.url,"Pref_UserAgent")) return;
 
-			for (var i=0;i<details.requestHeaders.length;++i){
-				var headerName = details.requestHeaders[i].name.toString().toLowerCase();
+			for (let i=0;i<details.requestHeaders.length;++i){
+				let headerName = details.requestHeaders[i].name.toString().toLowerCase();
 
 				// Skip headers that aren't user agent
 				if (headerName !== "user-agent") continue;

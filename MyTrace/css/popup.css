@@ -6,10 +6,10 @@ html, body {
 	font-weight:100;
 	box-sizing: border-box;
 	overflow:hidden;
-	width:570px;
-	min-width:570px;
-	height:440px;
-	min-height:440px;
+	width:600px;
+	min-width:600px;
+	height:450px;
+	min-height:450px;
 }
 body {
 	text-align:center;
@@ -197,7 +197,7 @@ a{
 	height:42.5vh;
 	overflow-y:scroll;
 	margin-bottom:5px;
-	background-color:rgba(0,0,0,0.2);
+	background-color:rgba(255,255,255,0.2);
 }
 #whitelist_prots_list h2 {
 	margin:0.5rem 0;
@@ -213,13 +213,17 @@ a{
 	top:2px !important;
 	left:4px !important;
 }
-.spanlink {
-	color:#eee;
-	text-decoration:underline;
-	cursor:pointer;
+.setting_traffic{
+	display: inline-block !important;
+	float:unset !important;
+	padding:.35em 0 !important;
+	margin:.25%;
+	width:calc(49.5%);
+	font-size:1.45em !important;
+	background-color:rgba(0,0,0,0.7) !important;
 }
-.spanlink:hover, .spanlink:focus {
-	color:#ddd;
+.setting_traffic:hover {
+	background-color:rgba(0,0,0,0.9) !important;
 }
 
 #current_section{

@@ -10,7 +10,7 @@ var Trace = {
 
 		if (Trace.DEBUG) console.info("%c[%s]-> Notified: %s",'color:darkblue',sect,msg);
 
-		var opts = {
+		let opts = {
 			"type":"basic",
 			"message":msg,
 			"title":"Trace",
@@ -27,18 +27,16 @@ var Trace = {
 	a:{
 		AssignRuntime:function(){
 			// Set uninstall URL
-			var uninstallUrl = "https://absolutedouble.co.uk/trace/extension-uninstall?e=";
-			var storage_type = (!window.chrome.storage.sync ? window.chrome.storage.local : window.chrome.storage.sync);
+			let storage_type = (!window.chrome.storage.sync ? window.chrome.storage.local : window.chrome.storage.sync);
 
 			storage_type.get('userid',function(items) {
-
 				if (typeof items === "undefined" || !items.hasOwnProperty("userid")) {
 					items = {'userid': "Unknown"};
 				}
 
 				// We pass the users error reporting ID so that their data can be purged from the error reporting database
-				var usr = items.userid;
-				uninstallUrl = uninstallUrl + usr;
+				let usr = items.userid;
+				let uninstallUrl = Vars.uninstallUrl + usr;
 
 				try {
 					chrome.runtime.setUninstallURL(uninstallUrl,function(){
@@ -50,101 +48,106 @@ var Trace = {
 				}
 			});
 		},
+
 		NewInstall:function(details){
-			// If this is a new install, open welcome page and set default settings
-			if (details.reason && details.reason === "install"){
+			if (!details.reason) return;
+
+			if (details.reason === "update") {
+				if (Trace.DEBUG) console.info("[mangd]-> Updated from: " + details.previousVersion);
+
+				if (details.previousVersion === "2.4.3" || details.previousVersion === "2.4.4"){
+					try {
+						Prefs.Set("Main_Simple.presets.enabled", false);
+					} catch (e){
+						console.warn(e);
+					}
+				}
+			} else if (details.reason === "install"){
+				// If this is a new install, open welcome page and set default settings
 				Prefs.SetDefaults();
 				Prefs.s.set({"trace_installdate":Stats.GenTime()[0]});
+
 				Stats.SaveStats();
 				Web.BlocklistLoader(true);
-				chrome.tabs.create({url:"/html/options.html#installed"});
-			} else if (details.reason && details.reason === "update") {
-				if (Trace.DEBUG) console.info("[mangd]-> Updated from: " + details.previousVersion);
+				_UserCrashReportService({"NewInstall":true});
+
+				chrome.tabs.create({url:"/html/settings.html#installed"});
+			} else {
+				console.error("Unknown reason: " + details.reason);
 			}
 		},
+
 		ContentTalk:function(request, sender, sendResponse){
 			switch (request.msg) {
-				case "uaReq":
-					sendResponse({
-						userAgentString:Vars.useragent,
-						osCPUString:Vars.oscpu,
-						platformString:Vars.platform
-					});
-					break;
-				case "gpuReq":
-					sendResponse({
-						gpuChose:Vars.gpuChose
-					});
-					break;
-				case "checkList":
-					// See if the whitelist can sort this one out for us
-					if (Whitelist.wlEnabled === true || Whitelist.useTempWl === true){
-						var reqUrl = request.url;
+				case "tracepage": Trace.a.TracePage(request, sender, sendResponse); break;
+				case "traceload": Trace.a.TraceLoaded(request, sender, sendResponse); break;
 
-						var wl = Whitelist.GetWhitelist();
-						for (var i = 0, l = wl.keys.length;i<l;i++){
-							if (wl.keys[i].test(reqUrl)){
-								var send = wl.values[i].Protections;
-								sendResponse({
-									"prefs":Prefs.Current,
-									"tracePaused":Vars.paused,
-									"runProtection":true,
-									"data":send
-								});
-								return;
-							}
-						}
-					}
-
-					// Okay so the whitelist couldn't...
-					var protections = Whitelist.whitelistDefaults;
-					var keys = Object.keys(protections);
-					for (var l = keys.length, i = 0;i<l;i++){
-						protections[keys[i]] = Prefs.Current.Main_ExecutionOrder.PerPage.indexOf(keys[i]) === -1;
-					}
-					sendResponse({
-						"prefs":Prefs.Current,
-						"tracePaused":Vars.paused,
-						"runProtection":false,
-						"data":protections
-					});
-					break;
-				case "getsetting":
-					if (request.setting) {
-						sendResponse({
-							"data":Prefs.Current[request.setting]
-						});
-					} else {
-						sendResponse(Prefs.Current);
-					}
-					break;
-				case "getLoadedSettings":
-					sendResponse({
-						"pingAttr":Prefs.Current.Pref_PingBlock.removePingAttr.enabled,
-						"relOpener":Prefs.Current.Pref_NativeFunctions.windowOpen.enabled
-					});
-					break;
-				case "protectionUpdate":
-					if (Trace.DEBUG) console.log("[TracePage] " + sender.tab ? "from a content script:" + sender.tab.url : "from the extension");
-
-					sendResponse({
-						"pingAttr":Prefs.Current.Pref_PingBlock.removePingAttr.enabled,
-						"relOpener":Prefs.Current.Pref_NativeFunctions.windowOpen.enabled
-					});
-					break;
 				case "protectionRan":
 					Trace.f.HandleCsUpdate(request);
 					sendResponse({});
 					break;
+
 				default:
 					console.error("Invalid message recieved");
 					console.warn(request);
 					break;
 			}
+		},
+
+		TraceLoaded:function(request, sender, sendResponse){
+			sendResponse({
+				"pingAttr":Prefs.Current.Pref_PingBlock.removePingAttr.enabled,
+				"relOpener":Prefs.Current.Pref_NativeFunctions.windowOpen.enabled
+			});
+		},
+
+		TracePage:function(request, sender, sendResponse){
+			let response = {
+				"additional":{
+					"Pref_UserAgent":{
+						ua:Vars.useragent,
+						os:Vars.oscpu,
+						plat:Vars.platform
+					},
+					"Pref_WebGLFingerprint":{
+						gpuChose:Vars.gpuChose
+					}
+				},
+				"prefs":Prefs.Current,
+				"tracePaused":Vars.paused,
+				"url":request.url
+			};
+
+			let entryInWhitelist = false;
+
+			// See if the whitelist can sort this one out for us
+			if (Whitelist.wlEnabled === true || Whitelist.useTempWl === true){
+				let reqUrl = request.url;
+				let wl = Whitelist.GetWhitelist();
+
+				for (let i = 0, l = wl.keys.length;i<l;i++){
+					if (!wl.keys[i].test(reqUrl)) continue;
+
+					response["data"] = wl.values[i].Protections;
+					entryInWhitelist = true;
+					break;
+				}
+			}
+
+			if (!entryInWhitelist){
+				let protections = Whitelist.whitelistDefaults;
+				let keys = Object.keys(protections);
+				for (let l = keys.length, i = 0;i<l;i++){
+					protections[keys[i]] = Prefs.Current.Main_ExecutionOrder.PerPage.indexOf(keys[i]) === -1;
+				}
+				response["data"] = protections;
+			}
+
+			sendResponse(response);
 		}
 	},
 
-	// Functions
+	// Functions for Trace's start up
 	f:{
 		StartTrace:function(){
 			// Echo some console information
@@ -152,13 +155,12 @@ var Trace = {
 
 			// Create current object and prepare for loading
 			Prefs.Current = Prefs.Defaults;
-			Prefs.Defaults["tracenewprefs"] = true;
 
 			// Load settings from storage
 			Prefs.Load(Trace.f.StartModules);
 		},
-		StartModules:function(){
-			// Load some settings into program
+
+		LoadStateVars:function(){
 			Vars.bNotifications = Prefs.Current.Main_Trace.BrowserNotifications.enabled;
 			Vars.eReporting = Prefs.Current.Main_Trace.ErrorReporting.enabled;
 			Vars.pSessions = Prefs.Current.Main_Trace.ProtectionSessions.enabled;
@@ -166,9 +168,13 @@ var Trace = {
 			Tabs.TabInfo = Prefs.Current.Main_Trace.TabStats.enabled;
 			Trace.DEBUG = Prefs.Current.Main_Trace.DebugApp.enabled;
 
-			Vars.simpleUi = Prefs.Current.Main_Simple.enabled;
 			Vars.usePresets = Prefs.Current.Main_Simple.presets.enabled;
 			Vars.preset = Prefs.Current.Main_Simple.presets.global;
+		},
+
+		StartModules:function(){
+			// Load some settings into program
+			Trace.f.LoadStateVars();
 
 			// Tell users that they can debug trace if they wish
 			if (Trace.DEBUG === false){
@@ -184,7 +190,7 @@ var Trace = {
 
 			// Load statistics into program
 			if (Vars.pSessions === true)
-				Trace.f.GenerateSession();
+				Session.init();
 
 			// Assign keyboard shortcuts
 			if (chrome.commands){
@@ -204,33 +210,17 @@ var Trace = {
 			}
 
 			// Any post-header modifications start here
-			if (Prefs.Current.Pref_CookieEater.enabled === true)
-				Headers.Cookie.Start();
-
-			if (Prefs.Current.Pref_ETagTrack.enabled === true)
-				Headers.Etag.Start();
-
-			if (Prefs.Current.Pref_GoogleHeader.enabled === true)
-				Headers.Google.Start();
-
-			if (Prefs.Current.Pref_ReferHeader.enabled === true)
-				Headers.Referer.Start();
-
-			if (Prefs.Current.Pref_UserAgent.enabled === true)
-				Headers.UserAgent.Start();
-
-			if (Prefs.Current.Pref_IPSpoof.enabled === true)
-				Headers.IPSpoof.Start();
+			Headers.Execute(true);
 
 			// Start keeping tabs on the tabs
 			Tabs.Init();
 
 			// Alarm events to change UserAgent
-			Trace.f.StartAlarmEvent();
+			Alarms.Start();
 
 			// Toggle alarms
-			Trace.f.ToggleUserAgentRandomiser(true);
-			Trace.f.ToggleGPURandomiser(true);
+			Alarms.Toggle.UserAgentRandomiser(true);
+			Alarms.Toggle.GPURandomiser(true);
 			Trace.i.ToggleIPSpoof(true);
 
 			// Toggle WebRTC protection
@@ -239,66 +229,25 @@ var Trace = {
 			// Tell the user that we're done!
 			Trace.Notify("Finished setting up.","initd");
 		},
-		GenerateSession:function(){
-			var newSession = {};
-			var keys = Prefs.Current.Main_Trace.ProtectionSessions.affects;
 
-			// Generate resolution & colour depth
-			if (keys.indexOf("Pref_ScreenRes") !== -1){
-				//newSession = Trace.
+		OpenSettingsPage:function(section){
+			let page = "html/options.html";
+
+			if (Prefs.Current.Main_Simple.enabled === true){
+				page = "html/settings.html";
 			}
 
-			// Generate effectiveType, downlink and rtt
-			if (keys.indexOf("Pref_NetworkInformation") !== -1){
+			if (section) page += "#view=" + section;
 
-			}
-
-			// Generate browser and os
-			if (keys.indexOf("Pref_UserAgent") !== -1){
-
-			}
+			chrome.tabs.create({url:page});
 		},
-		ReturnExecOrder:function(cb){
-			cb(Prefs.Current.Main_ExecutionOrder);
-		},
-		ChangeExecOrder:function(prot,cb){
-			var current = "AllPage", goto = "PerPage", duplicate = false, inArr = false;
-			if (Prefs.Current.Main_ExecutionOrder.AllPage.indexOf(prot) !== -1){
-				console.log("All:",prot);
-				inArr = true;
-			}
-			if (Prefs.Current.Main_ExecutionOrder.PerPage.indexOf(prot) !== -1){
-				console.log("Per:",prot);
-				current = "PerPage";
-				goto = "AllPage";
 
-				if (inArr === true) duplicate = true;
-			}
-
-			console.log("[execd]-> Moving %s to %s",prot,goto);
-
-			// Remove item
-			var index = Prefs.Current.Main_ExecutionOrder[current].indexOf(prot);
-			Prefs.Current.Main_ExecutionOrder[current].splice(index,1);
-
-			// Add item
-			if (!duplicate)
-				Prefs.Current.Main_ExecutionOrder[goto].push(prot);
-
-			// Save data
-			Prefs.s.set({
-				"Main_ExecutionOrder":Prefs.Current.Main_ExecutionOrder
-			},function(){
-				if (cb) cb();
-			});
-		},
 		KeyboardCommand:function(c){
 			// This function is called whenever a keyboard shortcut is pressed
-			if (Prefs.Current.Main_Trace.KeyboardCommand.enabled !== true){
-				return;
-			}
+			if (Prefs.Current.Main_Trace.KeyboardCommand.enabled !== true) return;
 
 			if (Trace.DEBUG) console.log("[commd]-> User Command:",c);
+
 			if (c === "ToggleTraceWeb"){
 				if (Trace.DEBUG) console.info("Toggled Trace Web");
 				Prefs.ToggleSetting("Pref_WebController");
@@ -308,156 +257,17 @@ var Trace = {
 				Trace.Notify(Vars.paused ? "Trace paused." : "Trace protections are active again.","commd");
 			} else if (c === "OpenTraceSettings") {
 				if (Trace.DEBUG) console.info("Opening Trace's settings");
-				chrome.tabs.create({url:"/html/options.html"});
+				TraceBg(function(bg){
+					bg.Trace.f.OpenSettingsPage();
+				});
 			} else {
 				Trace.Notify("Unknown Command","commd");
 			}
 		},
-		ToggleUserAgentRandomiser:function(onlyStart){
-			if (Prefs.Current.Pref_UserAgent.enabled === true){
-				// Create random user agent
-				Trace.f.ChooseUserAgent();
 
-				// Assign browser event
-				chrome.alarms.create("UserAgentRefresh",{periodInMinutes: Vars.UserAgentInterval});
-			} else {
-				if (!onlyStart){
-					chrome.alarms.clear("UserAgentRefresh",function(success) {
-						if (!success) Trace.Notify("Failed to stop user-agent refresh process (It probably wasn't running)","uabgd");
-					});
-				}
-			}
-		},
-		ToggleGPURandomiser:function(onlyStart){
-			if (Prefs.Current.Pref_WebGLFingerprint.enabled === true){
-				// Create random user agent
-				Trace.f.ChooseGPU();
-
-				// Assign browser event
-				chrome.alarms.create("GPURefresh",{periodInMinutes: Vars.GPUInterval});
-			} else {
-				if (!onlyStart){
-					chrome.alarms.clear("GPURefresh",function(success) {
-						if (!success) Trace.Notify("Failed to stop GPU refresh process (It probably wasn't running)","gpupd");
-					});
-				}
-			}
-		},
-
-		ChooseGPU:function(){
-			if (Prefs.Current.Pref_WebGLFingerprint.enabled === false) return;
-
-			var gpuStr = rA(Vars.gpuModels);
-			if (Prefs.Current.Pref_WebGLFingerprint.gpuList.list.length !== 0){
-				gpuStr = rA(Prefs.Current.Pref_WebGLFingerprint.gpuList.list);
-			}
-
-			var addDirectX = rA([0,1,2,3]);
-
-			if (addDirectX === 0) gpuStr += gpuDirect2;
-			if (addDirectX === 1) gpuStr += gpuDirect3;
-			if (addDirectX === 2) gpuStr += gpuDirect5;
-
-			Vars.gpuChose = gpuStr;
-		},
-
-		ChooseUserAgent:function(){
-			// If user has enabled custom user agents and set some
-			if (Prefs.Current.Pref_UserAgent.uaCust.enabled === true && Prefs.Current.Pref_UserAgent.uaCust.customUAs.length > 0){
-				return rA(Prefs.Current.Pref_UserAgent.uaCust.customUAs);
-			}
-
-			// Choose OS
-			var uaOSPool = [];
-			if (Prefs.Current.Pref_UserAgent.uaOSConfig.AllowLinux.enabled === true){
-				uaOSPool = uaOSPool.concat(Object.values(Vars.uaSettings.os.linux));
-			}
-			if (Prefs.Current.Pref_UserAgent.uaOSConfig.AllowMac.enabled === true){
-				uaOSPool = uaOSPool.concat(Object.values(Vars.uaSettings.os.macos));
-			}
-			if (Prefs.Current.Pref_UserAgent.uaOSConfig.AllowWindows.enabled === true){
-				uaOSPool = uaOSPool.concat(Object.values(Vars.uaSettings.os.windows));
-			}
-
-			// Choose browser
-			var uaWBPool = [];
-			if (Prefs.Current.Pref_UserAgent.uaWBConfig.AllowChrome.enabled === true){
-				uaWBPool = uaWBPool.concat(Object.values(Vars.uaSettings.wb.chrome));
-			}
-			if (Prefs.Current.Pref_UserAgent.uaWBConfig.AllowFirefox.enabled === true){
-				uaWBPool = uaWBPool.concat(Object.values(Vars.uaSettings.wb.firefox));
-			}
-			if (Prefs.Current.Pref_UserAgent.uaWBConfig.AllowEdge.enabled === true){
-				uaWBPool = uaWBPool.concat(Object.values(Vars.uaSettings.wb.edge));
-			}
-			if (Prefs.Current.Pref_UserAgent.uaWBConfig.AllowSafari.enabled === true){
-				uaWBPool = uaWBPool.concat(Object.values(Vars.uaSettings.wb.safari));
-			}
-			if (Prefs.Current.Pref_UserAgent.uaWBConfig.AllowVivaldi.enabled === true){
-				uaWBPool = uaWBPool.concat(Object.values(Vars.uaSettings.wb.vivaldi));
-			}
-
-			Vars.oscpu = rA(uaOSPool);
-			var browser = rA(uaWBPool);
-
-			// Special case for firefox on mac, Thanks: https://github.com/jake-cryptic/AbsoluteDoubleTrace/issues/3#issuecomment-437178452
-			if (Vars.oscpu.toLowerCase().includes("mac")){
-				if (browser.includes("Firefox")){
-					Vars.oscpu = Vars.oscpu.replace(/_/g,".");
-				}
-			}
-
-			Vars.useragent = "Mozilla/5.0 (" + Vars.oscpu + ") " + browser;
-
-			if (Vars.oscpu.toLowerCase().includes("win")){
-				Vars.platform = rA(["Win32","Win64"]);
-			} else if (Vars.oscpu.toLowerCase().includes("mac")){
-				Vars.platform = rA(["MacIntel","MacPPC"]);
-			} else {
-				Vars.platform = rA(["Linux","X11","Linux 1686"]);
-			}
-		},
-		StartAlarmEvent:function(){
-			if (!chrome.alarms) {
-				console.error("Alarms aren't supported in this browser.");
-				return false;
-			}
-			try{
-				chrome.alarms.onAlarm.addListener(function(a){
-					if (a.name === "UserAgentRefresh" && Prefs.Current.Pref_UserAgent.enabled === true){
-						Trace.f.ChooseUserAgent();
-					}
-					if (a.name === "GPURefresh" && Prefs.Current.Pref_WebGLFingerprint.enabled === true){
-						Trace.f.ChooseGPU();
-					}
-					if (a.name === "StatsDatabaseRefresh" && Prefs.Current.Main_Trace.ProtectionStats.enabled === true){
-						Stats.SaveStats();
-					}
-					if (a.name === "UserFakeIPRefresh" && Prefs.Current.Pref_IPSpoof.enabled === true){
-						if (Prefs.Current.Pref_IPSpoof.traceIP.enabled === true){
-							Trace.i.StopIPRefresh();
-							return;
-						}
-						Trace.i.RefreshFakeUserIP();
-					} else if (a.name === "UserFakeIPRefresh" && Prefs.Current.Pref_IPSpoof.enabled !== true){
-						Trace.i.StopIPRefresh();
-					}
-				});
-			} catch(e){
-				if (e.message){
-					console.log(e.message);
-				} else {
-					console.warn("Error starting alarm events, mabye browser doesn't support them?");
-				}
-			}
-		},
 		ToggleWebRtc:function(){
-			if (!chrome.privacy) {
-				Trace.Notify("WebRTC Setting isn't supported in this browser or Trace doesn't have permission to access it.");
-				return false;
-			}
-			if (!chrome.privacy.network.webRTCIPHandlingPolicy) {
-				Trace.Notify("WebRTC Setting requires Chrome 48 or newer.");
+			if (!chrome.privacy || !chrome.privacy.network.webRTCIPHandlingPolicy) {
+				Trace.Notify("WebRTC Setting cannot be accessed. Please contact the developer.");
 				return false;
 			}
 
@@ -465,10 +275,7 @@ var Trace = {
 				value:((Prefs.Current.Pref_WebRTC.enabled && Prefs.Current.Pref_WebRTC.wrtcInternal.enabled) ? "default_public_interface_only" : "default")
 			});
 		},
-		RemovePremium:function(){
-			Prefs.Set("Main_Trace.PremiumCode","");
-			Prefs.Current.Main_Trace.PremiumCode = "";
-		},
+
 		HandleCsUpdate:function(req){
 			//console.log(req);
 			return;
@@ -490,29 +297,6 @@ var Trace = {
 		}
 	},
 
-	beta:{
-		AssignEvents:function(){
-			chrome.webRequest.onBeforeRequest.addListener(Trace.e.RequestCleaner,{
-				"types":["image"],
-				"urls":["http://*/*","https://*/*"]
-			},["blocking"]);
-		},
-		RequestCleaner:function(request){
-			// Check if URL is valid
-			if (request.tabId === -1 || typeof request.url !== "string" || request.url.substring(0,4) !== "http"){
-				return {cancel:false};
-			}
-
-			var newUrl = request.url;
-			console.log(newUrl);
-
-			newUrl = newUrl.split("?")[0];
-			console.log(newUrl);
-
-			return {redirectUrl:newUrl};
-		}
-	},
-
 	// IP Spoofing functions
 	i:{
 		CurrentFakeIP:"0.0.0.0",
@@ -529,15 +313,11 @@ var Trace = {
 				return;
 			}
 
-			var Rand = function(l,m){
-				return Math.floor(Math.random()*(m-l)+l);
-			};
-
-			var digits = [
-				Rand(Trace.i.IPRange[0][0],Trace.i.IPRange[0][1]),
-				Rand(Trace.i.IPRange[1][0],Trace.i.IPRange[1][1]),
-				Rand(Trace.i.IPRange[2][0],Trace.i.IPRange[2][1]),
-				Rand(Trace.i.IPRange[3][0],Trace.i.IPRange[3][1])
+			let digits = [
+				randrange(Trace.i.IPRange[0][0],Trace.i.IPRange[0][1]),
+				randrange(Trace.i.IPRange[1][0],Trace.i.IPRange[1][1]),
+				randrange(Trace.i.IPRange[2][0],Trace.i.IPRange[2][1]),
+				randrange(Trace.i.IPRange[3][0],Trace.i.IPRange[3][1])
 			];
 
 			Trace.i.CurrentFakeIP = digits[0] + "." + digits[1] + "." + digits[2] + "." + digits[3];
@@ -587,7 +367,7 @@ var Trace = {
 		StopIPRefresh:function(){
 			if (!chrome.alarms) console.error("Alarms aren't supported in this browser.");
 			chrome.alarms.getAll(function(list){
-				for (var alarm in list){
+				for (let alarm in list){
 					if (alarm.name === "UserFakeIPRefresh"){
 						chrome.alarms.clear("UserFakeIPRefresh",function(success){
 							if (!success) alert("Trace Error: Failed to stop UserFakeIPRefresh (chrome.alarms)");
@@ -611,7 +391,7 @@ var Trace = {
 				var s = Prefs.Current.Pref_CookieEater.list;
 				var k = Object.keys(s);
 				var r = [];
-				for (var i = 0,l = k.length;i<l;i++){
+				for (let i = 0,l = k.length;i<l;i++){
 					if (s[k[i]] === true){
 						r.push(k[i]);
 					}
@@ -644,10 +424,10 @@ var Trace = {
 				}
 
 				// Create array to return
-				var s = Prefs.Current.Pref_WebController.tld.settings;
-				var k = Object.keys(s);
-				var r = [];
-				for (var i = 0,l = k.length;i<l;i++){
+				let s = Prefs.Current.Pref_WebController.tld.settings;
+				let k = Object.keys(s);
+				let r = [];
+				for (let i = 0,l = k.length;i<l;i++){
 					if (s[k[i]] === true){
 						r.push(k[i]);
 					}
@@ -678,7 +458,7 @@ var Trace = {
 				var s = Prefs.Current.Pref_WebController.urlCleaner.queryString.params;
 				var k = Object.keys(s);
 				var r = [];
-				for (var i = 0,l = k.length;i<l;i++){
+				for (let i = 0,l = k.length;i<l;i++){
 					if (s[k[i]] === true){
 						r.push(k[i]);
 					}

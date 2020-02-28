@@ -63,6 +63,34 @@
 	transform:rotate(45deg);
 }
 
+.setting_traffic {
+	display:block;
+	float:left;
+	padding:.6em 1em;
+	margin:.25%;
+	background-color:#fff;
+	transition:.2s ease-in-out background-color,.2s ease-in-out color;
+	font-size:1.2em;
+	font-weight:500;
+	cursor:pointer;
+	-webkit-user-select:none;
+	-moz-user-select:none;
+	-ms-user-select:none;
+	user-select: none;
+}
+.setting_traffic:hover {
+	background-color: #313131;
+}
+.traffic_enabled{color:#22ea46;}.traffic_enabled:hover{color:#22ff46;}
+.traffic_disabled{color:#dd092a;}.traffic_disabled:hover{color: #ff092c;}
+
+.fullwidthtext{
+	display: block;
+	width:100%;
+}
+.traffic_txt{
+	font-weight:900;
+}
 /* Navigation positions */
 .nav_top #main{
 	width:100%;
@@ -79,7 +107,7 @@
 }
 .nav_top .side_el {
 	float:left;
-	width:16.66%;
+	width:14.285%;
 	line-height:7.5vh !important;
 	height:100% !important;
 }
@@ -131,8 +159,8 @@
 .tracegreyscale_theme .blc_premreq {color:#1a1a1a;}
 .tracegreyscale_theme .blc_optreq {color:#1a1a1a;}
 
-.tracegreyscale_theme .tld_enabled{color: #000;background-color: #fff;} .tracegreyscale_theme .tld_enabled:hover{color: #000;}
-.tracegreyscale_theme .tld_disabled{color: #fff;background-color: #000;} .tracegreyscale_theme .tld_disabled:hover{color: #fff;}
+.tracegreyscale_theme .traffic_enabled{color: #000;background-color: #fff;} .tracegreyscale_theme .traffic_enabled:hover{color: #000;}
+.tracegreyscale_theme .traffic_disabled{color: #fff;background-color: #000;} .tracegreyscale_theme .traffic_disabled:hover{color: #fff;}
 
 /* Trace Light */
 .tracelight_theme{

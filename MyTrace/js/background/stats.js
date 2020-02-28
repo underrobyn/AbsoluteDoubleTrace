@@ -21,10 +21,10 @@ var Stats = {
 		if (Prefs.Current.Main_Trace.ProtectionStats.enabled === false) return;
 
 		// Get date time reference for today
-		var TimeRef = Stats.GenTime();
+		let TimeRef = Stats.GenTime();
 
 		// Convert chrome type to TraceType
-		var TraceType = Stats.TypeNames[type];
+		let TraceType = Stats.TypeNames[type];
 
 		if (TraceType === undefined) console.error("Massive type error, unknown type:",type);
 
@@ -47,14 +47,9 @@ var Stats = {
 		chrome.alarms.create("StatsDatabaseRefresh",{when:TimeRef[1]});
 	},
 	GenTime:function(){
-		var d = new Date();
-		var day = d.getDate();
-		var mon = d.getMonth()+1;
-		day.toString().length !== 2 ? day = "0" + day.toString() : 0;
-		mon.toString().length !== 2 ? mon = "0" + mon.toString() : 0;
-
+		let d = getDateStrings();
 		return [
-			(d.getFullYear() + "-" + mon + "-" + day).toString(),
+			(d[0] + "-" + d[1] + "-" + d[2]).toString(),
 			Date.now()+3000
 		];
 	},
@@ -70,7 +65,7 @@ var Stats = {
 		Prefs.s.get(
 			["stats_db", "stats_main"],
 			function(s){
-				var forceStatSave = false;
+				let forceStatSave = false;
 
 				// Load the current statistics
 				if (typeof(s.stats_db) !== "undefined") {
@@ -104,9 +99,7 @@ var Stats = {
 	},
 	DeleteAmount:function(amount,cb) {
 		console.log("[statd]-> Deleting",amount);
-		if (amount === "all"){
-			Stats.Current = {};
-		} else {
+		if (amount !== "all"){
 			var newstats = {};
 			var keys = Object.keys(Stats.Current);
 			if (amount >= keys.length){
@@ -114,31 +107,40 @@ var Stats = {
 				return;
 			}
 
-			for (var i = keys.length-amount;i < keys.length;i++){
+			for (let i = keys.length-amount;i < keys.length;i++){
 				newstats[keys[i]] = Stats.Current[keys[i]];
 			}
 			Stats.Current = newstats;
+		} else {
+			Stats.Current = {};
 		}
 
 		Stats.SaveStats(cb);
 	},
 	MainText:function(cb){
 		Prefs.s.get("trace_installdate",function(s){
-			var d = [], installDate = "today.";
-			if (typeof s.trace_installdate === "string"){
-				installDate = s.trace_installdate;
-			}
+			let wrcData = {},
+				installDate = typeof(s.trace_installdate) === "string" ? s.trace_installdate : "today.";
+
 			if (Prefs.Current.Pref_WebController.enabled === true){
-				var recordData = [
-					WebBlocker.blocked.domain.length,
-					WebBlocker.blocked.host.length,
-					WebBlocker.blocked.tld.length,
-					WebBlocker.blocked.url.length,
-					WebBlocker.blocked.file.length
-				];
-				d = [WebBlocker.meta.listTypeName,WebBlocker.meta.listVersion,recordData,WebBlocker.meta.fromServer];
+				let recordData = {
+					domain:WebBlocker.blocked.domain.length,
+					host:WebBlocker.blocked.host.length,
+					tld:WebBlocker.blocked.tld.length,
+					url:WebBlocker.blocked.url.length,
+					file:WebBlocker.blocked.file.length,
+					total:0
+				};
+				recordData["total"] = Object.values(WebBlocker.blocked).map(a => a.length).reduce((a, b) => a+b);;
+
+				wrcData = {
+					listType:WebBlocker.meta.listTypeName,
+					listVer:WebBlocker.meta.listVersion,
+					listData:recordData,
+					listOnline:WebBlocker.meta.fromServer
+				};
 			}
-			cb(installDate,Stats.Main,d);
+			cb(installDate,Stats.Main,wrcData);
 		});
 	}
 };

@@ -14,7 +14,7 @@
 
 
 	"miscMsgOffline":{
-		"message":"No internet connection available"
+		"message":"Pas de connexion Internet disponible"
 	},
 	"miscMsgUiFail":{
 		"message":"Unable to load UI."
@@ -23,7 +23,7 @@
 		"message": "An error occurred whilst changing the setting"
 	},
 	"miscMsgLoading":{
-		"message":"Loading..."
+		"message":"Chargement..."
 	},
 	"miscMsgSaving":{
 		"message":"Saving..."
@@ -32,7 +32,7 @@
 		"message":"Sending..."
 	},
 	"miscMsgPleaseWait":{
-		"message":"Please wait..."
+		"message":"Veuillez patienter..."
 	},
 	"miscMsgUnblockOrigin":{
 		"message":"Unblock the Origin URL: "
@@ -53,10 +53,10 @@
 		"message": "Allow this site to make requests to blocked sites"
 	},
 	"miscCtrlEnabled":{
-		"message":"Enabled"
+		"message":"Activé"
 	},
 	"miscCtrlDisabled":{
-		"message":"Disabled"
+		"message":"Pas Activé"
 	},
 	"miscCtrlModifyEntry":{
 		"message":"Modify"
@@ -65,19 +65,19 @@
 		"message":"Apply"
 	},
 	"miscCtrlCancel":{
-		"message":"Cancel"
+		"message":"Annuler"
 	},
 	"miscCtrlClose":{
-		"message":"Close"
+		"message":"Fermé"
 	},
 	"miscCtrlOkay":{
 		"message":"Okay"
 	},
 	"miscCtrlSave":{
-		"message":"Save"
+		"message":"Enregistrer"
 	},
 	"miscCtrlSaveClose":{
-		"message":"Save & Close"
+		"message":"Enregistrer et Fermer"
 	},
 
 
@@ -143,14 +143,14 @@
 	},
 
 	"advHomeMsgWelcomeLong":{
-		"message":"Welcome to the Trace Dashboard!"
+		"message":"Tableau de bord de Trace"
 	},
 	"advHomeMsgWelcomeShort":{
-		"message":"Trace Dashboard"
+		"message":"Tableau de bord de Trace"
 	},
 
 	"advNavMenuToggle": {
-		"message": "Menu"
+		"message": ""
 	},
 
 	"advOverlayCtrlClose":{
@@ -188,11 +188,11 @@
 	},
 
 	"advSettingsCtrlEnabled":{
-		"message":"Enabled",
+		"message":"Activé",
 		"description":"setting enabled/disabled toggle"
 	},
 	"advSettingsCtrlDisabled":{
-		"message":"Disabled",
+		"message":"Pas Activé",
 		"description":"setting enabled/disabled toggle"
 	},
 	"advSettingsMsgDisabled":{
@@ -224,7 +224,7 @@
 		"message":"Backup/Restore Settings"
 	},
 	"advBackupCtrlCreate":{
-		"message":"Download Backup"
+		"message":"Télécharger la sauvegarde"
 	},
 	"advRestoreMsgTitle":{
 		"message":"Restore a backup"
@@ -243,13 +243,13 @@
 		"message": "Search lists"
 	},
 	"advBlocklistConfListDefault": {
-		"message": "Default List"
+		"message": "Liste de défaut"
 	},
 	"advBlocklistConfListOptional": {
-		"message": "Optional List"
+		"message": "List de facultative"
 	},
 	"advBlocklistConfListPremium": {
-		"message": "Premium List"
+		"message": "Liste de premium"
 	},
 
 	"advSettCanvasCustomSubhead":{
@@ -266,10 +266,10 @@
 		"message": "Block Gamepad API"
 	},
 	"advSettHardwareCountCpu":{
-		"message": "Spoof CPU Core Count"
+		"message": "Nombre de coeurs de CPU faux"
 	},
 	"advSettHardwareCountRam":{
-		"message": "Spoof RAM amount"
+		"message": "Quantité de mémoire RAM faux"
 	},
 
 	"advSettScreenResAddSubhead":{
@@ -297,7 +297,7 @@
 		"message": "Add Common Resolutions"
 	},
 	"advSettScreenResClearList":{
-		"message": "Clear List"
+		"message": "Vider la liste"
 	},
 
 	"advSettWebglGpuSubhead": {
@@ -313,7 +313,7 @@
 		"message": "Import Trace's List"
 	},
 	"advSettWebglGpuClearList":{
-		"message": "Clear List"
+		"message": "Vider la liste"
 	},
 
 
@@ -490,7 +490,7 @@
 	  	"message":"Unpause"
 	},
   	"mainCardCtrlWeb": {
-	  	"message":"Configure"
+	  	"message":"Configurer"
 	},
   	"mainCardCtrlPremium": {
 	  	"message":"Options"

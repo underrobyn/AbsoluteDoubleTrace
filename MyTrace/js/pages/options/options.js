@@ -1,6 +1,6 @@
 /*
  * 	Trace options page script
- * 	Copyright AbsoluteDouble 2018 - 2019
+ * 	Copyright AbsoluteDouble 2018 - 2020
  * 	Written by Jake Mcneill
  * 	https://absolutedouble.co.uk/
  */
@@ -9,162 +9,11 @@ if (!chrome.hasOwnProperty("extension") || typeof chrome.extension.getBackground
 	showErr("Extension failed to connect to background page. Please try reloading the page.");
 }
 
-var Opts = {
+let Opts = {
 	homeRefresh:null,
 	searchTimeout:null,
 	currentSettingTab:"settings_stracefeature",
 	debug:false,
-
-	CloseUI:function(){
-		return $("<button/>",{"title":lang("miscCtrlClose"),"class":"float_r"}).text(lang("advOverlayCtrlClose")).on("click enter",Opts.CloseOverlay);
-	},
-	CloseOverlay:function(){
-		$("#overlay_message").fadeOut(250);
-		$("#ux").removeClass("blurred");
-		setTimeout(function(){
-			$("#overlay_message").removeClass("overlay_fs");
-		},250);
-	},
-	AssignCloseOverlay:function(fs){
-		if (fs) $("#overlay_message").addClass("overlay_fs");
-
-		$("#ux").addClass("blurred");
-		$("#overlay_message").fadeIn(300);
-		$("#overlay_close").on("click enter",Opts.CloseOverlay);
-		$(window).click(function(e){
-			if ($(e.target)[0].id === "overlay_message"){
-				Opts.CloseOverlay();
-			}
-		});
-	},
-	MakeDownload:function(name,data){
-		// File information
-		var a = document.createElement("a"),
-			file = new Blob([data], {type: "text/json"});
-		var url = URL.createObjectURL(file);
-
-		// Generate file date
-		var d = getDateStrings();
-		var filedate = (d[0] + "-" + d[1] + "-" + d[2]).toString();
-
-		// Download file
-		a.href = url;
-		a.download = name + "-" + filedate + ".json";
-		document.body.appendChild(a);
-		a.click();
-
-		// Remove link
-		setTimeout(function() {
-			document.body.removeChild(a);
-			window.URL.revokeObjectURL(url);
-		},0);
-	},
-
-	Auth:{
-		Channel:null,
-		Init:function(){
-			if ('BroadcastChannel' in self) {
-				// Start Authentication Channel
-				Opts.Auth.Channel = new BroadcastChannel('TraceAuth');
-
-				Opts.Auth.Channel.onmessage = function(m){
-					if (m.data.action === "ByeByeTab"){
-						clearInterval(Opts.homeRefresh);
-
-						document.title = "Tab Disabled";
-
-						$("#drop_message").empty().append(
-							$("<h1/>").text("Tab disabled"),
-							$("<span/>").text("Trace only allows one tab to be open at a time, you are now using Trace in a new tab and so this one will close in 10 seconds.")
-						);
-						$("#ux").addClass("blurred");
-						$("#overlay_message").slideDown(300);
-						$("#overlay_close").hide();
-
-						setTimeout(function(){
-							window.close();
-						},10000);
-					} else if (m.data.action === "ReloadList"){
-
-						Opts.Scope.ReloadList();
-
-					} else {
-						console.log("Authenticator: No action taken");
-					}
-				};
-			}
-
-			return true;
-		},
-		SafePost:function(data){
-			if ('BroadcastChannel' in self) {
-				if (typeof Opts.Auth.Channel !== null){
-					Opts.Auth.Channel.postMessage(data);
-				}
-			}
-		},
-		Integrity:function(){
-			Opts.Auth.SafePost({action:"ByeByeTab"});
-		}
-	},
-
-	Tutorial:{
-		ShowRequest:function(){
-			$("#drop_message").empty().append(
-				$("<h1/>").text("Trace's Request Settings"),
-				$("<span/>").text("Use the Web Request Controller to block web requests - it must be enabled for protections like Bad TLD Protection to work, however you can set it not to block anything by deselecting all of the blocklists."),
-				$("<br/>"),$("<br/>"),
-				$("<span/>").text("Bad TLD protection is very useful for keeping you safe against lots of shady TLDs, read more about the research behind it in the 'Info' section."),
-				$("<br/>"),$("<br/>"),
-				$("<span/>").text("The URL Tracking Cleaner removes information from URLs that is used to track you, it has lots of configuration options and I recommend you enable it at some level to improve your privacy."),
-				$("<br/>"),$("<br/>"),
-				$("<button/>",{"title":lang("miscCtrlClose")}).text(lang("miscCtrlOkay")).on("click enter",Opts.CloseOverlay)
-			);
-
-			$("#ux").addClass("blurred");
-			$("#overlay_message").slideDown(300);
-			$("#overlay_close").on("click enter",Opts.CloseOverlay);
-
-			ls.Store("showRequestTutorial",false);
-		},
-		ShowSettings:function(){
-			$("#drop_message").empty().append(
-				$("<h1/>").text("Introduction to Trace's settings"),
-				$("<span/>").text("Click on setting name to reveal a description of what it does."),
-				$("<br/>"),$("<br/>"),
-				$("<span/>").text("Advanced features are features that provide a greater level of protection but can cause more problems on websites when enabled."),
-				$("<br/>"),$("<br/>"),
-				$("<span/>").text("Browser settings are hidden settings already in your browser, they're shown here to make it easy for you to change them."),
-				$("<br/>"),$("<br/>"),
-				$("<span/>").text("You can find settings such as URL Parameter editing and Bad TLD Protection in the 'Requests' section."),
-				$("<br/>"),$("<br/>"),
-				$("<h3/>").html("If you find a bug with anything, especially features marked as 'Beta', please report it to <a class='dark' href='mailto:absolutedouble@gmail.com'>absolutedouble@gmail.com</a>"),
-				$("<button/>",{"title":lang("miscCtrlClose")}).text(lang("miscCtrlOkay")).on("click enter",Opts.CloseOverlay)
-			);
-
-			$("#ux").addClass("blurred");
-			$("#overlay_message").slideDown(300);
-			$("#overlay_close").on("click enter",Opts.CloseOverlay);
-
-			ls.Store("showSettingsTutorial",false);
-		},
-		ShowScope:function(){
-			$("#drop_message").empty().append(
-				$("<h1/>").text("Whitelist"),
-				$("<span/>").text("This is the area of Trace where you can configure where protections will run."),
-				$("<br/>"),$("<br/>"),
-				$("<span/>").text("Add entries to the list and use the check boxes to select what protections are allowed to run on that page."),
-				$("<br/>"),$("<br/>"),
-				$("<button/>",{"title":lang("miscCtrlClose")}).text(lang("miscCtrlOkay")).on("click enter",Opts.CloseOverlay)
-			);
-
-			$("#ux").addClass("blurred");
-			$("#overlay_message").slideDown(300);
-			$("#overlay_close").on("click enter",Opts.CloseOverlay);
-
-			ls.Store("showScopeTutorial",false);
-		}
-	},
 
 	WindowLoad:function(){
 		// Let's check the API...
@@ -183,10 +32,35 @@ var Opts = {
 		// Assign click events to nav bar
 		Opts.AssignNavEvents();
 		Opts.Interface.Browsers();
+		Opts.Interface.PresetWarn();
 
 		// Start Auth Channel and check integrity
-		Opts.Auth.Init();
-		Opts.Auth.Integrity();
+		Auth.Init(function(m) {
+			if (m.data.action === "ByeByeTab") {
+				clearInterval(Opts.homeRefresh);
+
+				document.title = "Tab Disabled";
+
+				$("#drop_message").empty().append(
+					$("<h1/>").text("Tab disabled"),
+					$("<span/>").text("Trace only allows one tab to be open at a time, you are now using Trace in a new tab and so this one will close in 10 seconds.")
+				);
+				$("#ux").addClass("blurred");
+				$("#overlay_message").slideDown(300);
+				$("#overlay_close").hide();
+
+				setTimeout(function () {
+					window.close();
+				}, 10000);
+			} else if (m.data.action === "ReloadList") {
+
+				Opts.Scope.ReloadList();
+
+			} else {
+				console.log("Authenticator: No action taken");
+			}
+		});
+		Auth.Integrity();
 
 		// Assign storage event
 		window.addEventListener("storage",function (a){
@@ -195,9 +69,9 @@ var Opts = {
 
 		// Get main page text and start update intervals
 		Opts.Premium.GetStatus();
-		Opts.Interface.GetMainPage();
+		Opts.Interface.GetMainPage(false);
 		Opts.homeRefresh = setInterval(function(){
-			Opts.Interface.GetMainPage();
+			Opts.Interface.GetMainPage(true);
 			Opts.Premium.GetStatus();
 			Opts.Stats.GetStatsData(function(d){
 				Opts.Stats.MakeData(d,Opts.Stats.MakeGraph);
@@ -217,6 +91,7 @@ var Opts = {
 		Opts.URLCleaner.AssignEvents();
 
 		Opts.Interface.GenerateHome();
+		Opts.Interface.UpdateStrings();
 
 		// Get statistics loaded and ready
 		Opts.Stats.StructureGraph();
@@ -253,8 +128,6 @@ var Opts = {
 			Opts.Blocklist.isPremium = (typeof bg.Vars.Premium !== "undefined" ?
 				(bg.Vars.Premium.length !== 0) : false);
 		});
-
-		$("#trace_vernum").text(chrome.runtime.getManifest().version || "?");
 	},
 	NewInstall:{
 		ShowInterface:function(){
@@ -284,7 +157,7 @@ var Opts = {
 	},
 	Interface:{
 		Browsers:function(){
-			if (!/Chrome|Firefox/.test(navigator.userAgent)){
+			if (!/Chrome|Firefox|Edg/.test(navigator.userAgent)){
 				$("#home .sect_cont").append(
 					$("<div/>",{"class":"sect_adv"}).append(
 						$("<div/>",{"class":"sect_adv_header"}).html("&nbsp;Developer Message"),
@@ -296,78 +169,105 @@ var Opts = {
 				$("body").css("font-size","0.8em");
 			}
 		},
+		UpdateStrings:function(){
+			$(".menutoggle").text(lang("advNavMenuToggle"));
+		},
 		GenerateHome:function(){
-			var greetings = [
+			let greetings = [
 				lang("advHomeMsgWelcomeLong"),
 				lang("advHomeMsgWelcomeShort")
 			];
 			$("#trace_main_title").text(greetings[Math.floor(Math.random()*greetings.length)]);
-
-			var tips = [
-				"In the 'Settings' section you can click any setting name to open a menu that tells you what it does.",
-				"The Web Request Controller lives in the 'Requests' section of Trace and can be used to block lots of tracking domains!",
-				"Bad TLD Protection is a very effective way to block unknown tracking domains, enable it in the 'Requests' section.",
-				"You can download all of your statistics data to csv, tsv, xml or json format to use externally.",
-				"You can reset Trace's settings to default in 'Settings' then 'Trace Options'",
-				"Click the Trace icon in the top corner of your browser window to report a site to Trace's developer.",
-				"You can find links to all the Research and Tools that have helped me make Trace in the 'Info' section.",
-				"A changelog and roadmap for Trace is available <a href='https://absolutedouble.co.uk/trace/information.html' rel='noreferrer' title='Trace RoadMap/Changelog'>here</a>.",
-				"To contact the Trace Developer check the 'Info' section for details.",
-				"If you want to see a feature in Trace, you can create an issue on <a href='https://github.com/jake-cryptic/AbsoluteDoubleTrace/' rel='noreferrer' title='Trace Source'>GitHub</a> or email absolutedouble@gmail.com",
-				"The source code for Trace is available on <a href='https://github.com/jake-cryptic/AbsoluteDoubleTrace/' rel='noreferrer' title='Trace Source'>GitHub</a>",
-				"You can enable protections for only certain sites by moving a protection to the 'Run on only some pages' list in 'Where Protections Run' under Settings and then creating a rule in the Whitelist section.",
-				"You can whitelist sites from the Trace report panel",
-				"Trace can function as a web filter by adding rules in the 'Whitelist' section and then choosing to block the site.",
-				"You can backup and restore your Trace settings in 'Trace Options' under the settings section."
-			];
-			$("#user_tip").html(tips[Math.floor(Math.random()*tips.length)]);
+			$("#user_tip").html(traceTips[Math.floor(Math.random()*traceTips.length)]);
 		},
-		GetMainPage:function(){
-			var neatNumber = function(x) {
-				if (!x) return "0";
-				return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+		GetMainPage:function(refresh){
+			let plural = function(n){
+				return (parseInt(n) !== 1) ? "s" : "";
+			};
+			let requestNames = {
+				"total":"request",
+				"webpage":"page load",
+				"media":"media request",
+				"code":"code request",
+				"other":"miscellaneous request"
 			};
 
+			if (!refresh){
+				$("#trace_info").empty().append(
+					$("<br />"), "Trace has been protecting you since ",
+					$("<span/>",{"id":"trace_info_protectdate"}).text("today."),
+
+					$("<div/>",{"id":"trace_info_alltime_stats"}),
+					$("<div/>",{"id":"trace_info_current_wrc"}),
+				);
+			}
+
 			TraceBg(function(bg){
-				bg.Stats.MainText(function(i,t,d){
-					var text = "<br />Trace has been protecting you since <span>" + i + "</span>";
+				bg.Stats.MainText(function(protectDate, stats, wrcData){
+					if (!refresh) $("#trace_info_protectdate").text(protectDate);
 
-					if (neatNumber(t["total"]).toString() !== "0"){
-						text += "<br />Since then, there have been a total of <span>" + neatNumber(t["total"]) + "</span> requests blocked.";
-						text += " That includes, <span>" + neatNumber(t["webpage"]) + "</span> page load" + (t["webpage"] === 1 ? "" : "s") + ", ";
-						text += "<span>" + neatNumber(t["media"]) + "</span> media request" + (t["media"] === 1 ? "" : "s") + " (tracking pixels, page ads), also, Trace blocked ";
-						text += "<span>" + neatNumber(t["code"]) + "</span> code request" + (t["code"] === 1 ? "" : "s") + " (3rd party scripts, ping requests), and finally ";
-						text += "<span>" + neatNumber(t["other"]) + "</span> miscellaneous requests to tracking servers.";
-					}
-
-					if (d.length === 4){
-						var totalBlocked = d[2][0] + d[2][1] + d[2][2] + d[2][3] + d[2][4];
-
-						if (neatNumber(d[1]) === "0"){
-							if (neatNumber(d[2]) !== "0"){
-								text += "<br /><br />Trace is currently blocking <span>" + neatNumber(totalBlocked) + "</span> records.";
-							}
+					if (neatNumber(stats["total"]) !== "0") {
+						if (!refresh){
+							$("#trace_info_alltime_stats").append(
+								"Since then, there have been a total of ",
+								$("<span/>",{"data-alltimestats":"total"}).text(neatNumber(stats["total"]) + " " + requestNames["total"] + plural(stats["total"])),
+								" blocked. That includes, ",
+								$("<span/>",{"data-alltimestats":"webpage"}).text(neatNumber(stats["webpage"]) + " " + requestNames["webpage"] + plural(stats["webpage"])),
+								" and ",
+								$("<span/>",{"data-alltimestats":"media"}).text(neatNumber(stats["media"]) + " " + requestNames["media"] + plural(stats["media"])),
+								" (tracking pixels, page ads).",
+								"Trace also blocked, ",
+								$("<span/>",{"data-alltimestats":"code"}).text(neatNumber(stats["code"]) + " " + requestNames["code"] + plural(stats["code"])),
+								" (3rd party scripts, ping requests) and ",
+								$("<span/>",{"data-alltimestats":"other"}).text(neatNumber(stats["other"]) + " " + requestNames["other"] + plural(stats["other"])),
+								" to tracking servers."
+							);
 						} else {
-							if (neatNumber(d[2]) !== "0"){
-								text += "<br /><br />Trace is currently blocking <span>" + neatNumber(totalBlocked) + "</span> records from the " + (d[3] === 3 ? "cached " : "uncached ") + d[0] + " blocklist. <br />";
-
-								try{
-									text += "The list contains: ";
-									text += (d[2][0] !== 0 ? neatNumber(d[2][0]) + " domains, " : "");
-									text += (d[2][1] !== 0 ? neatNumber(d[2][1]) + " hostnames, " : "");
-									text += (d[2][2] !== 0 ? neatNumber(d[2][2]) + " TLDs, " : "");
-									text += (d[2][3] !== 0 ? neatNumber(d[2][3]) + " URLs and " : "");
-									text += (d[2][4] !== 0 ? neatNumber(d[2][4]) + " tracking scripts." : "");
-								} catch(e){}
-
-								text += "<br />WebController List Version: " + d[1] + ".";
-							} else {
-								text += "<br /><br />Domain blocking is enabled.";
-							}
+							$("[data-alltimestats]").each(function(){
+								let cat = $(this).data("alltimestats");
+								$(this).text(neatNumber(stats[cat]) + " " + requestNames[cat] + plural(stats[cat]));
+							});
 						}
 					}
-					$("#trace_info").html(text);
+
+					if (!wrcData.listType) return;
+
+					let text = "";
+					if (neatNumber(wrcData.listVer) === "0"){
+						if (neatNumber(wrcData.listData.total) !== "0"){
+							text += "<br />Trace is currently blocking <span>" + neatNumber(wrcData.listData.total) + "</span> records.";
+						}
+					} else {
+						if (neatNumber(wrcData.listData.total) !== "0"){
+							text += "<br />Trace is currently blocking <span>" + neatNumber(wrcData.listData.total) + "</span> records from the " + (wrcData.listOnline === 3 ? "cached " : "uncached ") + wrcData.listType + " blocklist. <br />";
+
+							try{
+								text += "The list contains: ";
+								text += (wrcData.listData.domain !== 0 ? neatNumber(wrcData.listData.domain) + " domains, " : "");
+								text += (wrcData.listData.host !== 0 ? neatNumber(wrcData.listData.host) + " hostnames, " : "");
+								text += (wrcData.listData.tld !== 0 ? neatNumber(wrcData.listData.tld) + " TLDs, " : "");
+								text += (wrcData.listData.url !== 0 ? neatNumber(wrcData.listData.url) + " URLs and " : "");
+								text += (wrcData.listData.file !== 0 ? neatNumber(wrcData.listData.file) + " tracking scripts." : "");
+							} catch(e){}
+
+							text += "<br />WebController List Version: " + wrcData.listVer + ".";
+						} else {
+							text += "<br />Domain blocking is enabled.";
+						}
+					}
+
+					$("#trace_info_current_wrc").html(text);
 				});
+			});
+		},
+		PresetWarn:function(){
+			TraceBg(function(bg){
+				if (bg.Prefs.Current.Main_Simple.presets.enabled){
+					$("#trace_preset_warn").show();
+
+				} else {
+					$("#trace_preset_warn").hide();
+				}
 			});
 		},
 		AskFeedback:function(){
@@ -376,13 +276,13 @@ var Opts = {
 				$("<span/>").text("Hi there! Would you like to leave feedback on Trace? (if not, no big deal, I'll not bother you again). Reviews and user-feedback really motivate me to make Trace even better. Thanks!"),
 				$("<br />"),$("<br />"),
 				$("<button/>").text("Contact Developer").on("click enter",function(){
-					var openUrl = "mailto:absolutedouble@gmail.com";
+					let openUrl = "mailto:absolutedouble@gmail.com";
 					window.open(openUrl,"_blank");
 					ls.Store("hasAskedForFeedback",true);
 				}),
 				$("<span/>").text(" "),
 				$("<button/>").text("Leave Feedback").on("click enter",function(){
-					var openUrl = "https://addons.mozilla.org/en-GB/firefox/addon/absolutedouble-trace/reviews/";
+					let openUrl = "https://addons.mozilla.org/en-GB/firefox/addon/absolutedouble-trace/reviews/";
 					if (!/Firefox/.test(navigator.userAgent)) openUrl = "https://chrome.google.com/webstore/detail/trace-online-tracking-pro/njkmjblmcfiobddjgebnoeldkjcplfjb/reviews";
 					window.open(openUrl,"_blank");
 					ls.Store("hasAskedForFeedback",true);
@@ -399,10 +299,10 @@ var Opts = {
 			if (!window.location.hash) return;
 			if (!window.location.hash.includes("=")) return;
 
-			var spl = window.location.hash.split("=");
+			let spl = window.location.hash.split("=");
 			if (spl[0] !== "#view") return;
 
-			var allowed = ["home","statistics","settings","requests","whitelist","information"];
+			let allowed = ["home","statistics","settings","requests","whitelist","information"];
 			if (allowed.indexOf(spl[1]) !== -1){
 				Opts.LoadPage(spl[1]);
 			} else {
@@ -418,7 +318,7 @@ var Opts = {
 
 	AssignNavEvents:function(){
 		// This is for the mobile navigation bar
-		window.addEventListener("resize",function(a){
+		window.addEventListener("resize",function(){
 			if (!$(".menutoggle").is(":visible")){
 				if ($(window).width() > 700 && !$("#nav").is(":visible")) {
 					$("#nav").show();
@@ -439,20 +339,22 @@ var Opts = {
 			$("#nav").fadeOut(250);
 		}
 
-		$(".view").addClass("hidden");
-
-		var load;
-		if (typeof override === "string"){
-			load = override;
-		} else {
+		let load = override;
+		if (typeof override !== "string"){
 			load = $(this).data("load");
 		}
 
+		if (load === "information"){
+			openNewTab(chrome.runtime.getURL("html/about.html"));
+			return;
+		}
+
+		$(".view").addClass("hidden");
 		$("#" + load).removeClass("hidden");
 
 		switch(load){
 			case "home":
-				Opts.Interface.GetMainPage();
+				Opts.Interface.GetMainPage(false);
 				Opts.Premium.GetStatus();
 				document.title = "Trace";
 				break;
@@ -464,31 +366,30 @@ var Opts = {
 				break;
 			case "settings":
 				if (ls.supported === true){
-					if (ls.Read("showSettingsTutorial") === null || ls.Read("showSettingsTutorial") === "true"){
-						Opts.Tutorial.ShowSettings();
+					if (ls.Read("showSettingsTutorial") === "true"){
+						Tutorial.ShowSettings();
 					}
 				}
 				document.title = "Trace | Settings";
 				break;
 			case "requests":
 				if (ls.supported === true){
-					if (ls.Read("showRequestTutorial") === null || ls.Read("showRequestTutorial") === "true"){
-						Opts.Tutorial.ShowRequest();
+					if (ls.Read("showRequestTutorial") === "true"){
+						Tutorial.ShowRequest();
 					}
 				}
 				document.title = "Trace | Web Request Settings";
 				break;
 			case "whitelist":
 				if (ls.supported === true){
-					if (ls.Read("showScopeTutorial") === null || ls.Read("showScopeTutorial") === "true"){
-						Opts.Tutorial.ShowScope();
+					if (ls.Read("showScopeTutorial") === "true"){
+						Tutorial.ShowScope();
 					}
 				}
 				document.title = "Trace | Whitelist";
 				break;
-			case "information":
-				document.title = "Trace | Information";
-				Opts.Premium.GetStatus();
+			case "options":
+				document.title = "Trace | Options";
 				break;
 			default:
 				console.error("Unknown page.",load);
@@ -498,7 +399,7 @@ var Opts = {
 	ResetTraceSettings:function(){
 		if (confirm("Reset Trace settings to default? It will also remove your premium code from Trace's storage.")){
 			TraceBg(function(bg){
-				bg.Prefs.SetDefaults(true,function(){
+				bg.Prefs.SetDefaults(function(){
 					window.location.reload();
 				});
 			});
@@ -508,7 +409,7 @@ var Opts = {
 		// Settings category events
 		$(".setting_title").each(function(){
 			$(this).on("click enter", function(){
-				var newTab = $(this).data("content");
+				let newTab = $(this).data("content");
 
 				if (Opts.currentSettingTab !== ""){
 					$("#" + Opts.currentSettingTab).hide().fadeOut(200);
@@ -536,7 +437,7 @@ var Opts = {
 
 		// Settings toggle events
 		$(".setting_toggle, .trace_toggle").each(function(){
-			$(this).on("click enter", function(e){
+			$(this).on("click enter", function(){
 				var that = this;
 				TraceBg(function(bg){
 					bg.Prefs.ToggleSetting($(that).data("toggle"),Opts.GetCurrentSettings);
@@ -549,6 +450,11 @@ var Opts = {
 			$(this).on("click enter", function(){
 				Opts.Config.Options($(this).data("config"));
 			}).on("keypress",EnterTriggerClick);
+		});
+
+		// Settings order events
+		$(".setting_order").each(function(){
+			$(this).on("click enter",Opts.ExecutionOrder.SwapProtection).on("keypress",EnterTriggerClick);
 		});
 
 		// Direct toggle events
@@ -568,22 +474,23 @@ var Opts = {
 			var settingsList = bg.Prefs.Current;
 
 			$(".setting_toggle").each(function(){
-				var status = $(this).data("toggle"), e = false;
+				let status = $(this).data("toggle"), obj;
 
 				if (status.includes(".")){
-					var a = status.split(".");
-					if (typeof settingsList[a[0]][a[1]] === "undefined") return;
-					e = settingsList[a[0]][a[1]].enabled;
+					let a = status.split(".");
+					obj = settingsList[a[0]][a[1]];
 				} else {
-					if (typeof settingsList[status] === "undefined") return;
-					e = settingsList[status].enabled;
+					obj = settingsList[status];
 				}
-				$(this).text((e === true ? lang("advSettingsCtrlEnabled") : lang("advSettingsCtrlDisabled")));
+
+				if (typeof obj === "undefined") return;
+
+				$(this).text((obj.enabled ? lang("advSettingsCtrlEnabled") : lang("advSettingsCtrlDisabled")));
 			});
 			$(".isetting_toggle").each(function(){
-				var status = $(this).data("toggle"), enabled = false;
+				let status = $(this).data("toggle"), enabled = false;
 				if (status.includes(".")){
-					var a = status.split(".");
+					let a = status.split(".");
 					enabled = settingsList[a[0]][a[1]].enabled;
 				} else {
 					enabled = settingsList[status].enabled;
@@ -591,13 +498,13 @@ var Opts = {
 				$(this).text((enabled === true ? lang("advSettingsCtrlEnabled") : lang("advSettingsCtrlDisabled")));
 			});
 			$(".direct_toggle").each(function(){
-				var status = $(this).data("toggle");
+				let status = $(this).data("toggle");
 				Opts.DirectSetting(this,status,false);
 			});
 			$(".trace_toggle").each(function(){
-				var status = $(this).data("toggle"), enabled = false;
+				let status = $(this).data("toggle"), enabled = false;
 				if (status.includes(".")){
-					var a = status.split(".");
+					let a = status.split(".");
 					enabled = settingsList[a[0]][a[1]].enabled;
 				} else {
 					enabled = settingsList[status].enabled;
@@ -632,16 +539,14 @@ var Opts = {
 						$("<span/>",{class:"premium_inner"}).text("Support Trace's development! Buy premium to gain access to the Premium blocklist"),
 						$("<br/>"),$("<br/>"),
 						$("<button/>").on("click enter",Opts.Premium.EnterCode).text("Enter Code"),
-						$("<span/>").text(" "),
+						" ",
 						$("<button/>").on("click enter",function(){
-							var win = window.open("https://absolutedouble.co.uk/trace/premium", "_blank");
-							if (win !== null) win.focus();
+							openNewTab("https://absolutedouble.co.uk/trace/premium");
 						}).text(lang("advPremiumCtrlBuy")),
-						$("<span/>").text(" "),
+						" ",
 						$("<button/>").on("click enter",function(){
-							var win = window.open("https://absolutedouble.co.uk/trace/", "_blank");
-							if (win !== null) win.focus();
-						}).text("Website")
+							openNewTab("https://absolutedouble.co.uk/trace/");
+						}).text(lang("advTraceCtrlWebsite"))
 					);
 					return;
 				}
@@ -650,22 +555,22 @@ var Opts = {
 					$("<span/>").text(lang("advPremiumMsgThanks")),
 					$("<br/>"),$("<br/>"),
 					$("<button/>").text(lang("advPremiumCtrlDisable")).click(Opts.Premium.RemoveCode),
-					$("<span/>").text(" "),
+					" ",
 					$("<button/>").text(
 						(bg.Prefs.Current.Pref_WebController.enabled === true ? "Force Blocklist Update" : "Enable Web Request Controller")
 					).on("click enter",Opts.UpdateBlocklist),
-					$("<span/>").text(" "),
+					" ",
 					$("<button/>").on("click enter",function(){
-						var win = window.open("https://absolutedouble.co.uk/trace/", "_blank");
-						if (win !== null) win.focus();
-					}).text("Website")
+						openNewTab("https://absolutedouble.co.uk/trace/");
+					}).text(lang("advTraceCtrlWebsite"))
 				);
 			});
 		},
 		RemoveCode:function(){
 			TraceBg(function(bg){
-				if (!confirm("Are you sure you wish to remove your premium code from Trace?\nThis will not delete your code from our servers.\n\nYour code:\n" + bg.Vars.Premium)) return;
+				if (!confirm("Are you sure you wish to remove your premium code from Trace?\nThis will not delete your code from Trace's servers.\n\nYour code:\n" + bg.Vars.Premium)) return;
 
+				// TODO: Move these functions to background page
 				// Update settings
 				bg.Prefs.Set("Main_Trace.PremiumCode","");
 				Opts.Blocklist.InstallList("a00000001",false);
@@ -673,9 +578,11 @@ var Opts = {
 
 				bg.Web.ClearDomainCache();
 
-				$(".premium_inner").empty().html("<h1>Please wait...</h1>");
+				$(".premium_inner").empty().append(
+					$("<h1/>").text(lang("miscMsgPleaseWait"))
+				);
 
-				Opts.Interface.GetMainPage();
+				Opts.Interface.GetMainPage(false);
 				Opts.Premium.GetStatus();
 				setTimeout(function(){
 					Opts.Blocklist.isPremium = (typeof bg.Vars.Premium !== "undefined" ?
@@ -708,9 +615,9 @@ var Opts = {
 					$("<h2/>").text("Please wait " + t + " minutes to try again." + (t === "10" ? " Might want to make a cup of tea to pass the time." : "")),
 					$("<span/>").text("The timer resets every time you re-enter this popup, wait " + t + " minutes before trying again."),$("<br />"),$("<br />"),
 					$("<button/>",{"title":"I need help"}).text("Help").click(Opts.Premium.HelpDialog),
-					Opts.CloseUI()
+					Overlay.CloseUI()
 				);
-				Opts.AssignCloseOverlay();
+				Overlay.AssignCloseEvent();
 			};
 
 			if (attn > 12){
@@ -738,9 +645,9 @@ var Opts = {
 				$("<br />"),$("<br />"),
 				$("<button/>",{"title":"Activate premium code"}).text("Activate").on("click enter",Opts.Premium.Go),
 				$("<button/>",{"title":"I need help"}).text("Help").on("click enter",Opts.Premium.HelpDialog),
-				Opts.CloseUI()
+				Overlay.CloseUI()
 			);
-			Opts.AssignCloseOverlay(true);
+			Overlay.AssignCloseEvent(true);
 		},
 		HelpDialog:function(){
 			$("#drop_message").empty().append(
@@ -786,14 +693,14 @@ var Opts = {
 						)
 					)
 				),
-				Opts.CloseUI()
+				Overlay.CloseUI()
 			);
-			Opts.AssignCloseOverlay(true);
+			Overlay.AssignCloseEvent(true);
 		},
 		Go:function(){
 			if ($("#premium_code_box") === null) return;
 
-			Opts.CloseOverlay();
+			Overlay.DoClose();
 
 			var pt = $("#premium_inner");
 			var eden = $("#premium_code_box").val();
@@ -808,7 +715,7 @@ var Opts = {
 				return;
 			}
 
-			var u = "https://trace-extension.absolutedouble.co.uk/app/weblist.php?p=";
+			let u = "https://trace-extension.absolutedouble.co.uk/app/weblist.php?p=";
 			u += btoa(eden);
 			u += "&s=" + btoa(lost);
 			u += "&d=" + btoa((Math.round((new Date()).getTime()/1000))*2);
@@ -856,7 +763,7 @@ var Opts = {
 						localStorage.removeItem("atme");
 					}
 
-					pt.text("Please wait... Initialising Premium :)");
+					pt.text(lang("miscMsgPleaseWait"));
 
 					if (chrome.extension.getBackgroundPage().Prefs.Current.Pref_WebController.enabled === true){
 						pt.text("Premium blocklist will be used when domain blocking is enabled in setttings.");
@@ -871,14 +778,14 @@ var Opts = {
 								(bg.Vars.Premium.length !== 0) : false);
 						},1500);
 
-						Opts.Interface.GetMainPage();
+						Opts.Interface.GetMainPage(false);
 						Opts.Premium.GetStatus();
 					});
 				},
 				error:function(e){
 					if (e.status === 403 || e.status === 402){
 						// Choose a status message to show
-						var a = Opts.Premium.eMessages[0];
+						let a = Opts.Premium.eMessages[0];
 						if (e.responseText === "CodeRevokedError") a = Opts.Premium.eMessages[2];
 						if (e.responseText === "CodeInactiveError") a = Opts.Premium.eMessages[1];
 						if (e.responseText === "CodePauseError") a = Opts.Premium.eMessages[3];
@@ -897,11 +804,7 @@ var Opts = {
 	DirectSetting:function(obj,name,change){
 		// This very large function handles the privacy settings directly in the browser (Privacy API)
 		if (!chrome.privacy) {
-			$("#settings_sbrowserfeature").empty().append(
-				$("<tr/>").append(
-					$("<td/>",{"colspan":"3"}).text("Your browser doesn't yet support these settings")
-				)
-			);
+			$("#trace_sbrowser").hide();
 			return;
 		}
 
@@ -918,7 +821,7 @@ var Opts = {
 						if (details.levelOfControl === 'controllable_by_this_extension' || details.levelOfControl === 'controlled_by_this_extension') {
 							chrome.privacy.network.networkPredictionEnabled.set({"value":!v,"scope":"regular"},function (){
 								$(obj).text((!v === true ? "Unprotected" : "Protected"));
-								if (chrome.runtime.lastError !== undefined && chrome.runtime.lastError !== null) alert("Error changing setting.");
+								if (chrome.runtime.lastError !== undefined && chrome.runtime.lastError !== null) alert(lang("miscMsgSettingError"));
 							});
 						} else {
 							alert("This extension cannot modify that chrome setting\n\n"+details.levelOfControl);
@@ -935,12 +838,12 @@ var Opts = {
 				}
 
 				chrome.privacy.services.alternateErrorPagesEnabled.get({},function(details){
-					var v = details.value;
+					let v = details.value;
 					if (change){
 						if (details.levelOfControl === 'controllable_by_this_extension' || details.levelOfControl === 'controlled_by_this_extension') {
 							chrome.privacy.services.alternateErrorPagesEnabled.set({"value":!v,"scope":"regular"},function (){
 								$(obj).text((!v === true ? "Unprotected" : "Protected"));
-								if (chrome.runtime.lastError !== undefined && chrome.runtime.lastError !== null) alert("Error changing setting.");
+								if (chrome.runtime.lastError !== undefined && chrome.runtime.lastError !== null) alert(lang("miscMsgSettingError"));
 							});
 						} else {
 							alert("This extension cannot modify that chrome setting\n\n"+details.levelOfControl);
@@ -957,12 +860,12 @@ var Opts = {
 				}
 
 				chrome.privacy.services.autofillEnabled.get({},function(details){
-					var v = details.value;
+					let v = details.value;
 					if (change){
 						if (details.levelOfControl === 'controllable_by_this_extension' || details.levelOfControl === 'controlled_by_this_extension') {
 							chrome.privacy.services.autofillEnabled.set({"value":!v,"scope":"regular"},function (){
 								$(obj).text((!v === true ? "Unprotected" : "Protected"));
-								if (chrome.runtime.lastError !== undefined && chrome.runtime.lastError !== null) alert("Error changing setting.");
+								if (chrome.runtime.lastError !== undefined && chrome.runtime.lastError !== null) alert(lang("miscMsgSettingError"));
 							});
 						} else {
 							alert("This extension cannot modify that chrome setting\n\n"+details.levelOfControl);
@@ -979,12 +882,12 @@ var Opts = {
 				}
 
 				chrome.privacy.services.safeBrowsingExtendedReportingEnabled.get({},function(details){
-					var v = details.value;
+					let v = details.value;
 					if (change){
 						if (details.levelOfControl === 'controllable_by_this_extension' || details.levelOfControl === 'controlled_by_this_extension') {
 							chrome.privacy.services.safeBrowsingExtendedReportingEnabled.set({"value":!v,"scope":"regular"},function (){
 								$(obj).text((!v === true ? "Unprotected" : "Protected"));
-								if (chrome.runtime.lastError !== undefined && chrome.runtime.lastError !== null) alert("Error changing setting.");
+								if (chrome.runtime.lastError !== undefined && chrome.runtime.lastError !== null) alert(lang("miscMsgSettingError"));
 							});
 						} else {
 							alert("This extension cannot modify that chrome setting\n\n"+details.levelOfControl);
@@ -1001,12 +904,12 @@ var Opts = {
 				}
 
 				chrome.privacy.websites.hyperlinkAuditingEnabled.get({},function(details){
-					var v = details.value;
+					let v = details.value;
 					if (change){
 						if (details.levelOfControl === 'controllable_by_this_extension' || details.levelOfControl === 'controlled_by_this_extension') {
 							chrome.privacy.websites.hyperlinkAuditingEnabled.set({"value":!v,"scope":"regular"},function (){
 								$(obj).text((!v === true ? "Unprotected" : "Protected"));
-								if (chrome.runtime.lastError !== undefined && chrome.runtime.lastError !== null) alert("Error changing setting.");
+								if (chrome.runtime.lastError !== undefined && chrome.runtime.lastError !== null) alert(lang("miscMsgSettingError"));
 								console.log(chrome.runtime.lastError);
 							});
 						} else {
@@ -1041,12 +944,12 @@ var Opts = {
 				}).on("change",Opts.Backup.Restore),
 				$("<p/>",{"id":"restore_info"})
 			);
-			Opts.AssignCloseOverlay(true);
+			Overlay.AssignCloseEvent(true);
 		},
 		Create:function(){
 			TraceBg(function(bg){
 				bg.Prefs.CreateBackup(function(raw){
-					Opts.MakeDownload("TraceSettings",JSON.stringify(raw,null,4));
+					MakeDownload("TraceSettings",JSON.stringify(raw,null,4));
 				});
 			});
 		},
@@ -1055,9 +958,8 @@ var Opts = {
 
 			var reader = new FileReader();
 			reader.onload = function(){
-				var data = reader.result;
 				try{
-					Opts.Backup.Data = JSON.parse(data);
+					Opts.Backup.Data = JSON.parse(reader.result);
 				} catch(e){
 					Opts.Backup.Data = {};
 				}
@@ -1067,8 +969,8 @@ var Opts = {
 		},
 		RestoreConfirmation:function(){
 			// Check backup file..
-			var keys = Object.keys(Opts.Backup.Data);
-			var redFlags = 0;
+			let keys = Object.keys(Opts.Backup.Data);
+			let redFlags = 0;
 			if (Opts.Backup.Data["backupTime"] === undefined) redFlags++;
 			if (Opts.Backup.Data["version"] === undefined) redFlags++;
 			if (Opts.Backup.Data["data"] === undefined) redFlags++;
@@ -1113,7 +1015,7 @@ var Opts = {
 			$("#backuprestore_title").text(lang("advRestoreMsgTitle"));
 
 			$("#restore_info").empty().append(
-				$("<h2/>").text("You are about to restore a backup..."),
+				$("<h2/>").text(lang("advRestoreMsgSubhead")),
 				$("<p/>").append(
 					$("<strong/>").text("Date: "),
 					$("<span/>").text(Opts.Backup.Data.backupTime || "Unknown.")
@@ -1147,44 +1049,19 @@ var Opts = {
 	ExecutionOrder:{
 		ReloadInterface:function(){
 			TraceBg(function(bg){
-				bg.Trace.f.ReturnExecOrder(Opts.ExecutionOrder.CreateInterface);
+				bg.Prefs.ReturnExecOrder(Opts.ExecutionOrder.CreateInterface);
 			});
 		},
 		CreateInterface:function(p){
-			var allpage = $("#settings_protallpage");
-			var perpage = $("#settings_protperpage");
-
-			allpage.empty();
-			perpage.empty();
-
-			for (var si = 0, sl = p.AllPage.length;si<sl;si++){
-				allpage.append(
-					$("<a/>",{
-						"class":"settings_execorder",
-						"title":"Click this protection to make it run on only some pages",
-						"data-pref":p.AllPage[si]
-					}).on("click enter",
-						Opts.ExecutionOrder.SwapProtection
-					).text(SettingNames[p.AllPage[si]] || p.AllPage[si])
-				);
-			}
-
-			for (var i = 0, l = p.PerPage.length;i<l;i++){
-				perpage.append(
-					$("<a/>",{
-						"class":"settings_execorder",
-						"title":"Click this item to make it run on all pages",
-						"data-pref":p.PerPage[i]
-					}).on("click enter",
-						Opts.ExecutionOrder.SwapProtection
-					).text(SettingNames[p.PerPage[i]] || p.PerPage[i])
-				);
-			}
+			$("[data-order]").each(function(){
+				let item = $(this).data("order");
+				$(this).text(p.AllPage.indexOf(item) !== -1 ? lang("advSettingsRunsAllPages") : lang("advSettingsRunsPerPage"));
+			});
 		},
 		SwapProtection:function(){
-			var that = $(this).data("pref");
+			var that = $(this).data("order");
 			TraceBg(function(bg){
-				bg.Trace.f.ChangeExecOrder(that,Opts.ExecutionOrder.ReloadInterface);
+				bg.Prefs.ChangeExecOrder(that,Opts.ExecutionOrder.ReloadInterface);
 			});
 		}
 	},
@@ -1192,15 +1069,20 @@ var Opts = {
 		SelectedOption:"",
 		CurrentSettings:{},
 		SettingName:{
-			audioBuffer:"Disable Audio Channel Functions (e.g. copyFromChannel)",
-			audioData:"Disable Audio Data Functions (e.g. getFloatFrequencyData)",
-			audioOfflineMain:"Disable Offline AudioContext Object (More commonly used for Tracking)",
-			audioMain:"Disable Main AudioContext Object (Breaks lots of websites)",
+			audioBuffer:"Modify Audio Channel Functions (e.g. copyFromChannel)",
+			audioData:"Modify Audio Data Functions (e.g. getFloatFrequencyData)",
+			audioOfflineMain:"Modify Offline AudioContext Object (More commonly used for Tracking)",
+			audioMain:"Modify Main AudioContext Object (Breaks lots of websites)",
 
 			rmChromeConnected:"Remove X-Chrome-Connected headers from web requests",
 			rmChromeUMA:"Remove X-Chrome-UMA-Enabled headers from web requests",
 			rmChromeVariations:"Remove X-Chrome-Variations headers from web requests",
 			rmClientData:"Remove X-Client-Data headers from web requests (Will break most Google websites)",
+
+			element:"Element:",
+			range:"Range:",
+			getclientrects:"getClientRects function",
+			getboundingclientrects:"getBoundingClientRects function",
 
 			pingRequest:"Block 'ping' requests in the browser (Recommended)",
 			sendBeacon:"Disable the javascript navigator.sendBeacon function on webpages",
@@ -1212,7 +1094,6 @@ var Opts = {
 			piwik:"Matomo (Piwik)",
 			segment:"Segment",
 
-			javascript:"Something went wrong if you're seeing this.",
 			deviceEnumeration:"Device Enumeration protection",
 			wrtcInternal:"Stop WebRTC exposing your local IPv4 address",
 			wrtcPeerConnection:"Disable the RTCPeerConnection javascript object (*)",
@@ -1226,7 +1107,7 @@ var Opts = {
 				//Trace.Config.CurrentSettings = bg.Prefs.GetSetting();
 				Opts.Config.CurrentSel = bg.Prefs.GetSetting(Opts.Config.SelectedOption);
 
-				var enabled = false;
+				let enabled = false;
 				if (Opts.Config.SelectedOption.includes(".")){
 					enabled = bg.Prefs.GetSetting(Opts.Config.SelectedOption).enabled;
 				} else {
@@ -1244,8 +1125,14 @@ var Opts = {
 				case "Pref_GoogleHeader":
 					Opts.Config.s.ChromeHeaderSettings();
 					break;
+				case "Pref_ClientRects":
+					Opts.Config.s.ClientRectsSettings();
+					break;
 				case "Pref_CommonTracking":
 					Opts.Config.s.CommonTrackingSettings();
+					break;
+				case "Pref_FontFingerprint":
+					Opts.Config.s.FontFingerprintingSettings();
 					break;
 				case "Pref_WebRTC":
 					Opts.Config.s.WebRTCSettings();
@@ -1278,9 +1165,6 @@ var Opts = {
 					Opts.PIPSpoof.OpenDialog();
 					break;
 				case "Pref_WebController":
-					Opts.Blocklist.OpenDialog();
-					break;
-				case "Pref_WebController.showBlocked":
 					Opts.Blocklist.OpenDialog();
 					break;
 				case "Pref_CookieEater":
@@ -1338,15 +1222,22 @@ var Opts = {
 				);
 			}
 
-			for (var i in Opts.Config.CurrentSel){
+			for (let i in Opts.Config.CurrentSel){
 				if (typeof Opts.Config.CurrentSel[i] !== "object") continue;
 
 				if (!Opts.Config.CurrentSel[i].hasOwnProperty("enabled")){
-					for (var j in Opts.Config.CurrentSel[i]){
+					// Create option name
+					if (!!Opts.Config.SettingName[i]){
+						el.append(
+							$("<h2/>").text(Opts.Config.SettingName[i] || i)
+						);
+					}
+
+					for (let j in Opts.Config.CurrentSel[i]){
 						if (j === "enabled" || Opts.Config.CurrentSel[i][j] === undefined) continue;
 						if (Object.keys(Opts.Config.CurrentSel[i][j]).length > 1) continue;
 
-						var opts = {
+						let opts = {
 							"type":"checkbox",
 							"id":"c_opt_"+makeRandomID(16),
 							"data-conf":Opts.Config.SelectedOption + "." + i + "." + j + ".enabled"
@@ -1360,7 +1251,7 @@ var Opts = {
 					continue;
 				}
 
-				var opts = {
+				let opts = {
 					"type":"checkbox",
 					"id":"c_opt_"+makeRandomID(16),
 					"data-conf":Opts.Config.SelectedOption + "." + i + ".enabled"
@@ -1379,81 +1270,101 @@ var Opts = {
 		},
 		s:{
 			AudioSettings:function(){
-				var cont = Opts.Config.GetConf();
+				let cont = Opts.Config.GetConf();
 				$("#drop_message").empty().append(
-					$("<h1/>").text("Audio Fingerprint Protection"),
+					$("<h1/>").text(SettingNames["Pref_AudioFingerprint"]),
 					cont,
-					Opts.CloseUI(),
+					Overlay.CloseUI(),
 					$("<br/>"),$("<br/>")
 				);
-				Opts.AssignCloseOverlay(true);
-			},
-			ChromeHeaderSettings:function(){
-				var cont = Opts.Config.GetConf();
-				$("#drop_message").empty().append(
-					$("<h1/>").text("Google Header Protection"),
-					cont,
-					Opts.CloseUI(),
-					$("<br/>"),$("<br/>")
-				);
-				Opts.AssignCloseOverlay(true);
-			},
-			CommonTrackingSettings:function(){
-				var cont = Opts.Config.GetConf();
-				$("#drop_message").empty().append(
-					$("<h1/>").text("Common Tracking Protection"),
-					cont,
-					Opts.CloseUI(),
-					$("<br/>"),$("<br/>")
-				);
-				Opts.AssignCloseOverlay(true);
+				Overlay.AssignCloseEvent(true);
 			},
 			BatteryAPISettings:function(){
-				var cont = Opts.Config.GetConf();
+				let cont = Opts.Config.GetConf();
 				$("#drop_message").empty().append(
-					$("<h1/>").text("Battery API Protection"),
+					$("<h1/>").text(SettingNames["Pref_BatteryApi"]),
 					cont,
 					$("<br/>"),
-					Opts.CloseUI(),
+					Overlay.CloseUI(),
 					$("<br/>"),$("<br/>")
 				);
-				Opts.AssignCloseOverlay(true);
+				Overlay.AssignCloseEvent(true);
+			},
+			ChromeHeaderSettings:function(){
+				let cont = Opts.Config.GetConf();
+				$("#drop_message").empty().append(
+					$("<h1/>").text(SettingNames["Pref_GoogleHeader"]),
+					cont,
+					Overlay.CloseUI(),
+					$("<br/>"),$("<br/>")
+				);
+				Overlay.AssignCloseEvent(true);
+			},
+			ClientRectsSettings:function(){
+				let cont = Opts.Config.GetConf();
+				$("#drop_message").empty().append(
+					$("<h1/>").text(SettingNames["Pref_ClientRects"]),
+					cont,
+					Overlay.CloseUI(),
+					$("<br/>"),$("<br/>")
+				);
+				Overlay.AssignCloseEvent(true);
+			},
+			CommonTrackingSettings:function(){
+				let cont = Opts.Config.GetConf();
+				$("#drop_message").empty().append(
+					$("<h1/>").text(SettingNames["Pref_CommonTracking"]),
+					cont,
+					Overlay.CloseUI(),
+					$("<br/>"),$("<br/>")
+				);
+				Overlay.AssignCloseEvent(true);
+			},
+			FontFingerprintingSettings:function(){
+				let cont = Opts.Config.GetConf();
+				$("#drop_message").empty().append(
+					$("<h1/>").text(SettingNames["Pref_FontFingerprint"]),
+					cont,
+					Overlay.CloseUI(),
+					$("<br/>"),$("<br/>")
+				);
+				Overlay.AssignCloseEvent(true);
 			},
 			NetworkAPISettings:function(){
-				var cont = Opts.Config.GetConf();
+				let cont = Opts.Config.GetConf();
 				$("#drop_message").empty().append(
-					$("<h1/>").text("Network Information API"),
+					$("<h1/>").text(SettingNames["Pref_NetworkInformation"]),
 					cont,
 					$("<br/>"),
-					Opts.CloseUI(),
+					Overlay.CloseUI(),
 					$("<br/>"),$("<br/>")
 				);
-				Opts.AssignCloseOverlay(true);
+				Overlay.AssignCloseEvent(true);
 			},
 			PingBlockSettings:function(){
-				var cont = Opts.Config.GetConf();
+				let cont = Opts.Config.GetConf();
 				$("#drop_message").empty().append(
-					$("<h1/>").text("Browser Ping Protection"),
+					$("<h1/>").text(SettingNames["Pref_PingBlock"]),
 					cont,
 					$("<br/>"),
 					$("<span/>").text("If you're looking for Hyperlink Auditing protection then you can find it under 'Browser Settings'"),
-					Opts.CloseUI(),
+					Overlay.CloseUI(),
 					$("<br/>"),$("<br/>")
 				);
-				Opts.AssignCloseOverlay(true);
+				Overlay.AssignCloseEvent(true);
 			},
 			WebRTCSettings:function(){
-				var cont = Opts.Config.GetConf();
+				let cont = Opts.Config.GetConf();
 				$("#drop_message").empty().append(
-					$("<h1/>").text("WebRTC Protection"),
+					$("<h1/>").text(SettingNames["Pref_WebRTC"]),
 					cont,
 					$("<br/>"),
 					$("<span/>").text("WebRTC is used for applications such as video calling. Disabling javascript objects will most likely break lots of websites that rely on WebRTC."),$("<br/>"),
 					$("<span/>").text("* Options with an asterisk are optional settings and should only be used if you know what you're doing"),$("<br/>"),
-					Opts.CloseUI(),
+					Overlay.CloseUI(),
 					$("<br/>"),$("<br/>")
 				);
-				Opts.AssignCloseOverlay(true);
+				Overlay.AssignCloseEvent(true);
 			}
 		}
 	},
@@ -1532,7 +1443,7 @@ var Opts = {
 			}
 		},
 		OpenDialog:function(){
-			var el = $("<div/>",{
+			let el = $("<div/>",{
 				"class":"settings_config_container",
 				"data-parent":Opts.Config.SelectedOption
 			});
@@ -1543,9 +1454,9 @@ var Opts = {
 				}).text("Retrieving IP..."),$("<br/>")
 			);
 
-			var configOpts = ["useClientIP","useForwardedFor","traceVia","traceIP"];
-			for (var i = 0, l = configOpts.length;i<l;i++){
-				var opts = {
+			let configOpts = ["useClientIP","useForwardedFor","traceVia","traceIP"];
+			for (let i = 0, l = configOpts.length;i<l;i++){
+				let opts = {
 					"type":"checkbox",
 					"id":"c_opt_"+makeRandomID(16),
 					"data-conf":Opts.Config.SelectedOption + "." + configOpts[i] + ".enabled",
@@ -1566,7 +1477,7 @@ var Opts = {
 							$("<input/>",opts).on("click enter",function(){
 								Opts.Config.SaveConf(this);
 
-								var s = $(this).data("special");
+								let s = $(this).data("special");
 								if (s === "traceVia"){
 									if ($(this).is(":checked")){
 										$("#pip_custvia").hide();
@@ -1621,12 +1532,12 @@ var Opts = {
 			$("#overlay_message").slideDown(300);
 			$("#overlay_close").unbind("click").click(function(){
 				clearInterval(Opts.IPTextRefresh);
-				Opts.CloseOverlay();
+				Overlay.DoClose();
 			});
 			$(window).unbind("click").click(function(e){
 				if ($(e.target)[0].id === "overlay_message"){
 					clearInterval(Opts.IPTextRefresh);
-					Opts.CloseOverlay();
+					Overlay.DoClose();
 				}
 			});
 		}
@@ -1670,10 +1581,10 @@ var Opts = {
 		GraphObj:undefined,
 
 		AssignGraphOptions:function(){
-			$("#stats_download").click(function(){
+			$("#stats_download").on("click enter",function(){
 				Opts.Stats.ShowDownloadOptions();
 			});
-			$("#stats_wipe").click(function(){
+			$("#stats_wipe").on("click enter",function(){
 				Opts.Stats.DeleteStats();
 			});
 			$("#graph_datacontrol, #graph_contbreakdown").change(function(){
@@ -1689,7 +1600,7 @@ var Opts = {
 			});
 		},
 		GraphColors:function(req){
-			var list = [
+			let list = [
 				'rgba(255,99,132,',
 				'rgba(54,162,235,',
 				'rgba(255,206,86,',
@@ -1698,16 +1609,17 @@ var Opts = {
 				'rgba(153,102,104,',
 				'rgba(255,159,64,'
 			];
+			let bar = [], border = [];
 			if (req !== "rand"){
-				var bar = [], border = [];
-				for (var i = 0;i<req;i++){
+				for (let i = 0;i<req;i++){
 					bar[i] = list[i] + "0.4)";
 					border[i] = list[i] + "1)";
 				}
 				return [bar,border];
 			} else {
-				var chose = list[Math.floor(Math.random() * list.length)];
-				var bar = chose + "0.4)", border = chose + "1)";
+				let chose = list[Math.floor(Math.random() * list.length)];
+				bar = chose + "0.4)";
+				border = chose + "1)";
 				return [bar,border];
 			}
 		},
@@ -1716,7 +1628,7 @@ var Opts = {
 			var cBreakDown = $("#graph_contbreakdown").val();
 
 			var rData = {};
-			var dLen = Object.keys(dataset).length;
+			let dLen = Object.keys(dataset).length;
 
 			if (dLen === 0){
 				$("#graph_controls").hide();
@@ -1773,7 +1685,7 @@ var Opts = {
 					rData["data"] = [];
 
 					var colors = Opts.Stats.GraphColors(4);
-					for(var i = 0;i < dControl;i++){
+					for (let i = 0;i < dControl;i++){
 						rData["data"].push({
 							label:keys[i],
 							data:[vals[i].webpage,vals[i].media,vals[i].code,vals[i].other],
@@ -1797,7 +1709,7 @@ var Opts = {
 						Opts.Stats.GraphObj.options.barValueSpacing = 20;
 					}
 
-					for(var i = 0;i < dControl;i++){
+					for (let i = 0;i < dControl;i++){
 						rData["labels"].push(keys[i]);
 						rData["data"][0].data.push(vals[i].webpage+vals[i].media+vals[i].code+vals[i].other);
 					}
@@ -1808,12 +1720,11 @@ var Opts = {
 			cb(rData);
 		},
 		MakeGraph:function(d){
-			if (d !== undefined){
-				Opts.Stats.GraphObj.data.datasets = d["data"];
-				Opts.Stats.GraphObj.data.labels = d["labels"];
-				Opts.Stats.GraphObj.options.title.text = d["title"];
-				Opts.Stats.GraphObj.update(0);
-			}
+			if (!d) return;
+			Opts.Stats.GraphObj.data.datasets = d["data"];
+			Opts.Stats.GraphObj.data.labels = d["labels"];
+			Opts.Stats.GraphObj.options.title.text = d["title"];
+			Opts.Stats.GraphObj.update(0);
 		},
 		StructureGraph:function(){
 			if (typeof Opts.Stats.GraphElm === "undefined"){
@@ -1823,6 +1734,7 @@ var Opts = {
 					console.error(e);
 				}
 			}
+
 			Chart.defaults.global.defaultFontColor = "#fff";
 			Opts.Stats.GraphObj = new Chart(Opts.Stats.GraphElm, {
 				type:'bar',
@@ -1837,7 +1749,7 @@ var Opts = {
 			$("#graph_container").html("Enable Protection Statistics to use this feature.<br /><br />").append(
 				$("<button/>").text("Enable").click(function(){
 					$("#setting_protstats").click();
-					$(this).text("Please wait...");
+					$(this).text(lang("miscMsgPleaseWait"));
 
 					if (l !== 0){
 						window.location.reload();
@@ -1871,27 +1783,24 @@ var Opts = {
 					"title":"Download Statistics in JSON format"
 				}).text("JSON").click(function(){Opts.Stats.DownloadStats("json");}),
 				$("<br/>"),$("<br/>"),
-				$("<button/>",{"title":lang("miscCtrlClose")}).text(lang("miscCtrlClose")).on("click enter",Opts.CloseOverlay)
+				$("<button/>",{"title":lang("miscCtrlClose")}).text(lang("miscCtrlClose")).on("click enter",Overlay.DoClose)
 			);
-			Opts.AssignCloseOverlay(true);
+			Overlay.AssignCloseEvent(true);
 		},
-		DownloadStats:function(file){
-			if (typeof file !== "string"){
-				var file = "csv";
-			}
+		DownloadStats:function(file = "csv"){
 			var date, returnd;
 
 			TraceBg(function(bg){
 				bg.Stats.Data(function(d) {
 					if (file === "csv" || file === "tsv") {
-						var s = ",";
+						let s = ",";
 						if (file === "tsv") s = "\t";
 
 						returnd = 'Date' + s + 'Web' + s + 'Media' + s + 'Code' + s + 'Other' + s + 'Total';
 
-						for (var i = 0, l = Object.keys(d).length; i < l; i++) {
-							var currentd = Object.keys(d)[i];
-							var obj = d[currentd];
+						for (let i = 0, l = Object.keys(d).length; i < l; i++) {
+							let currentd = Object.keys(d)[i];
+							let obj = d[currentd];
 							returnd += "\n" + currentd +
 								s + obj.webpage +
 								s + obj.media +
@@ -1908,9 +1817,9 @@ var Opts = {
 						returnd = '<?xml version="1.0" encoding="UTF-8"?>\n';
 						returnd += "<tracestats downloaded='" + (date[0] + "-" + date[1] + "-" + date[2]).toString() + "'>";
 
-						for (var i = 0, l = Object.keys(d).length; i < l; i++) {
-							var currentd = Object.keys(d)[i];
-							var obj = d[currentd];
+						for (let i = 0, l = Object.keys(d).length; i < l; i++) {
+							let currentd = Object.keys(d)[i];
+							let obj = d[currentd];
 							returnd += "\n\t<stats date='" + currentd + "'>" +
 								'\n\t\t<webpages>' + obj.webpage + '</webpages>' +
 								'\n\t\t<media>' + obj.media + '</media>' +
@@ -1927,7 +1836,7 @@ var Opts = {
 					} else if (file === "json") {
 
 						date = getDateStrings();
-						var stats = {
+						let stats = {
 							"downloaded": (date[0] + "-" + date[1] + "-" + date[2]).toString(),
 							"stats": d
 						};
@@ -1942,13 +1851,13 @@ var Opts = {
 		},
 		CreateDownload:function(data,filetype){
 			// File information
-			var a = document.createElement("a"),
+			let a = document.createElement("a"),
 				file = new Blob([data], {type: "text/" + filetype});
-			var url = URL.createObjectURL(file);
+			let url = URL.createObjectURL(file);
 
 			// Generate file date
-			var d = getDateStrings();
-			var filedate = (d[0] + "_" + d[1] + "_" + d[2]).toString();
+			let d = getDateStrings();
+			let filedate = (d[0] + "_" + d[1] + "_" + d[2]).toString();
 
 			// Download file
 			a.href = url;
@@ -1978,15 +1887,15 @@ var Opts = {
 				),
 				$("<br/>"),$("<br/>"),
 				$("<button/>",{"title":"Confirm deletion"}).text("Confirm").click(Opts.Stats.ConfirmDeleteStats),
-				$("<button/>",{"title":lang("miscCtrlClose")}).text(lang("miscCtrlCancel")).on("click enter",Opts.CloseOverlay)
+				$("<button/>",{"title":lang("miscCtrlClose")}).text(lang("miscCtrlCancel")).on("click enter",Overlay.DoClose)
 			);
-			Opts.AssignCloseOverlay(true);
+			Overlay.AssignCloseEvent(true);
 		},
 		ConfirmDeleteStats:function(x){
 			var a = $("#stats_del_amount").val();
 
 			var cb = function(){
-				Opts.CloseOverlay();
+				Overlay.DoClose();
 				Opts.Stats.GetStatsData(function(d){
 					Opts.Stats.MakeData(d,Opts.Stats.MakeGraph);
 				});
@@ -2003,10 +1912,10 @@ var Opts = {
 	},
 	HardwareSpoof:{
 		OpenDialog:function(){
-			var optsCpu = {"type":"checkbox", "id":"hwspoof_use_fakecpu"}, cpuVal = Opts.Config.CurrentSel["hardware"]["hardwareConcurrency"].value;
-			var optsRam = {"type":"checkbox", "id":"hwspoof_use_fakeram"}, ramVal = Opts.Config.CurrentSel["hardware"]["deviceMemory"].value;
-			var optsVr = {"type":"checkbox", "id":"hwspoof_use_blockvr"};
-			var optsGamepad = {"type":"checkbox", "id":"hwspoof_use_blockgp"};
+			let optsCpu = {"type":"checkbox", "id":"hwspoof_use_fakecpu"}, cpuVal = Opts.Config.CurrentSel["hardware"]["hardwareConcurrency"].value;
+			let optsRam = {"type":"checkbox", "id":"hwspoof_use_fakeram"}, ramVal = Opts.Config.CurrentSel["hardware"]["deviceMemory"].value;
+			let optsVr = {"type":"checkbox", "id":"hwspoof_use_blockvr"};
+			let optsGamepad = {"type":"checkbox", "id":"hwspoof_use_blockgp"};
 
 			if (Opts.Config.CurrentSel["hardware"]["hardwareConcurrency"].enabled === true) optsCpu["checked"] = "checked";
 			if (Opts.Config.CurrentSel["hardware"]["deviceMemory"].enabled === true) optsRam["checked"] = "checked";
@@ -2014,13 +1923,13 @@ var Opts = {
 			if (Opts.Config.CurrentSel["hardware"]["hwGamepads"].enabled === true) optsGamepad["checked"] = "checked";
 
 			$("#drop_message").empty().append(
-				$("<h1/>").text("Hardware Fingerprinting Protection"),
+				$("<h1/>").text(SettingNames["Pref_HardwareSpoof"]),
 				$("<div/>").append(
 					$("<div/>",{"class":"setting_conf_opt xregular"}).append(
 						$("<label/>",{
 							"for":optsVr["id"],
 							"class":"checkbox_cont"
-						}).text("Block VR API").append(
+						}).text(lang("advSettHardwareBlockVr")).append(
 							$("<input/>",optsVr),
 							$("<span/>",{"class":"ccheck"})
 						)
@@ -2031,7 +1940,7 @@ var Opts = {
 						$("<label/>",{
 							"for":optsGamepad["id"],
 							"class":"checkbox_cont"
-						}).text("Block Gamepad API").append(
+						}).text(lang("advSettHardwareBlockGamepad")).append(
 							$("<input/>",optsGamepad),
 							$("<span/>",{"class":"ccheck"})
 						)
@@ -2043,7 +1952,7 @@ var Opts = {
 						$("<label/>",{
 							"for":optsCpu["id"],
 							"class":"checkbox_cont"
-						}).text("Spoof CPU Core Count").append(
+						}).text(lang("advSettHardwareCountCpu")).append(
 							$("<input/>",optsCpu),
 							$("<span/>",{"class":"ccheck"})
 						)
@@ -2061,7 +1970,7 @@ var Opts = {
 						$("<label/>",{
 							"for":optsRam["id"],
 							"class":"checkbox_cont"
-						}).text("Spoof RAM amount").append(
+						}).text(lang("advSettHardwareCountRam")).append(
 							$("<input/>",optsRam),
 							$("<span/>",{"class":"ccheck"})
 						)
@@ -2076,7 +1985,7 @@ var Opts = {
 				$("<br/>"),$("<br/>"),
 				$("<button/>",{"class":"float_r"}).text(lang("miscCtrlSave")).click(Opts.HardwareSpoof.SaveParameters)
 			);
-			Opts.AssignCloseOverlay(true);
+			Overlay.AssignCloseEvent(true);
 		},
 		SaveParameters:function(){
 			TraceBg(function(bg){
@@ -2085,10 +1994,10 @@ var Opts = {
 					"Pref_HardwareSpoof.hardware.deviceMemory.enabled": $("#hwspoof_use_fakeram").is(":checked"),
 					"Pref_HardwareSpoof.hardware.hwVrDisplays.enabled": $("#hwspoof_use_blockvr").is(":checked"),
 					"Pref_HardwareSpoof.hardware.hwGamepads.enabled": $("#hwspoof_use_blockgp").is(":checked"),
-					"Pref_HardwareSpoof.hardware.hardwareConcurrency.value": $("#hwspoof_val_fakecpu").val(),
-					"Pref_HardwareSpoof.hardware.deviceMemory.value": $("#hwspoof_val_fakeram").val()
+					"Pref_HardwareSpoof.hardware.hardwareConcurrency.value": parseInt($("#hwspoof_val_fakecpu").val()),
+					"Pref_HardwareSpoof.hardware.deviceMemory.value": parseInt($("#hwspoof_val_fakeram").val())
 				});
-				Opts.CloseOverlay();
+				Overlay.DoClose();
 			});
 		}
 	},
@@ -2117,20 +2026,16 @@ var Opts = {
 				$("<span/>").text("Warning: Enabling user agents that don't match your system can break sites such as YouTube."),$("<br />"),$("<br />")
 			);
 
-			for (var i in Opts.Config.CurrentSel){
-				if (i === "enabled" || i === "uaCust" || Opts.Config.CurrentSel[i] === undefined) {
-					continue;
-				}
-				if (Object.keys(Opts.Config.CurrentSel[i]).length <= 1) {
-					continue;
-				}
+			for (let i in Opts.Config.CurrentSel){
+				if (i === "enabled" || i === "uaCust" || Opts.Config.CurrentSel[i] === undefined) continue;
+				if (Object.keys(Opts.Config.CurrentSel[i]).length <= 1) continue;
 
 				// Create option name
 				el.append(
 					$("<span/>",{"class":"setting_cont_opt"}).text(Opts.UserAgent.StringNames[i] || i)
 				);
 
-				for (var j in Opts.Config.CurrentSel[i]){
+				for (let j in Opts.Config.CurrentSel[i]){
 					if (j === "enabled" || typeof Opts.Config.CurrentSel[i][j] === undefined) continue;
 
 					var opts = {
@@ -2163,28 +2068,30 @@ var Opts = {
 			$("#drop_message").empty().append(
 				$("<h1/>").text("User Agent Customiser"),
 				$("<div/>",{"id":"ua_specialconfig"}).append(el),
-				Opts.CloseUI()
+				Overlay.CloseUI()
 			);
-			Opts.AssignCloseOverlay(true);
+			Overlay.AssignCloseEvent(true);
 		}
 	},
 	ScreenRes:{
 		OpenDialog:function(){
-			var el = $("<div/>",{
+			let el = $("<div/>",{
 				"class":"settings_config_container",
 				"data-parent":Opts.Config.SelectedOption
 			});
 
 			el.append(
 				$("<div/>",{"id":"sr_resolutions"}).append(
-					$("<span/>").text("Use this to specify resolutions that will be provided, one will randomly be chosen at each page reload."),$("<br/>"),
+					$("<span/>").text(lang("advSettScreenResAddSubhead")),$("<br/>"),
 					$("<div/>",{"id":"sr_currentresolutions","class":"itemlist"}),
 					$("<div/>",{"id":"sr_addtoresolutions"}).append(
-						$("<input/>",{"type":"text","id":"sr_addtoresinput","placeholder":"Resolution to add (Format WxH) e.g. 1920x1080"}),$("<br/>"),$("<br/>"),
-						$("<button/>",{"id":"sr_addtoressubmit","class":"small"}).text("Add Resolution").on("click enter",Opts.ScreenRes.AddNewResolution),$("<span/>").text(" "),
-						$("<button/>",{"class":"small"}).text("Add Common Resolutions").on("click enter",Opts.ScreenRes.AddCommonResolutions),$("<span/>").text(" "),
-						$("<button/>",{"class":"small"}).text("Clear List").on("click enter",Opts.ScreenRes.ClearResolutionsList)
-					)
+						$("<input/>",{"type":"number","id":"sr_addtoreswidth","placeholder":lang("advSettScreenResAddWidth")}),
+						$("<input/>",{"type":"number","id":"sr_addtoresheight","placeholder":lang("advSettScreenResAddHeight")}),
+						$("<input/>",{"type":"number","id":"sr_addtoresdepth","placeholder":lang("advSettScreenResAddDepth")})
+					),
+					$("<button/>",{"id":"sr_addtoressubmit","class":"small"}).text(lang("advSettScreenResAddButton")).on("click enter",Opts.ScreenRes.AddNewResolution),$("<span/>").text(" "),
+					$("<button/>",{"class":"small"}).text(lang("advSettScreenResAddCommon")).on("click enter",Opts.ScreenRes.AddCommonResolutions),$("<span/>").text(" "),
+					$("<button/>",{"class":"small"}).text(lang("advSettScreenResClearList")).on("click enter",Opts.ScreenRes.ClearResolutionsList)
 				),
 				$("<div/>",{"id":"sr_randoffset"}).append(
 					$("<span/>").text("A random number between these two values is created and added to the width and height of the screen resolution at each page refresh, making it harder to know your real screen resolution."),
@@ -2195,14 +2102,14 @@ var Opts = {
 					$("<span/>").text("Maximum Offset (Default is 10)"),
 					$("<input/>",{"type":"text","id":"sr_offsetmaxval","placeholder":"Maximum Value"}),
 					$("<br/>"),$("<br/>"),
-					$("<button/>",{"id":"sr_updateoffsets","class":"small"}).text("Save Offsets").on("click enter",Opts.ScreenRes.UpdateOffset)
+					$("<button/>",{"id":"sr_updateoffsets","class":"small"}).text(lang("miscCtrlSave")).on("click enter",Opts.ScreenRes.UpdateOffset)
 				),
 				$("<br/>"),$("<button/>",{"id":"sr_togglemode","class":"small"}).text("Change selection method").on("click enter",Opts.ScreenRes.ToggleModeUI),
-				$("<button/>",{"title":lang("miscCtrlClose"),"class":"small float_r"}).text(lang("miscCtrlClose")).on("click enter",Opts.CloseOverlay)
+				$("<button/>",{"title":lang("miscCtrlClose"),"class":"small float_r"}).text(lang("miscCtrlClose")).on("click enter",Overlay.DoClose)
 			);
 
 			$("#drop_message").empty().append(
-				$("<h1/>").text("Configure Screen Resolution Protection"),
+				$("<h1/>").text(SettingNames["Pref_ScreenRes"]),
 				$("<div/>",{"id":"sr_specialconfig"}).append(el)
 			);
 
@@ -2216,7 +2123,7 @@ var Opts = {
 			Opts.ScreenRes.UpdateResolutions();
 			Opts.ScreenRes.UpdateOffsets();
 
-			Opts.AssignCloseOverlay(true);
+			Overlay.AssignCloseEvent(true);
 		},
 		ToggleModeUI:function(){
 			$(this).text("Changing...");
@@ -2244,26 +2151,27 @@ var Opts = {
 			$("#sr_offsetmaxval").val(Opts.Config.CurrentSel.randomOpts.values[1]);
 		},
 		AddCommonResolutions:function(){
-			var common = [
-				[1024,768],
-				[1280,720],
-				[1280,800],
-				[1280,1024],
-				[1360,768],
-				[1366,768],
-				[1440,900],
-				[1600,900],
-				[1920,1080],
-				[1920,1280],
-				[1920,1440],
-				[3440,1440],
-				[3840,1600]
+			let common = [
+				[1024,768,16],
+				[1280,720,16],
+				[1280,800,16],
+				[1280,1024,16],
+				[1360,768,16],
+				[1366,768,24],
+				[1440,900,24],
+				[1600,900,24],
+				[1920,1080,24],
+				[1920,1280,24],
+				[1920,1440,24],
+				[3440,1440,24],
+				[3840,1600,24]
 			];
 
 			if (!confirm("This will add " + common.length + " resolutions to the list.\nAre you sure you wish to proceed?")) return;
 
-			for (var res in common){
-				Opts.Config.CurrentSel.commonResolutions.resolutions.push([parseInt(common[res][0]),parseInt(common[res][1])]);
+			for (let res in common){
+				// You cannot pass parseInt to map without causing issues
+				Opts.Config.CurrentSel.commonResolutions.resolutions.push(common[res].map(function(n){ return parseInt(n); }));
 			}
 
 			TraceBg(function(bg){
@@ -2284,20 +2192,25 @@ var Opts = {
 			Opts.ScreenRes.UpdateResolutions();
 		},
 		UpdateResolutions:function(){
-			var r = Opts.Config.CurrentSel.commonResolutions.resolutions,
+			let r = Opts.Config.CurrentSel.commonResolutions.resolutions,
 				d = $("#sr_currentresolutions");
 			d.empty();
+
 			if (typeof r === "undefined" || r.length === 0){
-				d.html("<h2>No Resolutions In List</h2><p>Protection will not work unless you specify a resolution</p>");
+				d.append(
+					$("<h2/>").text(lang("advSettScreenResEmptyListHead")),
+					$("<p/>").text(lang("advSettScreenResEmptyListSubhead"))
+				);
 				return;
 			}
-			for (var item in r){
+
+			for (let item in r){
 				d.append(
 					$("<div/>",{
 						"class":"itemlist_itm",
 						"data-listid":item,
-						"title":"Click to delete this resolution"
-					}).text(r[item][0] + "x" + r[item][1]).on("click enter",Opts.ScreenRes.RemoveResolution)
+						"title":"Click to delete this resolution\nFormat: Width x Height x Depth"
+					}).text(r[item].join("x")).on("click enter",Opts.ScreenRes.RemoveResolution)
 				);
 			}
 		},
@@ -2310,28 +2223,26 @@ var Opts = {
 			Opts.ScreenRes.UpdateResolutions();
 		},
 		AddNewResolution:function(){
-			var res = $("#sr_addtoresinput").val().toLowerCase();
-			if (!res.includes("x")) {
-				alert("Incorrect format\nMake sure you entered something in the format Width x Height");
+			let res = [
+				$("#sr_addtoreswidth").val().toLowerCase(),
+				$("#sr_addtoresheight").val().toLowerCase(),
+				$("#sr_addtoresdepth").val().toLowerCase(),
+			];
+			let valid = res.map($.isNumeric).reduce(function(val, curr){ return val && curr; });
+
+			if (!valid){
+				alert("Input not accepted, please make sure you specify an integer in each box.");
 				return;
 			}
 
-			res = res.replace(/[^!x\d.-]/g,"");
-			res = res.split("x");
-
-			if (res.length !== 2){
-				alert("Invalid resolution!\nMake sure you enter it in the format Width x Height");
-				return;
-			}
-
-			Opts.Config.CurrentSel.commonResolutions.resolutions.push([parseInt(res[0]),parseInt(res[1])]);
+			Opts.Config.CurrentSel.commonResolutions.resolutions.push(res.map(function(n){ return parseInt(n); }));
 			TraceBg(function(bg){
 				bg.Prefs.Set("Pref_ScreenRes.commonResolutions.resolutions",Opts.Config.CurrentSel.commonResolutions.resolutions);
 			});
 			Opts.ScreenRes.UpdateResolutions();
 		},
 		UpdateOffset:function(){
-			var max = parseInt($("#sr_offsetmaxval").val()),
+			let max = parseInt($("#sr_offsetmaxval").val()),
 				min = parseInt($("#sr_offsetminval").val());
 			Opts.Config.CurrentSel.randomOpts.values = [min,max];
 
@@ -2342,53 +2253,53 @@ var Opts = {
 
 			$("#sr_updateoffsets").text("Saved!");
 			setTimeout(function(){
-				$("#sr_updateoffsets").text("Save Offsets");
+				$("#sr_updateoffsets").text(lang("miscCtrlSave"));
 			},1000);
 		}
 	},
 	WebGL:{
 		OpenDialog:function(){
-			var el = $("<div/>",{
+			let el = $("<div/>",{
 				"class":"settings_config_container",
 				"data-parent":Opts.Config.SelectedOption
 			});
 
 			el.append(
 				$("<div/>",{"id":"sr_resolutions"}).append(
-					$("<span/>").text("Below you can add specific GPU models to be selected by Trace, if you don't add any, Trace's built in list will be used."),$("<br/>"),
+					$("<span/>").text(lang("advSettWebglGpuSubhead")),$("<br/>"),
 					$("<div/>",{"id":"gl_gpulist","class":"itemlist"}),
-					$("<div/>",{"id":"sr_addtoresolutions"}).append(
+					$("<div/>",{"id":"gl_addgpu"}).append(
 						$("<input/>",{"type":"text","id":"gpu_addtolist","placeholder":"GPU Model to add"}),$("<br/>"),$("<br/>"),
-						$("<button/>",{"id":"sr_addtoressubmit","class":"small"}).text("Add GPU").on("click enter",Opts.WebGL.AddNewGPU),$("<span/>").text(" "),
-						$("<button/>",{"id":"sr_addtoressubmit","class":"small"}).text("Import Trace's List").on("click enter",Opts.WebGL.AddTraceList),$("<span/>").text(" "),
-						$("<button/>",{"id":"sr_addtoressubmit","class":"small"}).text("Clear List").on("click enter",Opts.WebGL.ClearList)
+						$("<button/>",{"id":"sr_addtoressubmit","class":"small"}).text(lang("advSettWebglGpuAddButton")).on("click enter",Opts.WebGL.AddNewGPU),$("<span/>").text(" "),
+						$("<button/>",{"id":"sr_addtoressubmit","class":"small"}).text(lang("advSettWebglGpuAddCommon")).on("click enter",Opts.WebGL.AddTraceList),$("<span/>").text(" "),
+						$("<button/>",{"id":"sr_addtoressubmit","class":"small"}).text(lang("advSettWebglGpuClearList")).on("click enter",Opts.WebGL.ClearList)
 					)
 				),
-				$("<button/>",{"title":lang("miscCtrlClose"),"class":"small float_r"}).text(lang("miscCtrlClose")).on("click enter",Opts.CloseOverlay)
+				$("<button/>",{"title":lang("miscCtrlClose"),"class":"small float_r"}).text(lang("miscCtrlClose")).on("click enter",Overlay.DoClose)
 			);
 
 			$("#drop_message").empty().append(
-				$("<h1/>").text("Configure WebGL Fingerprinting"),
+				$("<h1/>").text(SettingNames["Pref_WebGLFingerprint"]),
 				el
 			);
 
 			Opts.WebGL.UpdateGPUList();
 
-			Opts.AssignCloseOverlay(true);
+			Overlay.AssignCloseEvent(true);
 		},
 		UpdateGPUList:function(){
-			var l = Opts.Config.CurrentSel.gpuList.list,
+			let l = Opts.Config.CurrentSel.gpuList.list,
 				d = $("#gl_gpulist");
 			d.empty();
 
 			if (typeof l === "undefined" || l.length === 0){
 				d.append(
-					$("<h2/>").text("No GPUs In List")
+					$("<h2/>").text(lang("advSettWebglGpuEmptyListHead"))
 				);
 				return;
 			}
 
-			for (var item in l){
+			for (let item in l){
 				d.append(
 					$("<div/>",{
 						"class":"itemlist_itm",
@@ -2413,6 +2324,7 @@ var Opts = {
 
 			TraceBg(function(bg){
 				bg.Prefs.Set("Pref_WebGLFingerprint.gpuList.list",Opts.Config.CurrentSel.gpuList.list);
+				bg.Alarms.Updaters.ChooseGPU();
 			});
 			Opts.WebGL.UpdateGPUList();
 		},
@@ -2420,7 +2332,7 @@ var Opts = {
 			if (!confirm("This will add the entire Trace GPU list.\nAre you sure you wish to proceed?")) return;
 
 			TraceBg(function(bg){
-				for (var item in bg.Vars.gpuModels){
+				for (let item in bg.Vars.gpuModels){
 					Opts.Config.CurrentSel.gpuList.list.push(bg.Vars.gpuModels[item]);
 				}
 				bg.Prefs.Set("Pref_WebGLFingerprint.gpuList.list",Opts.Config.CurrentSel.gpuList.list);
@@ -2453,9 +2365,7 @@ var Opts = {
 			$("#overlay_cont").addClass("blc_parent");
 
 			$("#drop_message").empty().append(
-				$("<h1/>",{
-					"class":"hasloader"
-				}).text("Trace Blocklist Customiser").append(
+				$("<h1/>",{"class":"hasloader"}).text(lang("advBlocklistConfTitle")).append(
 					$("<img/>",{
 						"src":"../icons/loader.gif",
 						"alt":"Please wait whilst Trace loads the lists available for use",
@@ -2466,11 +2376,11 @@ var Opts = {
 					"type":"text",
 					"id":"blc_searchlists",
 					"class":"hidden",
-					"placeholder":"Search lists"
+					"placeholder":lang("advBlocklistConfSearchBox")
 				}).on("keyup",Opts.Blocklist.SearchList),
 				$("<span/>",{"id":"blc_updAlert","style":"display:none"}).text("The blocklist will update with new the settings when you exit this popup."),
 				$("<div/>",{"id":"blc_lists"}).append(
-					$("<span/>",{"id":"blc_loadStatus"}).text("Loading lists. Please Wait...")
+					$("<span/>",{"id":"blc_loadStatus"}).text(lang("miscMsgPleaseWait"))
 				)
 			);
 
@@ -2495,7 +2405,7 @@ var Opts = {
 
 				$("#blc_cServerList").empty();
 				$("#overlay_cont").removeClass("blc_parent");
-				Opts.CloseOverlay();
+				Overlay.DoClose();
 			}
 
 			unbindClick();
@@ -2505,7 +2415,7 @@ var Opts = {
 			});
 		},
 		SearchList:function(){
-			var term = $(this).val().toLowerCase();
+			let term = $(this).val().toLowerCase();
 			if (term.length === 0){
 				$(".blcTraceList").show();
 			}
@@ -2520,7 +2430,7 @@ var Opts = {
 		LoadList:function(){
 			if (!navigator.onLine){
 				$(".loader_img").hide();
-				$("#blc_loadStatus").text("You don't seem to be online...");
+				$("#blc_loadStatus").text(lang("miscMsgOffline"));
 				return;
 			}
 
@@ -2535,7 +2445,7 @@ var Opts = {
 						$("<h2/>").text("There are no lists available for use.")
 					);
 				} else {
-					for (var i = 0,l = Opts.Blocklist.ListConfig.lists.length;i<l;i++){
+					for (let i = 0,l = Opts.Blocklist.ListConfig.lists.length;i<l;i++){
 						var currentItem = Opts.Blocklist.ListConfig.lists[i];
 						var currentItemId = makeRandomID(7);
 
@@ -2566,11 +2476,11 @@ var Opts = {
 						);
 
 						// List labels
-						var label = $("<span/>",{"class":"blc_optreq blc_req"}).text("Optional List");
+						var label = $("<span/>",{"class":"blc_optreq blc_req"}).text(lang("advBlocklistConfListOptional"));
 						if (currentItem.premium === true){
-							label = $("<span/>",{"class":"blc_premreq blc_req"}).text(Opts.Blocklist.isPremium===true ? "Premium List" : "This list requires Premium");
+							label = $("<span/>",{"class":"blc_premreq blc_req"}).text(Opts.Blocklist.isPremium===true ? lang("advBlocklistConfListPremium") : "This list requires Premium");
 						} else if (currentItem.default === true){
-							label = $("<span/>",{"class":"blc_defreq blc_req"}).text("Default List");
+							label = $("<span/>",{"class":"blc_defreq blc_req"}).text(lang("advBlocklistConfListDefault"));
 						}
 
 						if (Opts.debug === true){
@@ -2660,7 +2570,7 @@ var Opts = {
 			}
 
 			TraceBg(function(bg){
-				var currentCodes = bg.Prefs.Current.Pref_WebController.installCodes;
+				let currentCodes = bg.Prefs.Current.Pref_WebController.installCodes;
 				if (typeof currentCodes !== "object") {
 					currentCodes = {
 						"a00000002":true,
@@ -2692,18 +2602,18 @@ var Opts = {
 			Opts.Scope.PopulateList(Opts.Scope.AddToUI);
 		},
 		AssignEvents:function(){
-			$("#wlctrl_search").on("keyup",Opts.Scope.StartSearch);
-			$("#wlctrl_refresh").on("click enter",Opts.Scope.ReloadList);
-			$("#wlctrl_test").on("click enter",Opts.Scope.ListTest);
-			$("#wlctrl_clear").on("click enter",Opts.Scope.ClearWhitelist);
-			$("#wlctrl_addent").on("click enter",Opts.Scope.AddDomain);
-			$("#wlctrl_rement").on("click enter",Opts.Scope.RemoveDomain);
-			$("#wlctrl_editent").on("click enter",Opts.Scope.EditDomain);
-			$("#wlctrl_import").on("click enter",Opts.Scope.Export.UI);
-			$("#wlctrl_help").on("click enter",Opts.Scope.HelpDialog);
+			$("#wlctrl_search").attr("placeholder",lang("advWhitelistListSearch")).on("keyup",Opts.Scope.StartSearch);
+			$("#wlctrl_refresh").text(lang("advWhitelistListRefresh")).on("click enter",Opts.Scope.ReloadList);
+			$("#wlctrl_clear").text(lang("advWhitelistListClear")).on("click enter",Opts.Scope.ClearWhitelist);
+			$("#wlctrl_test").text(lang("advWhitelistListTest")).on("click enter",Opts.Scope.ListTest);
+			$("#wlctrl_addent").text(lang("advWhitelistListAdd")).on("click enter",Opts.Scope.AddDomain);
+			$("#wlctrl_rement").text(lang("advWhitelistListRemove")).on("click enter",Opts.Scope.RemoveDomain);
+			$("#wlctrl_editent").text(lang("advWhitelistListEdit")).on("click enter",Opts.Scope.EditDomain);
+			$("#wlctrl_import").text(lang("advWhitelistListImport")).on("click enter",Opts.Scope.Export.UI);
+			$("#wlctrl_help").text(lang("advWhitelistListHelp")).on("click enter",Opts.Scope.HelpDialog);
 		},
 		ClearWhitelist:function(){
-			if (confirm("Are you sure you wish to clear the entire list?")){
+			if (confirm(lang("advWhitelistListClearConfirm"))){
 				TraceBg(function(bg){
 					bg.Whitelist.EmptyList();
 					Opts.Scope.ReloadList();
@@ -2711,7 +2621,10 @@ var Opts = {
 			}
 		},
 		EmptyList:function(){
-			$("#wl_biglist").html("<h2>&nbsp;Whitelist contains no entries.</h2>&nbsp;&nbsp;Add new ones here.<br />");
+			$("#wl_biglist").empty().append(
+				$("<h2/>").text(lang("advWhitelistListNoEntries")),
+				$("<span/>").text(" Add new ones here.")
+			);
 		},
 		StartSearch:function(){
 			clearTimeout(Opts.searchTimeout);
@@ -2720,13 +2633,13 @@ var Opts = {
 		SearchList:function(){
 			Opts.Scope.UnselectDomain(false);
 			Opts.Scope.PopulateList(function(array,cb){
-				var keys = Object.keys(array);
-				var len = keys.length, added = 0;
-				var lst = $("#wl_biglist");
-				var src = $("#wlctrl_search").val();
+				let keys = Object.keys(array);
+				let len = keys.length, added = 0;
+				let lst = $("#wl_biglist");
+				let src = $("#wlctrl_search").val();
 
-				for (var i = 0;i < len;i++){
-					var pos = i;
+				for (let i = 0;i < len;i++){
+					let pos = i;
 					if (!keys[i].includes(src)) continue;
 					lst.append(
 						$("<div/>",{
@@ -2751,7 +2664,7 @@ var Opts = {
 		},
 		AddDomain:function(){
 			$("#drop_message").empty().append(
-				$("<h1/>").text("Add entry to list"),
+				$("<h1/>").text(lang("advWhitelistAddTitle")),
 				$("<input/>",{
 					"type":"text",
 					"placeholder":"Wildcard Pattern (e.g. *badtracker.co.nz*)",
@@ -2763,7 +2676,7 @@ var Opts = {
 					$("<label/>",{
 						"for":"s_prot_blocksite",
 						"class":"checkbox_cont xlarge"
-					}).text("Block access to this site").append(
+					}).text(lang("miscMsgWhitelistBlockSite")).append(
 						$("<input/>",{"id":"s_prot_blocksite","type":"checkbox"}),
 						$("<span/>",{"class":"ccheck"})
 					)
@@ -2772,82 +2685,50 @@ var Opts = {
 					$("<label/>",{
 						"for":"s_prot_initreqs",
 						"class":"checkbox_cont xlarge"
-					}).text("Allow this site to make requests to blocked sites").append(
+					}).text(lang("miscMsgWhitelistAllowInitReq")).append(
 						$("<input/>",{"id":"s_prot_initreqs","type":"checkbox","checked":"checked"}),
 						$("<span/>",{"class":"ccheck"})
 					)
 				),
-				$("<div/>",{"id":"s_add_protections"}).append(
-					$("<div/>",{"class":"xlarge settings_title_execorder rborder align_c"}).append("Applied to all pages"),
-					$("<div/>",{"class":"xlarge settings_title_execorder align_c"}).append("Apply only to this entry"),
-					$("<div/>",{"id":"s_add_allpage","class":"s_protside"}).append($("<h1/>").text(lang("miscMsgLoading"))),
-					$("<div/>",{"id":"s_add_perpage","class":"s_protside"}).append($("<h1/>").text(lang("miscMsgLoading")))
-				),
+				$("<br/>"),
+				$("<span/>").text(lang("advWhitelistEditorProtections")),
+				$("<div/>",{"id":"s_add_protections"}),
 				$("<br/>"),$("<br/>"),
-				$("<button/>",{"class":"float_r"}).text(lang("miscCtrlCancel")).on("click enter",Opts.CloseOverlay),
+				$("<button/>",{"class":"float_r"}).text(lang("miscCtrlCancel")).on("click enter",Overlay.DoClose),
 				$("<button/>",{"class":"float_r","title":"Add entry"}).text("Add Domain").click(function(){
-					var d = $("#wle_domainadd").val();
+					let d = $("#wle_domainadd").val();
 					Opts.Scope.AddValidation(d,this);
 				}),
 				$("<br/>"),$("<br/>")
 			);
-			Opts.AssignCloseOverlay(true);
+			Overlay.AssignCloseEvent(true);
 			TraceBg(Opts.Scope.AddExecs);
 		},
 		AddExecs:function(bg){
 			var enableStatus = bg.Whitelist.whitelistDefaults;
-			var dpAllPage = bg.Prefs.Current.Main_ExecutionOrder.AllPage || [];
-			var dpPerPage = bg.Prefs.Current.Main_ExecutionOrder.PerPage || [];
-			var allPage = $("#s_add_allpage"),
-				perPage = $("#s_add_perpage");
+			var $cont = $("#s_add_protections");
 
-			allPage.empty();
-			for (var i = 0;i<dpAllPage.length;i++){
-				var style = "", protmsg = "When checked, this setting is allowed to run";
-				allPage.append(
-					$("<div/>",{"class":"setting_conf_opt"}).append(
-						$("<label/>",{
-							"class":"checkbox_cont xlarge",
-							"style":style,
-							"title":protmsg
-						}).text(SettingNames[dpAllPage[i]] || dpAllPage[i]).append(
-							$("<input/>",{
-								"type":"checkbox",
-								"checked":"checked",
-								"data-controls":dpAllPage[i]
-							}),
-							$("<span/>",{"class":"ccheck"})
-						)
-					)
+			let allProts = Object.keys(bg.Whitelist.whitelistDefaults);
+
+			$cont.empty();
+			for (let i = 0;i<allProts.length;i++){
+				$cont.append(
+					$("<div/>",{
+						"data-protid":allProts[i],
+						"class":"setting_traffic " + (enableStatus[allProts[i]] === true ? "traffic_enabled" : "traffic_disabled"),
+						"title":(enableStatus[allProts[i]] === true ? lang("miscCtrlEnabled") : lang("miscCtrlDisabled"))
+					}).on("click enter",function(){
+						if ($(this).hasClass("traffic_enabled")){
+							$(this).removeClass("traffic_enabled").addClass("traffic_disabled").attr("title",lang("miscCtrlDisabled"));
+						} else {
+							$(this).removeClass("traffic_disabled").addClass("traffic_enabled").attr("title",lang("miscCtrlEnabled"));
+						}
+					}).text(SettingNames[allProts[i]])
 				);
 			}
-
-			perPage.empty();
-			for (var i = 0;i<dpPerPage.length;i++){
-				var style = "", protmsg = "When checked, this setting is allowed to run";
-				perPage.append(
-					$("<div/>",{"class":"setting_conf_opt"}).append(
-						$("<label/>",{
-							"class":"checkbox_cont xlarge",
-							"style":style,
-							"title":protmsg
-						}).text(SettingNames[dpPerPage[i]] || dpPerPage[i]).append(
-							$("<input/>",{
-								"type":"checkbox",
-								"data-controls":dpPerPage[i]
-							}),
-							$("<span/>",{"class":"ccheck"})
-						)
-					)
-				);
-			}
-
-			// If no protections in a category tell the user.
-			if (allPage.children().length === 0) allPage.text("No protections in this category");
-			if (perPage.children().length === 0) perPage.text("No protections in this category");
 		},
 		AddValidation:function(domain,e){
-			$(e).text("Updating...");
+			$(e).text(lang("miscMsgPleaseWait"));
 
 			// Default protection template
 			var scopeData = ProtectionTemplate(true);
@@ -2857,15 +2738,15 @@ var Opts = {
 			scopeData["InitRequests"] = $("#s_prot_initreqs").is(":checked");
 
 			// Update protection object
-			$("input[data-controls]").each(function() {
-				scopeData["Protections"][$(this).data("controls")] = $(this).is(":checked");
-				console.log($(this).data("controls"),"set to",$(this).is(":checked"));
+			$("div[data-protid]").each(function() {
+				scopeData["Protections"][$(this).data("protid")] = $(this).hasClass("traffic_enabled");
+				console.log($(this).data("protid"),"set to",$(this).hasClass("traffic_enabled"));
 			});
 
 			TraceBg(function(bg){
 				bg.Whitelist.AddItem(domain,scopeData,function(){
 					Opts.Scope.ReloadList();
-					Opts.CloseOverlay();
+					Overlay.DoClose();
 				});
 			});
 		},
@@ -2875,7 +2756,7 @@ var Opts = {
 			}
 
 			$("#drop_message").empty().append(
-				$("<h1/>").text("Edit whitelist domain"),
+				$("<h1/>").text(lang("advWhitelistEditTitle")),
 				$("<h3/>").text("Edit the wildcard pattern, site request permissions and modify protections that can run."),
 				$("<input/>",{
 					"type":"text",
@@ -2889,7 +2770,7 @@ var Opts = {
 					$("<label/>",{
 						"for":"s_prot_blocksite",
 						"class":"checkbox_cont xlarge"
-					}).text("Block access to this site").append(
+					}).text(lang("miscMsgWhitelistBlockSite")).append(
 						$("<input/>",{"id":"s_prot_blocksite","type":"checkbox"}),
 						$("<span/>",{"class":"ccheck"})
 					)
@@ -2898,25 +2779,20 @@ var Opts = {
 					$("<label/>",{
 						"for":"s_prot_initreqs",
 						"class":"checkbox_cont xlarge"
-					}).text("Allow this site to make requests to blocked sites").append(
+					}).text(lang("miscMsgWhitelistAllowInitReq")).append(
 						$("<input/>",{"id":"s_prot_initreqs","type":"checkbox","checked":"checked"}),
 						$("<span/>",{"class":"ccheck"})
 					)
 				),
 				$("<br/>"),
-				$("<span/>").text("You can change which section protections appear in under Settings and then 'Where Protections Run'"),
-				$("<div/>",{"id":"s_add_protections"}).append(
-					$("<div/>",{"class":"xlarge settings_title_execorder rborder align_c"}).append("Applied to all pages"),
-					$("<div/>",{"class":"xlarge settings_title_execorder align_c"}).append("Apply only to this entry"),
-					$("<div/>",{"id":"s_add_allpage","class":"s_protside"}).append($("<h1/>").text(lang("miscMsgLoading"))),
-					$("<div/>",{"id":"s_add_perpage","class":"s_protside"}).append($("<h1/>").text(lang("miscMsgLoading")))
-				),
+				$("<span/>").text(lang("advWhitelistEditorProtections")),
+				$("<div/>",{"id":"s_add_protections"}),
 				$("<br/>"),$("<br/>"),
-				$("<button/>",{"class":"float_r"}).text(lang("miscCtrlCancel")).on("click enter",Opts.CloseOverlay),
-				$("<button/>",{"class":"float_r"}).text("Modify").click(Opts.Scope.DoEditDomain),
+				$("<button/>",{"class":"float_r"}).text(lang("miscCtrlCancel")).on("click enter",Overlay.DoClose),
+				$("<button/>",{"class":"float_r"}).text(lang("miscCtrlModifyEntry")).click(Opts.Scope.DoEditDomain),
 				$("<br/>"),$("<br/>")
 			);
-			Opts.AssignCloseOverlay(true);
+			Overlay.AssignCloseEvent(true);
 			TraceBg(Opts.Scope.AddExecs);
 			TraceBg(Opts.Scope.UpdateExecs);
 		},
@@ -2928,8 +2804,12 @@ var Opts = {
 				alert("Error with Scope entry.");
 			}
 
-			$("input[data-controls]").each(function() {
-				$(this).attr("checked",currData.Protections[$(this).data("controls")]);
+			$("div[data-protid]").each(function() {
+				if (!currData.Protections[$(this).data("protid")]){
+					$(this).removeClass("traffic_enabled").addClass("traffic_disabled").attr("title",lang("miscCtrlDisabled"));
+				} else {
+					$(this).removeClass("traffic_disabled").addClass("traffic_enabled").attr("title",lang("miscCtrlEnabled"));
+				}
 			});
 
 			$("#s_prot_blocksite").attr("checked",currData.SiteBlocked);
@@ -2939,7 +2819,7 @@ var Opts = {
 			if(Opts.Scope.CurrentSelect === null){
 				return false;
 			}
-			Opts.CloseOverlay();
+			Overlay.DoClose();
 
 			// Get information
 			var removeItem = Opts.Scope.CurrentSelect.data("itmkey");
@@ -2953,8 +2833,8 @@ var Opts = {
 			scopeData["InitRequests"] = $("#s_prot_initreqs").is(":checked");
 
 			// Update protection object
-			$("input[data-controls]").each(function() {
-				scopeData["Protections"][$(this).data("controls")] = $(this).is(":checked");
+			$("div[data-protid]").each(function() {
+				scopeData["Protections"][$(this).data("protid")] = $(this).hasClass("traffic_enabled");
 			});
 
 			TraceBg(function(bg){
@@ -2982,8 +2862,8 @@ var Opts = {
 				return;
 			}
 
-			var pos = $(this).data("pos");
-			var el = null;
+			let pos = $(this).data("pos");
+			let el = null;
 
 			if (e.keyCode === 40){
 				if ($("#wl_biglist div[data-pos='"+ (pos+1) +"']").length !== 0){
@@ -3040,16 +2920,16 @@ var Opts = {
 			},300);
 		},
 		AddToUI:function(array,cb){
-			var keys = Object.keys(array).sort();
-			var len = keys.length;
-			var lst = $("#wl_biglist");
+			let keys = Object.keys(array).sort();
+			let len = keys.length;
+			let lst = $("#wl_biglist");
 
-			var parseEntry = function(e){
+			let parseEntry = function(e){
 				return e.replace(/</g,"&lt;").replace(/\*/g,"<strong>*</strong>");
 			};
 
-			for (var i = 0;i < len;i++){
-				var pos = i;
+			for (let i = 0;i < len;i++){
+				let pos = i;
 				lst.append(
 					$("<div/>",{
 						"class":"wl_blist_domain",
@@ -3085,14 +2965,14 @@ var Opts = {
 				cont.empty();
 
 				function doTheWhitelistParse(bg){
-					var currWl = bg.Whitelist.GetWhitelist();
-					var storWl = Object.keys(bg.Whitelist.storedList);
+					let currWl = bg.Whitelist.GetWhitelist();
+					let storWl = Object.keys(bg.Whitelist.storedList);
 
 					// Get result if there is one
-					for (var i = 0, l = currWl.keys.length;i<l;i++){
+					for (let i = 0, l = currWl.keys.length;i<l;i++){
 						if (!currWl.keys[i].test(val)) continue;
 
-						var currItm = $("<div/>").append($("<h1/>").text(storWl[i]));
+						let currItm = $("<div/>").append($("<h1/>").text(storWl[i]));
 
 						// Blocked status
 						currItm.append(
@@ -3114,7 +2994,7 @@ var Opts = {
 			}
 
 			$("#drop_message").empty().append(
-				$("<h1/>").text("Test List"),
+				$("<h1/>").text(lang("advWhitelistTestTitle")),
 				$("<h2/>").text("Use this to see what protections apply to a specified URL"),
 				$("<div/>").append(
 					$("<input/>",{
@@ -3125,14 +3005,14 @@ var Opts = {
 					}).keyup(runTest),
 					$("<div/>",{"id":"sl_testresp","class":"textscrollable"})
 				),
-				Opts.CloseUI(),$("<br />")
+				Overlay.CloseUI(),$("<br />")
 			);
-			Opts.AssignCloseOverlay(false);
+			Overlay.AssignCloseEvent(false);
 		},
 		HelpDialog:function(){
 			$("#drop_message").empty().append(
-				$("<h1/>").text("Whitelist Help"),
-				$("<h2/>").text("If you don't find what you're looking for here, please email me"),
+				$("<h1/>").text(lang("advWhitelistHelpTitle")),
+				$("<h2/>").text(lang("advWhitelistHelpSubhead")),
 				$("<div/>",{"class":"textscrollable xregular"}).append(
 					$("<ul/>").append(
 						$("<li/>").append(
@@ -3140,22 +3020,18 @@ var Opts = {
 							$("<span/>",{"class":"premhelp_a"}).text("This is what's known as a wildcard character, it basically means anything can go there."),$("<br />"),
 							$("<span/>",{"class":"premhelp_a"}).text("So for example if you typed *.com then example.com would match but example.net wouldn't match."),$("<br />"),
 							$("<span/>",{"class":"premhelp_a"}).text("You can make this more complicated, for example https://*.ac.uk/* could be used to allow all .ac.uk domains so long as they use https"),$("<br />")
-						),
-						$("<li/>").append(
-							$("<span/>",{"class":"premhelp_q"}).text("How can I change which list protections are in?"),$("<br />"),
-							$("<span/>",{"class":"premhelp_a"}).text("If you wish to change a protection from 'All Pages' to 'Per Page' and vice versa, then you can do so under 'Settings' and then 'Where Protections Run'."),$("<br />")
 						)
 					)
 				),
-				Opts.CloseUI()
+				Overlay.CloseUI()
 			);
-			Opts.AssignCloseOverlay(true);
+			Overlay.AssignCloseEvent(true);
 		},
 		Export:{
 			Data:{},
 			UI:function(){
 				$("#drop_message").empty().append(
-					$("<h1/>",{"id":"backuprestore_title"}).text("Import/Export Whitelist"),
+					$("<h1/>",{"id":"backuprestore_title"}).text(lang("advWhitelistImportTitle")),
 					$("<section/>",{"id":"backuprestore_section"}).append(
 						$("<span/>").text("Export your whitelist"),
 						$("<br/>"),$("<br/>"),
@@ -3169,21 +3045,21 @@ var Opts = {
 					}).on("change",Opts.Scope.Export.Upload),
 					$("<p/>",{"id":"restore_info"})
 				);
-				Opts.AssignCloseOverlay(true);
+				Overlay.AssignCloseEvent(true);
 			},
 			Download:function(){
 				TraceBg(function(bg){
 					bg.Whitelist.WhitelistExport(function(raw){
-						Opts.MakeDownload("TraceWhitelistExport",JSON.stringify(raw,null,4));
+						MakeDownload("TraceWhitelistExport",JSON.stringify(raw,null,4));
 					});
 				});
 			},
 			Upload:function(evt){
 				if (!this.files.length) return;
 
-				var reader = new FileReader();
+				let reader = new FileReader();
 				reader.onload = function(){
-					var data = reader.result;
+					let data = reader.result;
 					try{
 						Opts.Scope.Export.Data = JSON.parse(data);
 					} catch(e){
@@ -3283,7 +3159,7 @@ var Opts = {
 		SelectProtectionUI:function(){
 			$("#drop_message").empty().append(
 				$("<h1/>").text("Bad Top Level Domains"),
-				$("<h2/>").text("Click a TLD to toggle whether it is blocked"),
+				$("<h2/>").text("Click a TLD to toggle whether or not it is blocked"),
 				$("<div/>",{"id":"adv_tldlist"}),
 				$("<div/>").append(
 					$("<h1/>").text("TLD Presets"),
@@ -3293,9 +3169,9 @@ var Opts = {
 					$("<button/>",{"data-selects":"3"}).text("All Bad TLDs").on("click enter",Opts.BadTLD.SelectPreset)
 				),
 				$("<br/>"),$("<br/>"),
-				$("<button/>",{"class":"float_r"}).text(lang("miscCtrlClose")).on("click enter",Opts.CloseOverlay)
+				$("<button/>",{"class":"float_r"}).text(lang("miscCtrlClose")).on("click enter",Overlay.DoClose)
 			);
-			Opts.AssignCloseOverlay(true);
+			Overlay.AssignCloseEvent(true);
 
 			TraceBg(function(bg){
 				if (bg.Prefs.Current.Pref_WebController.tld.enabled !== true){
@@ -3308,7 +3184,7 @@ var Opts = {
 			Opts.BadTLD.LoadTLDs();
 		},
 		SelectPreset:function(){
-			var preset = $(this).data("selects");
+			let preset = $(this).data("selects");
 			var newList = {
 				"accountant":false, "ads":false, "asia":false,
 				"bid":false,
@@ -3338,7 +3214,7 @@ var Opts = {
 			if (preset >= 2) enableList = enableList.concat(Opts.BadTLD.tldPresets.extended);
 			if (preset === 3) enableList = enableList.concat(Opts.BadTLD.tldPresets.all);
 
-			for (var tld in enableList){
+			for (let tld in enableList){
 				newList[enableList[tld]] = true;
 			}
 
@@ -3349,16 +3225,16 @@ var Opts = {
 		},
 		LoadTLDs:function(){
 			TraceBg(function(bg){
-				var s = bg.Prefs.Current.Pref_WebController.tld.settings;
-				var k = Object.keys(s);
-				var r = $("<div/>",{"id":"adv_tldlist"});
-				for (var i = 0,l = k.length;i<l;i++){
+				let s = bg.Prefs.Current.Pref_WebController.tld.settings;
+				let k = Object.keys(s);
+				let r = $("<div/>",{"id":"adv_tldlist"});
+				for (let i = 0,l = k.length;i<l;i++){
 					r.append(
 						$("<div/>",{
 							"data-tldid":k[i],
 							"data-current":s[k[i]],
-							"class":"setting_traffic " + (s[k[i]] === true ? "tld_enabled" : "tld_disabled"),
-							"title":(s[k[i]] === true ? "Enabled" : "Disabled")
+							"class":"setting_traffic " + (s[k[i]] === true ? "traffic_enabled" : "traffic_disabled"),
+							"title":(s[k[i]] === true ? lang("miscCtrlEnabled") : lang("miscCtrlDisabled"))
 						}).on("click enter",Opts.BadTLD.SaveSelection).text(k[i])
 					);
 				}
@@ -3386,7 +3262,7 @@ var Opts = {
 				$("#drop_message").empty().append(
 					$("<h1/>").text(lang("advPremiumMsgRequired"))
 				);
-				Opts.AssignCloseOverlay(true);
+				Overlay.AssignCloseEvent(true);
 				return;
 			}
 
@@ -3437,10 +3313,10 @@ var Opts = {
 						$("<span/>",{"class":"ccheck"})
 					)
 				),
-				Opts.CloseUI(),
+				Overlay.CloseUI(),
 				$("<br/>"),$("<br/>")
 			);
-			Opts.AssignCloseOverlay(true);
+			Overlay.AssignCloseEvent(true);
 
 			$("#custui_navbarpos option[value='" + Opts.Config.CurrentSel.Theme["navPlacement"] + "']").prop("selected", true);
 			$("#custui_themename option[value='" + Opts.Config.CurrentSel.Theme["name"] + "']").prop("selected", true);
@@ -3499,9 +3375,9 @@ var Opts = {
 					$("<option/>", {value: "randomise"}).text("Randomise Parameters")
 				),*/
 				$("<br/>"),$("<br/>"),
-				$("<button/>",{"class":"float_r"}).text(lang("miscCtrlClose")).on("click enter",Opts.CloseOverlay)
+				$("<button/>",{"class":"float_r"}).text(lang("miscCtrlClose")).on("click enter",Overlay.DoClose)
 			);
-			Opts.AssignCloseOverlay(true);
+			Overlay.AssignCloseEvent(true);
 			Opts.URLCleaner.LoadParams();
 
 			TraceBg(function(bg){
@@ -3543,7 +3419,7 @@ var Opts = {
 			if (preset === 3)
 				enableList = enableList.concat(Opts.URLCleaner.ParamPresets.extreme);
 
-			for (var param in enableList){
+			for (let param in enableList){
 				newList[enableList[param]] = true;
 			}
 
@@ -3557,13 +3433,13 @@ var Opts = {
 				var s = bg.Prefs.Current.Pref_WebController.urlCleaner.queryString.params || {};
 				var k = Object.keys(s);
 				var r = $("<div/>",{"id":"adv_urlparams"});
-				for (var i = 0,l = k.length;i<l;i++){
+				for (let i = 0,l = k.length;i<l;i++){
 					r.append(
 						$("<div/>",{
 							"data-tldid":k[i],
 							"data-current":s[k[i]],
-							"class":"setting_traffic " + (s[k[i]] === true ? "tld_enabled" : "tld_disabled"),
-							"title":(s[k[i]] === true ? "Enabled" : "Disabled")
+							"class":"setting_traffic " + (s[k[i]] === true ? "traffic_enabled" : "traffic_disabled"),
+							"title":(s[k[i]] === true ? lang("miscCtrlEnabled") : lang("miscCtrlDisabled"))
 						}).on("click enter",Opts.URLCleaner.SaveParams).text(k[i])
 					);
 				}
@@ -3595,23 +3471,23 @@ var Opts = {
 	},
 	CanvasRGBA:{
 		OpenDialog:function(){
-			var opts = {
+			let opts = {
 				"type":"checkbox",
 				"id":"trcanv_custrgba"
 			};
-			var rgba = Opts.Config.CurrentSel["customRGBA"]["rgba"];
+			let rgba = Opts.Config.CurrentSel["customRGBA"]["rgba"];
 			if (Opts.Config.CurrentSel["customRGBA"].enabled === true){
 				opts["checked"] = "checked";
 			}
 
 			$("#drop_message").empty().append(
-				$("<h1/>").text("Configure Canvas Fingerprinting Protection"),
-				$("<h2/>").text("If you don't use custom RGBA values then random ones will be generated at each page load."),
+				$("<h1/>").text(SettingNames["Pref_CanvasFingerprint"]),
+				$("<h2/>").text(lang("advSettCanvasCustomSubhead")),
 				$("<div/>",{"class":"setting_conf_opt xregular"}).append(
 					$("<label/>",{
 						"for":opts["id"],
 						"class":"checkbox_cont"
-					}).text("Use custom RGBA values specified below").append(
+					}).text(lang("advSettCanvasCustomRgba")).append(
 						$("<input/>",opts),
 						$("<span/>",{"class":"ccheck"})
 					)
@@ -3644,7 +3520,7 @@ var Opts = {
 				$("<button/>",{"class":"float_r"}).text(lang("miscCtrlSave")).click(Opts.CanvasRGBA.SaveParameters),
 				$("<br/>"),$("<br/>")
 			);
-			Opts.AssignCloseOverlay(true);
+			Overlay.AssignCloseEvent(true);
 		},
 		SaveParameters:function(){
 			var rgba = [
@@ -3660,7 +3536,7 @@ var Opts = {
 					"Pref_CanvasFingerprint.customRGBA.enabled":custRgba
 				});
 			});
-			Opts.CloseOverlay();
+			Overlay.DoClose();
 		}
 	},
 	CookieEaterUI:{
@@ -3740,10 +3616,10 @@ var Opts = {
 				$("<br/>"),$("<br/>"),
 				$("<button/>").text("Edit cookie list").on("click enter",Opts.CookieEaterUI.List.InitUI),
 				$("<br/>"),$("<br/>"),
-				$("<button/>",{"class":"float_r"}).text(lang("miscCtrlCancel")).on("click enter",Opts.CloseOverlay),
+				$("<button/>",{"class":"float_r"}).text(lang("miscCtrlCancel")).on("click enter",Overlay.DoClose),
 				$("<button/>",{"class":"float_r"}).text(lang("miscCtrlSaveClose")).click(Opts.CookieEaterUI.SaveSelection)
 			);
-			Opts.AssignCloseOverlay(true);
+			Overlay.AssignCloseEvent(true);
 
 			$("#ce_sett_fpcookiehead option[value='" + rc_sett["fp_method"] + "']").prop("selected", true);
 			$("#ce_sett_tpcookiehead option[value='" + rc_sett["tp_method"] + "']").prop("selected", true);
@@ -3768,7 +3644,7 @@ var Opts = {
 				});
 			});
 
-			Opts.CloseOverlay();
+			Overlay.DoClose();
 		},
 		List:{
 			InitUI:function(){
@@ -3777,9 +3653,9 @@ var Opts = {
 					$("<h2/>").text("Click a Cookie Name to toggle whether it is affected by the protection"),
 					$("<div/>",{"id":"adv_tldlist"}),
 					$("<br/>"),$("<br/>"),
-					Opts.CloseUI()
+					Overlay.CloseUI()
 				);
-				Opts.AssignCloseOverlay(true);
+				Overlay.AssignCloseEvent(true);
 
 				Opts.CookieEaterUI.List.LoadCookies();
 			},
@@ -3788,13 +3664,13 @@ var Opts = {
 					var s = bg.Prefs.Current.Pref_CookieEater.list;
 					var k = Object.keys(s);
 					var r = $("<div/>",{"id":"adv_tldlist"});
-					for (var i = 0,l = k.length;i<l;i++){
+					for (let i = 0,l = k.length;i<l;i++){
 						r.append(
 							$("<div/>",{
 								"data-cookieid":k[i],
 								"data-current":s[k[i]],
-								"class":"setting_traffic " + (s[k[i]] === true ? "tld_enabled" : "tld_disabled"),
-								"title":(s[k[i]] === true ? "Enabled" : "Disabled")
+								"class":"setting_traffic " + (s[k[i]] === true ? "traffic_enabled" : "traffic_disabled"),
+								"title":(s[k[i]] === true ? lang("miscCtrlEnabled") : lang("miscCtrlDisabled"))
 							}).on("click enter",Opts.CookieEaterUI.List.SaveSelection).text(k[i])
 						);
 					}
@@ -3923,10 +3799,10 @@ var Opts = {
 					)
 				),*/
 				$("<span/>").text("If you don't select any boxes then the header will never be set."),
-				$("<button/>",{"class":"float_r"}).text(lang("miscCtrlCancel")).on("click enter",Opts.CloseOverlay),
+				$("<button/>",{"class":"float_r"}).text(lang("miscCtrlCancel")).on("click enter",Overlay.DoClose),
 				$("<button/>",{"class":"float_r"}).text(lang("miscCtrlSaveClose")).click(Opts.RefererHeader.SaveSelection)
 			);
-			Opts.AssignCloseOverlay(true);
+			Overlay.AssignCloseEvent(true);
 		},
 		SaveSelection:function(){
 			var rf_ash = $("#referhead_ash").is(":checked");
@@ -3948,7 +3824,7 @@ var Opts = {
 				});
 			});
 
-			Opts.CloseOverlay();
+			Overlay.DoClose();
 		}
 	}
 };
@@ -3959,7 +3835,7 @@ ls.IsSupported();
 try{
 	$(document).ready(Opts.WindowLoad);
 } catch(e){
-	showErr("Unable to load UI.");
+	showErr(lang("miscMsgUiFail"));
 	console.error(e);
 }
 

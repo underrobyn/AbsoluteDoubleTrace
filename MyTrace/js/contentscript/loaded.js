@@ -1,6 +1,6 @@
 /*
  * 	Trace page helper script for after documents have loaded
- * 	Copyright AbsoluteDouble 2018
+ * 	Copyright AbsoluteDouble 2018 - 2020
  * 	Written by Jake Mcneill
  * 	https://absolutedouble.co.uk/
  */
@@ -24,21 +24,21 @@ var TLoaded = {
 	},
 
 	startTracePage:function(){
-		chrome.runtime.sendMessage({msg: "getLoadedSettings", url:location.href},function(response) {
+		chrome.runtime.sendMessage({msg: "traceload", url:location.href},function(response) {
 			TLoaded.init(response);
 		});
 	},
 
 	pingCleaner:function(){
 		var links = document.querySelectorAll("a[ping]");
-		for (var i = 0;i<links.length;i++){
+		for (let i = 0;i<links.length;i++){
 			//console.log(links[i].ping);
 			links[i].ping = "";
 		}
 	},
 	relOpenerFix:function(){
 		var links = document.querySelectorAll("a[target]");
-		for (var i = 0;i<links.length;i++){
+		for (let i = 0;i<links.length;i++){
 			var l = links[i];
 			if (!l.hasAttribute("href")) continue;
 			if (l.href.includes("javascript:void") || l.href === "#") continue;
@@ -47,7 +47,7 @@ var TLoaded = {
 			//console.log(links[i]);
 			var relTxt = "noopener";
 			if (l.hasAttribute("rel")){
-				var spl = l.rel.split(" ");
+				let spl = l.rel.split(" ");
 				if (spl.indexOf("noopener") !== -1) continue;
 
 				relTxt += " " + l.rel;

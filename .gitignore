@@ -1,3 +1,5 @@
 *.db
 *.txt
 MyTrace/.idea/*
+build/*
+dist/*

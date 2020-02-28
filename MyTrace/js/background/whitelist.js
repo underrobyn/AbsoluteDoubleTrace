@@ -44,13 +44,13 @@ var Whitelist = {
 	},
 
 	NewWhitelistFormat:function(old){
-		console.log("Saved new whitelist format");
-		var trNewWl = {};
-		for (var i = 0, l = Object.keys(old).length;i<l;i++){
+		console.log("[plstd]-> Saved new whitelist format");
+		let trNewWl = {};
+		for (let i = 0, l = Object.keys(old).length;i<l;i++){
 			trNewWl["*"+Object.keys(old)[i]+"*"] = {
 				"PresetLevel":null,
-				"SiteBlocked":false,	// Allow access to the site
-				"InitRequests":true,	// Allow the site to make requests to sites in the blocklist
+				"SiteBlocked":false,							// Allow access to the site
+				"InitRequests":true,							// Allow the site to make requests to sites in the blocklist
 				"Protections":Whitelist.whitelistDefaults		// Object of protections to change on the site
 			};
 		}
@@ -82,30 +82,29 @@ var Whitelist = {
 		delete Whitelist.decodedList;
 		Whitelist.decodedList = {
 			"keys":[],
-			"values":[]
+			"values":[],
+			"presets":[]
 		};
 
-		var keys = Object.keys(Whitelist.storedList);
-		var vals = Object.values(Whitelist.storedList);
-		var defKeys = Object.keys(Whitelist.whitelistDefaults);
-		var decoded = {
+		let keys = Object.keys(Whitelist.storedList);
+		let vals = Object.values(Whitelist.storedList);
+		let defKeys = Object.keys(Whitelist.whitelistDefaults);
+		let decoded = {
 			"keys":[],
 			"values":[]
 		};
-		var l = keys.length;
+		let l = keys.length;
 
-		for (var i = 0;i<l;i++){
+		for (let i = 0;i<l;i++){
 			decoded["keys"].push(Whitelist.wildcardToRegExp(keys[i]));
 
-			if (typeof vals[i] !== "object"){
-				continue;
-			}
+			if (typeof vals[i] !== "object") continue;
 
 			try {
 				// Repair protections object
 				if (typeof vals[i].Protections !== "object" || Object.keys(vals[i].Protections).length !== defKeys.length){
-					var repairedProts = vals[i].Protections;
-					for (var j = 0, k = defKeys.length;j<k;j++){
+					let repairedProts = vals[i].Protections;
+					for (let j = 0, k = defKeys.length;j<k;j++){
 						if (typeof repairedProts[defKeys[j]] === "undefined"){
 							repairedProts[defKeys[j]] = Whitelist.whitelistDefaults[defKeys[j]];
 							console.log("[plstd]-> Updated protections for",keys[i],defKeys[j]);
@@ -125,7 +124,7 @@ var Whitelist = {
 			} catch(e){
 				console.warn("Caught error");
 				console.error(e);
-				onerror("WhiteListDecodeError","backgroundscript",1052,0,e);
+				onerror("WhiteListDecodeError","whitelistscript",126,0,e);
 			}
 
 			decoded["values"].push(vals[i]);
@@ -154,7 +153,7 @@ var Whitelist = {
 		});
 	},
 	WhitelistExport:function(cb){
-		var exportObj = {
+		let exportObj = {
 			"fileCompat":1,
 			"maxStoreSize":Prefs.s.QUOTA_BYTES || 0,
 			"exportTime":(new Date).toString(),
@@ -172,7 +171,7 @@ var Whitelist = {
 
 		var keys = Object.keys(fMem);
 
-		for (var i = 0, l = keys.length;i<l;i++){
+		for (let i = 0, l = keys.length;i<l;i++){
 			// Override values already in list with same key
 			if (curr[keys[i]] !== undefined){
 				console.log("[plstd]-> Overriding Entry:",keys[i]);
@@ -234,7 +233,7 @@ var Whitelist = {
 			return "Invalid entry";
 		}
 
-		var template = new ProtectionTemplate(false);
+		let template = new ProtectionTemplate(false);
 		template.tempEntry = true;
 
 		// Update temp whitelist
@@ -265,7 +264,7 @@ var Whitelist = {
 	},
 	CheckList:function(url,protection){
 		// Check if protection can run on all pages
-		var globalAllow = Prefs.Current.Main_ExecutionOrder.AllPage.indexOf(protection) !== -1;
+		let globalAllow = Prefs.Current.Main_ExecutionOrder.AllPage.indexOf(protection) !== -1;
 
 		//if (Trace.DEBUG) console.log("[plstd]-> Checking",url,"for",protection,":",(Whitelist.DoCheck(url) !== false ? Whitelist.DoCheck(url).Protections[protection] : globalAllow));
 
@@ -273,7 +272,7 @@ var Whitelist = {
 		if (Whitelist.wlEnabled !== true) return globalAllow;
 
 		// Check if the item is in the whitelist
-		var checkResult = Whitelist.DoCheck(url);
+		let checkResult = Whitelist.DoCheck(url);
 
 		// If not (or there is an error) -> go with the default option
 		if (!checkResult || !checkResult.Protections) return globalAllow;
@@ -283,7 +282,7 @@ var Whitelist = {
 	},
 	DoCheck:function(url){
 		var activeWl = Whitelist.GetWhitelist();
-		for (var i = 0, l = activeWl.keys.length;i<l;i++){
+		for (let i = 0, l = activeWl.keys.length;i<l;i++){
 			if (activeWl.keys[i].test(url)){
 				return activeWl.values[i];
 			}

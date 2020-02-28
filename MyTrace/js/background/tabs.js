@@ -79,7 +79,7 @@ var Tabs = {
 			Tabs.List.GetTabId(id.tabId);
 		},
 		highlight:function(tab){
-			//for (var i = 0;i<)
+			//for (let i = 0;i<)
 		},
 		updated:function(tabId,state,tab){
 			// Fired when an attribute changes, e.g. url, or audible
@@ -134,7 +134,7 @@ var Tabs = {
 		},
 		GetAllTabs:function(){
 			chrome.tabs.query({}, function(tabs) {
-				for (var i = 0;i<tabs.length;i++){
+				for (let i = 0;i<tabs.length;i++){
 					if (Tabs.List.TabAccounted(tabs[i].id)) {
 						if (Trace.DEBUG) console.log("[tabmd]-> Skipped tab id", tabs[i].id);
 						continue;

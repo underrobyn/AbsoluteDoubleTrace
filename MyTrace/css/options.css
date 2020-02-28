@@ -1,4 +1,4 @@
-/* Copyright AbsoluteDouble Trace 2018 - 2019 */
+/* Copyright AbsoluteDouble Trace 2018 - 2020 */
 ::selection {
 	background:#a03158;
 	color:#fff;
@@ -58,7 +58,7 @@ html, body {
 	float:left;
 	position:fixed;
 	height:100vh;
-	background-color:rgba(0,0,0,0.35);
+	background-color:rgba(0,0,0,0.4);
 }
 #main {
 	width:87.5%;
@@ -178,6 +178,15 @@ h1 {
 	font-weight:400;
 	margin: 0 0 10px 0;
 }
+#sr_addtoresolutions{
+	display:flex;
+	flex-direction:row;
+}
+#sr_addtoresolutions input[type='number']{
+	width:33%;
+	font-size:1.25em;
+	height:unset;
+}
 h3{
 	font-weight:100;
 	font-size:1.25em;
@@ -224,9 +233,9 @@ a.dark{
 }
 .side_el {
 	user-select:none;
-	height:16.666vh;
+	height:14.285vh;
 	text-align:center;
-	line-height:16.666vh;
+	line-height:14.285vh;
 	font-size:2.4em;
 	transition:background .5s ease-in-out;
 	font-weight:900;
@@ -242,7 +251,7 @@ a.dark{
 	font-weight:400;
 	text-align:center;
 	width:100%;
-	background-color:rgba(0,0,0,0.35);
+	background-color:rgba(0,0,0,0.4);
 }
 .sect_cont, .sect_cont_semipad{
 	padding:1% 1%;
@@ -256,9 +265,9 @@ a.dark{
 	margin-bottom:1%;
 }
 .sect_adv_header{
-	font-size:1.4em;
-	height:5vh;
-	line-height:5vh;
+	font-size:1.3em;
+	height:4vh;
+	line-height:4vh;
 	width:100%;
 	transition: background-color .4s ease-in-out;
 	background-color:rgba(0,0,0,0.8);
@@ -303,26 +312,6 @@ a.dark{
 	width:auto;
 	display:inline-block;
 }
-.setting_traffic {
-	display:block;
-	float:left;
-	padding:.6em 1em;
-	margin:.25%;
-	background-color:#fff;
-	transition:.2s ease-in-out background-color,.2s ease-in-out color;
-	font-size:1.2em;
-	font-weight:500;
-	cursor:pointer;
-	-webkit-user-select:none;
-	-moz-user-select:none;
-	-ms-user-select:none;
-	user-select: none;
-}
-.setting_traffic:hover {
-	background-color: #313131;
-}
-.tld_enabled{color:#22ea46;}.tld_enabled:hover{color:#22ff46;}
-.tld_disabled{color:#dd092a;}.tld_disabled:hover{color: #ff092c;}
 #adv_tldlist{
 	display:block;
 	float:left;
@@ -369,7 +358,7 @@ a.dark{
 	color:#555;
 	background-color:#fff;
 	background-image:none;
-	border:0px solid #ccc;
+	border:0 solid #ccc;
 	border-radius:0;
 	-webkit-box-shadow:inset 0 1px 1px rgba(0, 0, 0, .075);
 	-moz-box-shadow:inset 0 1px 1px rgba(0, 0, 0, .075);
@@ -438,7 +427,7 @@ button:hover,button:focus{
 	text-decoration:dotted;
 }
 
-#settings_straceorder, #settings_straceadvanced, #settings_sbrowserfeature, #settings_stracesetting{
+#settings_straceadvanced, #settings_sbrowserfeature, #settings_stracesetting{
 	display:none;
 }
 .settings_config_container{
@@ -449,6 +438,7 @@ button:hover,button:focus{
 	text-align:left !important;
 }
 .setting_toggle:hover,.setting_toggle:focus,
+.setting_order:hover,.setting_order:focus,
 .setting_config:hover,.setting_config:focus,
 .isetting_toggle:hover,.isetting_toggle:focus,
 .direct_toggle:hover,.direct_toggle:focus,
@@ -460,24 +450,12 @@ button:hover,button:focus{
 	background-color:rgba(0,0,0,0.2);
 	color:#f2f2f2;
 }
-/*.setting_toggle:hover,.setting_toggle:focus,
-.setting_config:hover,.setting_config:focus,
-.isetting_toggle:hover,.isetting_toggle:focus,
-.direct_toggle:hover,.direct_toggle:focus,
-.trace_toggle:hover,.trace_toggle:focus{
-	transition:font-weight .2s ease-in-out;
-	font-weight:700;
-}*/
-.setting_info,.setting_toggle,.isetting_toggle,.direct_toggle,.trace_toggle,.setting_config{
+.setting_info,.setting_toggle,.setting_order,.isetting_toggle,.direct_toggle,.trace_toggle,.setting_config{
 	user-select:none;
 	cursor:pointer;
 	transition:background .3s ease-in-out,color .3s ease-in-out;
 }
 .setting_info{font-weight:100;}
-.setting_config,.trace_toggle,.direct_toggle,.setting_toggle{}
-#setting_backuprestore, #setting_reset{
-	width:50%;
-}
 .hiddensettinginfo {
 	display:none;
 	font-size:0.8em;
@@ -493,38 +471,6 @@ button:hover,button:focus{
 }
 table tr.hiddensettinginfo{
 	background-color:rgba(0,0,0,0.1);
-}
-.settings_title_execorder{
-	box-sizing:border-box;
-	width:50%;
-	padding:.5% 0;
-	float:left;
-	border-bottom:.05em #000 solid;
-}
-.settings_cont_execorder{
-	box-sizing:border-box;
-	width:50%;
-	padding:0 2%;
-	margin:2% 0;
-	float:left;
-}
-.settings_execorder{
-	display:block;
-	float:left;
-	background-color:rgba(255,255,255,0.1);
-	padding:2px 8px;
-	margin:.5%;
-	cursor:pointer;
-	transition:background .3s ease-in-out;
-}
-.settings_execorder:hover{
-	background-color:rgba(0,0,0,0.5);
-}
-.rborder{
-	border-right:.05em #000 solid;
-}
-#trace_order:hover {
-	background-color:rgba(0,0,0,0.05) !important;
 }
 #graph_controls{
 	padding:0;
@@ -624,7 +570,7 @@ input[type="text"]{
 	color:#555;
 	background-color:#fff;
 	background-image:none;
-	border:0px solid #ccc;
+	border:0 solid #ccc;
 	border-radius:0;
 	width:97%;
 	padding:0 1.5%;
@@ -681,7 +627,7 @@ input[type="text"]{
 	height:1.7em;
 	line-height:1.7em;
 	cursor:pointer;
-	box-shadow:#1a1a1a 1px 1px 0px;
+	box-shadow:#1a1a1a 1px 1px 0;
 	overflow:hidden;
 }
 .wl_blist_domain:hover{
@@ -953,14 +899,35 @@ td{
 	}
 }
 @media (max-width:600px){
+	table{
+		font-size:1.2em;
+	}
 	#ux {
 		font-size:0.9em;
 	}
 	#nav{
 		font-size:1.4em;
 	}
-	.setting_info{
-		font-size:0.95em;
+	td.setting_config, td.setting_order, td.setting_toggle{
+		display: inline-block;
+		width:33%;
+		padding:0.1% 0.12%;
+		float:left;
+	}
+	td.direct_toggle{
+		display: inline-block;
+		width:100%;
+		float:left;
+	}
+	td.setting_info{
+		font-size:1.1em;
+		font-weight:600;
+		display: inline-block;
+		width:100%;
+		float:left;
+	}
+	table tr {
+		border-bottom: 0.1em solid #000;
 	}
 }
 @media (max-height:800px){

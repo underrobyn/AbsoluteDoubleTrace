@@ -1,6 +1,6 @@
 /*
  * 	Trace error reporter script
- * 	Copyright AbsoluteDouble 2018 - 2019
+ * 	Copyright AbsoluteDouble 2018 - 2020
  * 	Written by Jake Mcneill
  * 	https://absolutedouble.co.uk/
  */
@@ -24,7 +24,8 @@ window.onerror = function(o,r,e,c,l) {
 // A general fix for browser that use window.browser instead of window.chrome
 if (typeof window.chrome === "undefined" || !window.chrome.hasOwnProperty("extension")) window.chrome = (function (){ return window.msBrowser || window.browser || window.chrome; })();
 
-var _UserCrashReportService = function(d,o){
+let _UserCrashReportService = function(d,o){
+	/*
 	var report = false;
 
 	// Check for premium override
@@ -36,17 +37,17 @@ var _UserCrashReportService = function(d,o){
 		}
 	} else {
 		report = true;
-	}
+	}*/
 
-	var storage_type = (!window.chrome.storage.sync ? window.chrome.storage.local : window.chrome.storage.sync);
+	let storage_type = (!window.chrome.storage.sync ? window.chrome.storage.local : window.chrome.storage.sync);
 	storage_type.get('userid',function(items){
 
 		if (typeof items === "undefined"){
 			items = {'userid':"Unknown"};
 		}
 
-		var usr = items.userid;
-		if (usr){
+		let usr = items.userid;
+		if (usr && usr !== "Unknown"){
 			useToken(usr);
 		} else {
 			usr = getToken();

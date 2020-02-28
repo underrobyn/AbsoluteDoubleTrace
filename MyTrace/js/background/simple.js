@@ -1,4 +1,4 @@
-var Simple = {
+let Simple = {
 
 	port:null,
 
@@ -39,7 +39,6 @@ var Simple = {
 			"Pref_AudioFingerprint.audioBuffer.enabled":true,
 			"Pref_AudioFingerprint.audioData.enabled":true,
 			"Pref_AudioFingerprint.audioOfflineMain.enabled":true,
-			"Pref_AudioFingerprint.audioMain.enabled":true,
 			"Pref_BatteryApi.enabled":true,
 			"Pref_HardwareSpoof.enabled":true,
 			"Pref_HardwareSpoof.hardware.enabled":true,
@@ -50,11 +49,13 @@ var Simple = {
 			"Pref_ScreenRes.enabled":true,
 			"Pref_ScreenRes.randomOpts.enabled":true,
 			"Pref_ScreenRes.modifyDepths.enabled":true,
-			//"Pref_ScreenRes.modifyPixelRatio.enabled":true,
+			"Pref_WebGLFingerprint.enabled":true,
+			"Pref_WebGLFingerprint.parameters.enabled":true,
 			"Pref_WebRTC.enabled":true,
 			"Pref_WebRTC.wrtcInternal.enabled":true
 		},
 		high:{
+			"Pref_AudioFingerprint.audioMain.enabled":true,
 			"Pref_CanvasFingerprint.enabled":true,
 			"Pref_ClientRects.enabled":true,
 			"Pref_CommonTracking.enabled":true,
@@ -63,7 +64,8 @@ var Simple = {
 			"Pref_GoogleHeader.rmChromeUMA.enabled":true,
 			"Pref_GoogleHeader.rmChromeVariations.enabled":true,
 			"Pref_GoogleHeader.rmChromeConnected.enabled":true,
-			"Pref_WebGLFingerprint.enabled":true,
+			"Pref_ScreenRes.modifyPixelRatio.enabled":true,
+			"Pref_WebGLFingerprint.gpuList.enabled":true,
 			"Pref_WebRTC.wrtcPeerConnection.enabled":true,
 			"Pref_WebRTC.wrtcDataChannel.enabled":true,
 			"Pref_WebRTC.wrtcRtpReceiver.enabled":true
@@ -86,11 +88,12 @@ var Simple = {
 	open:function(){
 		chrome.runtime.onConnect.addListener(function(port){
 			Simple.port = port;
-			port.onMessage.addListener(Simple.recieve);
+			port.onMessage.addListener(Simple.receive);
 		});
 	},
 
-	recieve:function(data){
+	receive:function(data){
+		console.log(data);
 		if (!data || !data.request){
 			Simple.sendError("Unknown request sent to background page");
 			return;
@@ -126,6 +129,7 @@ var Simple = {
 	},
 
 	send:function(data){
+		if (!Simple.port) return;
 		Simple.port.postMessage(data);
 	},
 
@@ -163,19 +167,19 @@ var Simple = {
 	},
 
 	zeroCurrent:function(){
-		var prefs = JSON.parse(JSON.stringify(Prefs.Current));
-		
-		for (var k in prefs){
+		let prefs = JSON.parse(JSON.stringify(Prefs.Current));
+
+		for (let k in prefs){
 			if (Simple.prefList.indexOf(k) === -1) continue;
 
-			for (var j in prefs[k]){
+			for (let j in prefs[k]){
 				if (j === "enabled" && prefs[k][j] === true){
 					prefs[k][j] = false;
 					if (Trace.DEBUG) console.log(k,j,"=> disabled");
 					continue;
 				}
 
-				for (var i in prefs[k][j]){
+				for (let i in prefs[k][j]){
 					if (i === "enabled" && prefs[k][j][i] === true){
 						prefs[k][j][i] = false;
 						if (Trace.DEBUG) console.log(k,j,i,"=> disabled");
@@ -183,7 +187,7 @@ var Simple = {
 					}
 
 					if (typeof prefs[k][j][i] === "object"){
-						for (var h in prefs[k][j][i]){
+						for (let h in prefs[k][j][i]){
 							if (h === "enabled" && prefs[k][j][i][j] === true){
 								prefs[k][j][i][j] = false;
 								if (Trace.DEBUG) console.log(k,j,i,j,"=> disabled");
@@ -198,7 +202,7 @@ var Simple = {
 	},
 
 	setPreset:function(preset){
-		var updates = Simple.presets.low;
+		let updates = Simple.presets.low;
 
 		if (preset === "medium") {
 			updates = Object.assign(updates,Simple.presets.medium);
@@ -208,7 +212,17 @@ var Simple = {
 			updates = Object.assign(updates,Simple.presets.medium,Simple.presets.high,Simple.presets.extreme);
 		}
 
-		Prefs.SetMultiple(updates);
+		Prefs.SetMultiple(updates, false);
+	},
+
+	makePresetPrefs:function(){
+		["low", "medium", "high", "extreme"].forEach(function(preset){
+			//Prefs.Presets[preset] = JSON.parse(JSON.stringify(Prefs.Defaults));
+		});
+	},
+
+	handleUiChange:function(){
+		console.log(Prefs.Current.Main_Simple);
 	},
 
 	sendDashboardUpdate:function(){
@@ -226,11 +240,11 @@ var Simple = {
 	},
 
 	sendSiteListUpdate:function(){
-		var decWl = Whitelist.storedList;
-		var decKeys = Object.keys(decWl);
-		var sendWl = {};
+		let decWl = Whitelist.storedList;
+		let decKeys = Object.keys(decWl);
+		let sendWl = {};
 
-		for (var i = 0;i<decKeys.length;i++){
+		for (let i = 0;i<decKeys.length;i++){
 			sendWl[decKeys[i]] = {
 				name:Simple.cleanEntryName(decKeys[i]),
 				preset:decWl[decKeys[i]].PresetLevel
@@ -259,13 +273,13 @@ var Simple = {
 		Prefs.SetMultiple({
 			"Main_Simple.presets.enabled":req.preset !== "custom",
 			"Main_Simple.presets.global":req.level
-		});
+		}, false);
 
 		Simple.sendDashboardUpdate();
 	},
 
 	updatePause:function(){
-		var newState = !Vars.paused;
+		let newState = !Vars.paused;
 
 		Vars.paused = newState;
 		if (newState) Vars.pauseEnd = 99999;
@@ -300,7 +314,7 @@ var Simple = {
 		var template = new ProtectionTemplate(false);
 		template.PresetLevel = req.level;
 
-		Whitelist.EditItem(siteKey,template,Simple.sendSiteListUpdate);
+		Whitelist.AddItem(siteKey,template,Simple.sendSiteListUpdate);
 	},
 
 	updateSiteRemove:function(req){

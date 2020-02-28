@@ -117,10 +117,40 @@ input[type="text"] {
 		width:75%;
 		margin:0 12.5%;
 	}
+	#help_info{
+		width:85%;
+		margin:0 7.5%;
+	}
+	#opts_title,#help_title {
+		font-size: 1.2em;
+		line-height: 1.75em;
+	}
 }
 @media (max-width:568px){
-	#whitelist_opts{
+	#whitelist_opts,#help_info{
 		width:90%;
 		margin:0 2.5%;
+	}
+	#page {
+		width:95%;
+		padding:2% 2.5%;
+	}
+	h2 {
+		max-width:90%;
+	}
+}
+@media (max-width:480px){
+	#page {
+		width:100%;
+		padding:2% 0;
+	}
+	h2 {
+		max-width:95%;
+	}
+	#opts_title,#help_title{
+		line-height:1.5em;
+	}
+	ul {
+		margin:.5em 0;
 	}
 }

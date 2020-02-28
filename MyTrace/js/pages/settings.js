@@ -1,6 +1,6 @@
 /*
  * 	Trace options page script
- * 	Copyright AbsoluteDouble 2018 - 2019
+ * 	Copyright AbsoluteDouble 2018 - 2020
  * 	Written by Jake Mcneill
  * 	https://absolutedouble.co.uk/
  */
@@ -24,12 +24,12 @@ var sTrace = {
 		sTrace.port = chrome.runtime.connect({
 			name:"background-msg"
 		});
-		sTrace.port.onMessage.addListener(sTrace.recieve);
+		sTrace.port.onMessage.addListener(sTrace.receive);
 
 		sTrace.send({"request":"connect"});
 	},
 
-	recieve:function(data){
+	receive:function(data){
 		switch (data.response){
 			case "connected":
 				sTrace.debug = data.debug;
@@ -59,7 +59,7 @@ var sTrace = {
 			console.log(data);
 
 			sTrace.ui.pauseState(data.paused,data.pause_end);
-			sTrace.ui.selectedCard(data.preset);
+			sTrace.ui.selectedCard(data.presets_enabled, data.preset);
 		},
 
 		siteList:function(data){
@@ -67,9 +67,9 @@ var sTrace = {
 				sTrace.ui.createSiteAdd()
 			);
 
-			var wl = data.list;
-			var wlKeys = Object.keys(wl).sort();
-			for (var i = 0;i<wlKeys.length;i++){
+			let wl = data.list;
+			let wlKeys = Object.keys(wl).sort();
+			for (let i = 0;i<wlKeys.length;i++){
 				$("#sites_list").append(
 					sTrace.ui.createSiteEntry(wlKeys[i],wl[wlKeys[i]].name,wl[wlKeys[i]].preset)
 				);
@@ -89,6 +89,14 @@ var sTrace = {
 
 				window.location.hash = '#';
 			};
+
+			$("#sw_adv_ui").on("click enter",function(){
+				TraceBg(function(bg){
+					bg.Prefs.Set("Main_Simple.enabled",false);
+					chrome.tabs.create({url:"html/options.html"});
+					window.close();
+				});
+			});
 
 			$("#ux").addClass("blurred");
 			$("#overlay_message").slideDown(300);
@@ -141,6 +149,7 @@ var sTrace = {
 				).on("click enter",sTrace.events.nav),
 				$("<div/>",{
 					"class":"nav_item",
+					"style":"display:none",
 					"tabindex":"1",
 					"data-load":"sites"
 				}).text(
@@ -184,7 +193,7 @@ var sTrace = {
 				$("<h3/>",{"class":"card_title"}).text(lang("mainCardTitleDisabled")),
 				$("<div/>",{"class":"card_desc"}).text(lang("mainCardDescDisabled")),
 				$("<div/>",{"class":"card_bottom"}).append(
-					$("<div/>",{"class":"card_control"}).text(lang("mainCardCtrlDisabled"))
+					$("<div/>",{"class":"card_control"}).text(lang("mainCardCtrlPause"))
 				).on("click enter",sTrace.events.card)
 			);
 			$("#prot_web").append(
@@ -195,11 +204,22 @@ var sTrace = {
 				).on("click enter",sTrace.events.card)
 			);
 			$("#prot_premium").append(
-				$("<h3/>",{"class":"card_title"}).text(lang("mainCardTitlePremium")),
+				$("<h3/>",{"class":"card_title"}).text("Advanced Mode"),
+				$("<div/>",{"class":"card_desc"}).text("Set advanced UI as the default UI. You can always change it back in Trace Options."),
+				$("<div/>",{"class":"card_bottom"}).append(
+					$("<div/>",{"class":"card_control"}).text("Change")
+				).on("click enter",function(){
+					TraceBg(function(bg){
+						bg.Prefs.Set("Main_Simple.enabled",false);
+						chrome.tabs.create({url:"/html/options.html"});
+						window.close();
+					});
+				})
+				/*$("<h3/>",{"class":"card_title"}).text(lang("mainCardTitlePremium")),
 				$("<div/>",{"class":"card_desc"}).text(lang("mainCardDescPremium")),
 				$("<div/>",{"class":"card_bottom"}).append(
 					$("<div/>",{"class":"card_control"}).text(lang("mainCardCtrlPremium"))
-				).on("click enter",sTrace.events.card)
+				).on("click enter",sTrace.events.card)*/
 			);
 
 			// Protection levels
@@ -300,8 +320,9 @@ var sTrace = {
 			);
 		},
 
-		selectedCard:function(preset){
+		selectedCard:function(presetsEnabled, preset){
 			let currPreset = sTrace.ui.sliderPresets[preset];
+			if (!presetsEnabled) currPreset = "custom";
 
 			$(".card_active div.card_control").text(lang("mainCardCtrlSelect"));
 			$(".card_active").addClass("card_standard").removeClass("card_active");
@@ -342,7 +363,7 @@ var sTrace = {
 					chrome.tabs.create({url:"/html/options.html"});
 					return;
 				case "#about":
-					chrome.tabs.create({url:"/html/options.html#view=information"});
+					chrome.tabs.create({url:"/html/about.html"});
 					return;
 				default:
 					break;

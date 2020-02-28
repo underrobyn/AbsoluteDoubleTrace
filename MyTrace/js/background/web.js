@@ -1,15 +1,18 @@
 var Web = {
+
 	GetInstallCodes:function(){
-		var codeArray = Prefs.Current.Pref_WebController.installCodes;
-		var installCodes = "";
-		for (var i = 0,l = Object.keys(codeArray).length;i<l;i++){
+		let codeArray = Prefs.Current.Pref_WebController.installCodes;
+		let installCodes = "";
+		for (let i = 0,l = Object.keys(codeArray).length;i<l;i++){
 			if(codeArray[Object.keys(codeArray)[i]] === true){
 				installCodes += Object.keys(codeArray)[i] + ",";
 			}
 		}
+
 		installCodes = installCodes.substring(0,installCodes.length-1);
 		return installCodes;
 	},
+
 	BlocklistLoader:function(bypassCache){
 		// Check if we are going to make a cache check
 		if (bypassCache || Prefs.Current.Main_Trace.DomainCache.enabled !== true){
@@ -19,7 +22,7 @@ var Web = {
 
 		var installCodes = Web.GetInstallCodes();
 
-		var url = Vars.blocklistURL;
+		let url = Vars.blocklistURL;
 		url += "?r=" + (typeof(Vars.Premium) !== "string" || Vars.Premium === "" ? "rv" : "pv");
 		url += "&a=cache";
 		url += "&v=" + Vars.listCompat;
@@ -68,13 +71,17 @@ var Web = {
 	BlocklistURL:function(attempt,server){
 		if (server === 2) return Vars.blocklistOffline;
 
-		var url;
-		var installCodes = Web.GetInstallCodes();
+		let url;
+		let installCodes = Web.GetInstallCodes();
+
+		function getdparam(){
+			return Math.round((new Date()).getTime()/1000)*2;
+		}
 
 		if (typeof(Vars.Premium) !== "string" || Vars.Premium === "" || attempt > 2){
 			if (server === 0){
 				url = Vars.blocklistURL;
-				url += "?d=" + btoa((Math.round((new Date()).getTime()/1000))*2);
+				url += "?d=" + btoa(getdparam());
 				url += "&a=download";
 				url += "&v=" + Vars.listCompat;
 				url += "&c=" + btoa(installCodes);
@@ -87,7 +94,7 @@ var Web = {
 			url += btoa(Vars.Premium);
 			url += "&s=" + btoa(Vars.appSecret);
 			url += "&a=download";
-			url += "&d=" + btoa((Math.round((new Date()).getTime()/1000))*2);
+			url += "&d=" + btoa(getdparam());
 			url += "&v=" + Vars.listCompat;
 			url += "&c=" + btoa(installCodes);
 			url += "&f=" + "json";
@@ -104,7 +111,7 @@ var Web = {
 				Trace.Notify("You don't seem to be connected to the internet. Will use built in blocklist.", "protd");
 				server = 2;
 			} else {
-				Trace.Notify("You don't seem to be connected to the internet.", "protd");
+				Trace.Notify(lang("miscMsgOffline"), "protd");
 				return false;
 			}
 		}
@@ -116,7 +123,7 @@ var Web = {
 		attempt++;
 
 		// Get URL
-		var url = Web.BlocklistURL(attempt,server);
+		let url = Web.BlocklistURL(attempt,server);
 
 		// Create XMLHttpRequest
 		var xhr = new XMLHttpRequest();
@@ -146,11 +153,9 @@ var Web = {
 		}
 
 		xhr.onreadystatechange = function(){
-			if (xhr.readyState !== 4){
-				return;
-			}
+			if (xhr.readyState !== 4) return;
 
-			var status = xhr.status,
+			let status = xhr.status,
 				sName = Vars.serverNames[server],
 				data;
 
@@ -171,7 +176,7 @@ var Web = {
 				return true;
 			}
 
-			var headerResp = xhr.getResponseHeader("x-trace-list");
+			let headerResp = xhr.getResponseHeader("x-trace-list");
 			if (headerResp !== null && headerResp !== "x-trace-list"){
 				console.error(JSON.stringify({"Event":"GetBlocklistDownloadFailure","TraceListHead":headerResp,"ErrorObj":{"status":status,"text":xhr.statusText}}));
 			}
@@ -190,10 +195,8 @@ var Web = {
 					Trace.Notify("Trace recieved a 404 from " + sName + " blocklist server.","protd");
 					break;
 				case 508:
-					Trace.Notify("Cloudflare error 508 when downloading update to blocklist.", "protd");
-					break;
 				case 520:
-					Trace.Notify("Cloudflare error 520 when downloading update to blocklist.", "protd");
+					Trace.Notify("Cloudflare error occurred when downloading update to blocklist.", "protd");
 					break;
 				default:
 					Trace.Notify("Trace couldn't download the blocklist, unknown error from " + sName + " blocklist server.","protd");
@@ -222,7 +225,7 @@ var Web = {
 			"WebCache_Type",
 			"WebCache_Data"
 		],function(r){
-			var data = {
+			let data = {
 				list_version:ver[1],
 				list_type:r.WebCache_Type,
 				data:r.WebCache_Data
@@ -285,6 +288,7 @@ var Web = {
 			if (fromServer === 3) Web.ClearDomainCache();
 			db.data = {};
 		}
+
 		WebBlocker.blocked.domain = db.data.domain || [];
 		WebBlocker.blocked.host = db.data.host || [];
 		WebBlocker.blocked.url = db.data.url || [];
@@ -295,31 +299,26 @@ var Web = {
 		WebBlocker.blocked.tld = WebBlocker.blocked.tld.concat(Trace.g.BadTopLevelDomain.GetList());
 
 		// Tell the checker what to check for
-		if (WebBlocker.blocked.tld.length > 0) WebBlocker.validate.tld = true;
-		if (WebBlocker.blocked.domain.length > 0) WebBlocker.validate.domain = true;
-		if (WebBlocker.blocked.host.length > 0) WebBlocker.validate.host = true;
-		if (WebBlocker.blocked.url.length > 0) WebBlocker.validate.url = true;
-		if (WebBlocker.blocked.query.length > 0) WebBlocker.validate.query = true;
-		if (WebBlocker.blocked.file.length > 0) WebBlocker.validate.file = true;
+		Object.keys(WebBlocker.blocked).map(function(key) {
+			WebBlocker.validate[key] = WebBlocker.blocked[key].length > 0;
+		});
 
 		Trace.Notify("Trace WebController has loaded the blocklists and is ready.","protd");
 	},
 	ToggleBlockPings:function(){
-		if (Prefs.Current.Pref_PingBlock.enabled === true){
-			if (Prefs.Current.Pref_PingBlock.pingRequest.enabled === true){
-				try {
-					chrome.webRequest.onBeforeRequest.addListener(
-						WebBlocker.PingBlocker,
-						{
-							urls:["http://*/*","https://*/*","ws://*/*","wss://*/*"],
-							types:["ping"]
-						},
-						["blocking"]
-					);
-				} catch(e){
-					if (e.message && e.message.toLowerCase().includes("invalid value for argument 1")){
-						Trace.Notify("Ping blocks are not supported by your browser.","pingd");
-					}
+		if (Prefs.Current.Pref_PingBlock.enabled === true && Prefs.Current.Pref_PingBlock.pingRequest.enabled === true){
+			try {
+				chrome.webRequest.onBeforeRequest.addListener(
+					WebBlocker.PingBlocker,
+					{
+						urls:["http://*/*","https://*/*","ws://*/*","wss://*/*"],
+						types:["ping"]
+					},
+					["blocking"]
+				);
+			} catch(e){
+				if (e.message && e.message.toLowerCase().includes("invalid value for argument 1")){
+					Trace.Notify("Ping blocks are not supported by your browser.","pingd");
 				}
 			}
 		} else {
@@ -378,9 +377,9 @@ var WebBlocker = {
 
 	// Thanks to https://github.com/Olical/binary-search/blob/master/src/binarySearch.js
 	arraySearch:function(list,item){
-		var min = 0, max = list.length - 1, guess;
+		let min = 0, max = list.length - 1, guess;
 
-		var bitwise = (max <= 2147483647);
+		let bitwise = (max <= 2147483647);
 		if (bitwise) {
 			while (min <= max) {
 				guess = (min + max) >> 1;
@@ -467,10 +466,10 @@ var WebBlocker = {
 			return s.split('?')[0];
 		}
 
-		var params = Trace.g.URLCleaner.GetList(type);
-		var parsed = new URL(s);
+		let params = Trace.g.URLCleaner.GetList(type);
+		let parsed = new URL(s);
 
-		for(var key of parsed.searchParams.keys()) {
+		for (let key of parsed.searchParams.keys()) {
 			if (params.indexOf(key) === -1) continue;
 
 			if (Prefs.Current.Pref_WebController.urlCleaner.queryString[type].method === "randomise"){
@@ -509,7 +508,7 @@ var WebBlocker = {
 			if (typeof request.originUrl === "string") initUrl = request.originUrl;
 
 			var wl = Whitelist.GetWhitelist();
-			for (var i = 0, l = wl.keys.length;i<l;i++){
+			for (let i = 0, l = wl.keys.length;i<l;i++){
 				// Check if this page is allowed to be accessed
 				if (wl.keys[i].test(reqUrl)){
 					if (wl.values[i].SiteBlocked === false){
@@ -579,11 +578,11 @@ var WebBlocker = {
 
 		// Check if we need to show a 'blocked' page
 		var redirectToBlocked = false;
-		if (Prefs.Current.Pref_WebController.showBlocked.enabled === true){
+		//if (Prefs.Current.Pref_WebController.showBlocked.enabled === true){
 			if (request.type === "main_frame"){
 				redirectToBlocked = true;
 			}
-		}
+		//}
 
 		// Check if we need to block the request
 		if (blockType !== 0){

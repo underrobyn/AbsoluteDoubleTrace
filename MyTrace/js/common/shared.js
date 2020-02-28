@@ -1,6 +1,6 @@
 /*
  * 	Trace shared UX utils
- * 	Copyright AbsoluteDouble 2018 - 2019
+ * 	Copyright AbsoluteDouble 2018 - 2020
  * 	Written by Jake Mcneill
  * 	https://absolutedouble.co.uk/
  */
@@ -34,11 +34,11 @@ if (typeof Object.assign !== 'function') {
 			}
 
 			var to = Object(target);
-			for (var index = 1; index < arguments.length; index++) {
+			for (let index = 1; index < arguments.length; index++) {
 				var nextSource = arguments[index];
 
 				if (nextSource !== null && nextSource !== undefined) {
-					for (var nextKey in nextSource) {
+					for (let nextKey in nextSource) {
 						if (Object.prototype.hasOwnProperty.call(nextSource, nextKey)) {
 							to[nextKey] = nextSource[nextKey];
 						}
@@ -53,47 +53,64 @@ if (typeof Object.assign !== 'function') {
 }
 
 // Get message for language
-var lang = function(msg){
+let lang = function(msg){
 	if (!chrome.i18n) return "";
 	return chrome.i18n.getMessage(msg);
 };
 
 // Generate a random string of r length
-var makeRandomID = function(r){
-	for(var n="",t="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789",a=0;r > a;a++){
+let makeRandomID = function(r){
+	var n = "";
+	for(let t="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789",a=0;r > a;a++){
 		n += t.charAt(Math.floor(Math.random()*t.length));
 	}
 	return n;
 };
 
 // Get day month and year as strings
-var getDateStrings = function(){
-	var date = new Date();
-	var day = date.getDate();
-	var month = date.getMonth()+1;
+let getDateStrings = function(){
+	let date = new Date();
+	let day = date.getDate();
+	let month = date.getMonth()+1;
+
 	day.toString().length !== 2 ? day = "0" + day.toString() : 0;
 	month.toString().length !== 2 ? month = "0" + month.toString() : 0;
 
 	return [date.getFullYear().toString(),month.toString(),day.toString()];
 };
 
+let getUnixTime = function(){
+	return (new Date).getTime()/1000;
+};
+
+// Find if any item in an array contains a string
+let strMatchesItemInArr = function(str, arr){
+	return arr.map(function(currStr){
+		return str.includes(currStr);
+	}).reduce(function(a, b) { return a || b; })
+};
+
 // Choose a random item from an array
-var rA = function(a){
+let rA = function(a){
 	return a[Math.floor(Math.random() * a.length)];
 };
 
-var getToken = function(){
+let randrange = function(l,m){
+	return Math.floor(Math.random()*(m-l)+l);
+};
+
+let getToken = function(){
 	var randomPool = new Uint8Array(32);
 	crypto.getRandomValues(randomPool);
 	var hex = '';
-	for (var i = 0; i < randomPool.length; ++i) {
+	for (let i = 0; i < randomPool.length; ++i) {
 		hex += randomPool[i].toString(16);
 	}
 	return hex;
 };
 
 // Thanks to https://stackoverflow.com/a/23945027/
-var extractHostname = function(url){
+let extractHostname = function(url){
 	var hostname;
 
 	if (url.indexOf("://") > -1) {
@@ -107,7 +124,7 @@ var extractHostname = function(url){
 
 	return hostname;
 };
-var extractRootDomain = function(url){
+let extractRootDomain = function(url){
 	var domain = extractHostname(url),
 		splitArr = domain.split('.'),
 		arrLen = splitArr.length;
@@ -121,30 +138,42 @@ var extractRootDomain = function(url){
 	return domain;
 };
 
-var SettingNames = {
-	"Pref_AudioFingerprint":"Audio Fingerprinting Protection",
-	"Pref_BatteryApi":"Battery API Protection",
-	"Pref_CanvasFingerprint":"Canvas Fingerprinting Protection",
-	"Pref_ClientRects":"getClientRects Protection",
-	"Pref_CommonTracking":"Common Tracking Protection",
-	"Pref_CookieEater":"Cookie Eater",
-	"Pref_HardwareSpoof":"Hardware Fingerprinting Protection",
-	"Pref_ETagTrack":"E-Tag Tracking Protection",
-	"Pref_GoogleHeader":"Google Header Removal",
-	"Pref_IPSpoof":"Proxy IP Header Spoofing",
-	"Pref_NativeFunctions":"JS functions",
-	"Pref_NetworkInformation":"Network Information API",
-	"Pref_PingBlock":"Ping Protection",
-	"Pref_PluginHide":"JS Plugin Hide",
-	"Pref_ReferHeader":"Referer Controller",
-	"Pref_ScreenRes":"Screen Resolution Tracking",
-	"Pref_UserAgent":"User-Agent Randomiser",
-	"Pref_WebGLFingerprint":"WebGL Fingerprinting Protection",
-	"Pref_WebRTC":"WebRTC Protection"
+let getURLComponents = function(url){
+	let obj = new URL(url), components = {};
+
+	components["origin"] = obj.origin + "/*";
+	components["path"] = "*" + obj + "*";
+	components["host"] = "*" + extractHostname(url) + "*";
+	components["root"] = "*" + extractRootDomain(url) + "*";
+
+	return components;
+};
+
+const SettingNames = {
+	"Pref_AudioFingerprint":lang("PrefNameAudioFingerprint") || "Audio Fingerprinting Protection",
+	"Pref_BatteryApi":lang("PrefNameBatteryApi") || "Battery API Protection",
+	"Pref_CanvasFingerprint":lang("PrefNameCanvasFingerprint") || "Canvas Fingerprinting Protection",
+	"Pref_ClientRects":lang("PrefNameClientRects") || "getClientRects Protection",
+	"Pref_CommonTracking":lang("PrefNameCommonTracking") || "Common Tracking Protection",
+	"Pref_CookieEater":lang("PrefNameCookieEater") || "Cookie Eater",
+	"Pref_ETagTrack":lang("PrefNameETagTrack") || "E-Tag Tracking Protection",
+	"Pref_FontFingerprint":lang("PrefNameFontFingerprint") || "Font Fingerprinting Protection",
+	"Pref_GoogleHeader":lang("PrefNameGoogleHeader") || "Google Header Removal",
+	"Pref_HardwareSpoof":lang("PrefNameHardwareSpoof") || "Hardware Fingerprinting Protection",
+	"Pref_IPSpoof":lang("PrefNameIPSpoof") || "Proxy IP Header Spoofing",
+	"Pref_NativeFunctions":lang("PrefNameNativeFunctions") || "JS functions",
+	"Pref_NetworkInformation":lang("PrefNameNetworkInformation") || "Network Information API",
+	"Pref_PingBlock":lang("PrefNamePingBlock") || "Ping Protection",
+	"Pref_PluginHide":lang("PrefNamePluginHide") || "JS Plugin Hide",
+	"Pref_ReferHeader":lang("PrefNameReferHeader") || "Referer Controller",
+	"Pref_ScreenRes":lang("PrefNameScreenRes") || "Screen Resolution Tracking",
+	"Pref_UserAgent":lang("PrefNameUserAgent") || "User-Agent Randomiser",
+	"Pref_WebGLFingerprint":lang("PrefNameWebGLFingerprint") || "WebGL Fingerprinting Protection",
+	"Pref_WebRTC":lang("PrefNameWebRTC") || "WebRTC Protection"
 };
 
 // Trace whitelist template
-var ProtectionTemplate = function(defaults){
+let ProtectionTemplate = function(defaults){
 	return {
 		PresetLevel:null,
 		SiteBlocked:false,
