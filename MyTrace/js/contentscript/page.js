@@ -79,8 +79,6 @@ var TPage = {
 			return;
 		}
 
-		console.log(data);
-
 		TPage.Settings.Additional = data.additional;
 		TPage.Settings.Prefs = data.prefs;
 		TPage.Settings.Whitelist = data.data;
@@ -101,7 +99,10 @@ var TPage = {
 		runCodeInFrames:function(protId){
 			return `
 
+			//console.log(window);
+			//console.log(self);
 			self['` + protId + `_func'](window);
+			//self['` + protId + `_func'](self);
 
 			["HTMLIFrameElement","HTMLFrameElement"].forEach(function(el) {
 				var wind = self[el].prototype.__lookupGetter__('contentWindow'),
@@ -112,7 +113,7 @@ var TPage = {
 						get:function(){
 							if (this.src && this.src.indexOf('//') !== -1 && location.host !== this.src.split('/')[2]) return wind.apply(this);
 
-							var frame = wind.apply(this);
+							let frame = wind.apply(this);
 							if (frame) self['` + protId + `_func'](frame);
 
 							return frame;
@@ -122,7 +123,7 @@ var TPage = {
 						get:function(){
 							if (this.src && this.src.indexOf('//') !== -1 && location.host !== this.src.split('/')[2]) return cont.apply(this);
 
-							var frame = cont.apply(this);
+							let frame = cont.apply(this);
 							if (frame) self['` + protId + `_func'](frame);
 
 							return frame;
@@ -143,7 +144,7 @@ var TPage = {
 					(` + protCode + `)(frame,` + protParams + `);
 				} else {
 					frame['` + protId + `_done'] = true;
-					console.log(frame);
+					//console.log(frame);
 				}
 			};`;
 
@@ -332,7 +333,6 @@ var TPage = {
 		},
 		"Pref_BatteryApi":function(frame, settings) {
 			if (!frame.navigator){
-				console.error("No navigator defined");
 				return;
 			}
 
@@ -343,7 +343,7 @@ var TPage = {
 				let props = Object.getOwnPropertyDescriptor(obj, prop) || {configurable:true};
 
 				if (!props["configurable"]) {
-					console.warn("Issue with property not being able to be configured.");
+					//console.warn("Issue with property not being able to be configured.");
 					return;
 				}
 
@@ -379,22 +379,27 @@ var TPage = {
 			doUpdateProp(frame.navigator.getBattery,"toString","function getBattery() { [native code] }");
 		},
 		"Pref_CanvasFingerprint":function(frame, settings) {
-			if (!frame.HTMLCanvasElement) return;
+			if (!frame.HTMLCanvasElement){
+				//frame = window;
+				return;
+			}
+			//if (!frame.HTMLCanvasElement) return;
 
-			var rgba = [0,0,0,0];
+			let rgba = [0,0,0,0];
 			if (settings["customRGBA"]["enabled"]){
 				rgba = settings["customRGBA"]["rgba"];
 			} else {
-				let rn = function(a,b){
-					return (10-Math.floor(Math.random()*(b-a)+a));
+				let rn = function(min,max){
+					return Math.floor(Math.random()*(max-min)+min) - 10;
 				};
-				rgba = [rn(0, 20), rn(0, 20), rn(0, 20), rn(0, 20)];
+				rgba = [rn(0, 15), rn(0, 15), rn(0, 15), rn(0, 15)];
+				//console.log(rgba);
 			}
 
 
 			var injectIframes = function(el){
 				let injectionFrames = ["iframe", "frame"];
-				if (injectionFrames.indexOf(el.tagName) === -1 || !el.contentWindow) return;
+				if (injectionFrames.indexOf(el.tagName.toLowerCase()) === -1 || !el.contentWindow) return;
 
 				if (el.contentWindow.HTMLCanvasElement) spoofExtract(el.contentWindow.HTMLCanvasElement);
 				if (el.contentWindow.CanvasRenderingContext2D) spoofRender(el.contentWindow.CanvasRenderingContext2D);
@@ -443,7 +448,7 @@ var TPage = {
 
 							if (context === null) return old.apply(this,arguments);
 
-							var iData = context.getImageData(0, 0, width, height);
+							let iData = context.getImageData(0, 0, width, height);
 							for (let i = 0; i < height; i++) {
 								for (let j = 0; j < width; j++) {
 									let index = ((i * (width * 4)) + (j * 4));
@@ -463,10 +468,10 @@ var TPage = {
 				blockExtraction("toBlob", root.prototype.toBlob);
 			};
 			var spoofRender = function(root){
-				var getImageData = root.prototype.getImageData;
+				let getImageData = root.prototype.getImageData;
 				Object.defineProperty(root.prototype,"getImageData",{
 					value:function(){
-						var iData = getImageData.apply(this, arguments);
+						let iData = getImageData.apply(this, arguments);
 						let height = iData.height;
 						let width = iData.width;
 						for (let i = 0; i < height; i++) {
@@ -492,7 +497,7 @@ var TPage = {
 				let props = Object.getOwnPropertyDescriptor(obj, prop) || {configurable:true};
 
 				if (!props["configurable"]) {
-					console.warn("Issue with property not being able to be configured.");
+					//console.warn("Issue with property not being able to be configured.");
 					return;
 				}
 
@@ -681,7 +686,6 @@ var TPage = {
 		},
 		"Pref_HardwareSpoof":function(frame, settings){
 			if (!frame.navigator){
-				console.error("No navigator defined");
 				return;
 			}
 
@@ -737,7 +741,6 @@ var TPage = {
 		},
 		"Pref_NetworkInformation":function(frame, settings){
 			if (!frame.navigator || !frame.NetworkInformation){
-				console.error("No navigator defined");
 				return;
 			}
 
@@ -745,7 +748,7 @@ var TPage = {
 				let props = Object.getOwnPropertyDescriptor(obj, prop) || {configurable:true};
 
 				if (!props["configurable"]) {
-					console.warn("Issue with property not being able to be configured.");
+					//console.warn("Issue with property not being able to be configured.");
 					return;
 				}
 
@@ -782,8 +785,7 @@ var TPage = {
 		},
 		"Pref_PingBlock":function(frame, settings) {
 			if (!settings["sendBeacon"]["enabled"]) return;
-			if (!frame.navigator){
-				console.error("No navigator defined");
+			if (!frame.navigator || !frame.navigator.sendBeacon){
 				return;
 			}
 
@@ -791,7 +793,7 @@ var TPage = {
 				let props = Object.getOwnPropertyDescriptor(obj, prop) || {configurable:true};
 
 				if (!props["configurable"]) {
-					console.warn("Issue with property not being able to be configured.");
+					//console.warn("Issue with property not being able to be configured.");
 					return;
 				}
 
@@ -810,11 +812,24 @@ var TPage = {
 		},
 		"Pref_PluginHide":function(frame, settings) {
 			if (!frame.navigator){
-				console.error("No navigator defined");
 				return;
 			}
 
-			var PluginArray = function(){
+			function doUpdateProp(obj, prop, newVal){
+				let props = Object.getOwnPropertyDescriptor(obj, prop) || {configurable:true};
+
+				if (!props["configurable"]) {
+					//console.warn("Issue with property not being able to be configured.");
+					return;
+				}
+
+				props["value"] = newVal;
+				Object.defineProperty(obj, prop, props);
+
+				return props;
+			}
+
+			let PluginArray = function(){
 				this.__proto__ = frame.PluginArray;
 				this.length = 0;
 				this.refresh = function(){
@@ -826,22 +841,14 @@ var TPage = {
 				};
 			};
 
-			Object.defineProperty(frame.navigator,"plugins",{
-				enumerable:true,
-				configurable:false,
-				value:new PluginArray()
-			});
-			Object.defineProperty(frame.navigator.plugins,"toString",{
-				configurable:false,
-				value:function(){
-					return "[object PluginArray]";
-				}
+			doUpdateProp(frame.navigator, "plugins", new PluginArray());
+			doUpdateProp(frame.navigator.plugins,"toString",function(){
+				return "[object PluginArray]";
 			});
 		},
 		"Pref_ReferHeader":function(frame, settings){
 			if (!settings["jsVariable"]["enabled"]) return;
 			if (!frame.document){
-				console.error("No document defined");
 				return;
 			}
 
@@ -853,7 +860,6 @@ var TPage = {
 		},
 		"Pref_ScreenRes":function(frame, settings){
 			if (!frame.screen){
-				console.error("No screen defined");
 				return;
 			}
 
@@ -925,7 +931,6 @@ var TPage = {
 		},
 		"Pref_UserAgent":function(frame, settings){
 			if (!frame.navigator){
-				console.error("No screen defined");
 				return;
 			}
 
@@ -1035,7 +1040,7 @@ var TPage = {
 				let props = Object.getOwnPropertyDescriptor(obj, prop) || {configurable:true};
 
 				if (!props["configurable"]) {
-					console.warn("Issue with property not being able to be configured.");
+					//console.warn("Issue with property not being able to be configured.");
 					return;
 				}
 

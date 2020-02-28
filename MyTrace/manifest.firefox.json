@@ -7,9 +7,8 @@
 	"description":"__MSG_addon_description__",
 	"default_locale": "en",
 	"minimum_chrome_version":"41",
-	"version":"3.0.0",
+	"version":"3.0.1",
   	"homepage_url":"https://absolutedouble.co.uk/trace/",
-  	"options_page":"html/options.html",
 	"options_ui": {
 	  	"page":"html/options.html",
 	  	"chrome_style":false,
@@ -32,7 +31,7 @@
 		},
 		"default_title": "Trace | Tracking Protection",
 		"default_popup": "html/report.html",
-		"browser_style": false
+		"browser_style": true
 	},
 	"commands": {
 		"ToggleTraceWeb":{
@@ -113,6 +112,8 @@
   	"web_accessible_resources": [
 		"html/blocked.html",
 	  	"js/pages/blocked.js",
+	  	"js/common/ux.js",
+	  	"js/common/shared.js",
 		"js/libraries/jquery.js"
   	],
 	"content_security_policy":"default-src 'none'; style-src 'unsafe-inline'; object-src 'self'; script-src 'self'; connect-src https://absolutedouble.co.uk https://trace-extension.absolutedouble.co.uk https://raw.githubusercontent.com"
