@@ -331,6 +331,12 @@ var Prefs = {
 		"Pref_ETagTrack":{
 			"enabled":false
 		},
+		"Pref_FontFingerprint":{
+			"enabled":false,
+			"measureText":{
+				"enabled":true
+			}
+		},
 		"Pref_PingBlock":{
 			"enabled":true,
 			"removePingAttr":{

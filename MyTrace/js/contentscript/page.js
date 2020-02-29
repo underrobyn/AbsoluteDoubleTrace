@@ -188,6 +188,7 @@ var TPage = {
 	},
 
 	runProtections:function(){
+		// TPage.Settings.Prefs["Pref_FontFingerprint"] = {"enabled":true};
 		let protectionKeys = Object.keys(TPage.Settings.Prefs);
 
 		console.group("Trace Protections");
@@ -390,10 +391,10 @@ var TPage = {
 				rgba = settings["customRGBA"]["rgba"];
 			} else {
 				let rn = function(min,max){
-					return Math.floor(Math.random()*(max-min)+min) - 10;
+					return Math.floor(Math.random()*(max-min)+min);
 				};
-				rgba = [rn(0, 15), rn(0, 15), rn(0, 15), rn(0, 15)];
-				//console.log(rgba);
+				rgba = [rn(0, 3), rn(0, 3), rn(0, 3), rn(0, 2)];
+				console.log(rgba);
 			}
 
 
@@ -507,13 +508,15 @@ var TPage = {
 				return props;
 			}
 
+			// Generate offset
+			let off = Math.floor(Math.random()*100)/100;
+
 			function updatedRect(old,round,overwrite){
 				function genOffset(round,val){
-					var off = Math.floor(Math.random()*100)/100;
 					return val + (round ? Math.round(off) : off);
 				}
 
-				var temp = overwrite === true ? old : new DOMRect();
+				let temp = overwrite === true ? old : new DOMRect();
 
 				temp.top 	= genOffset(round,old.top);
 				temp.right	= genOffset(round,old.right);
@@ -555,7 +558,7 @@ var TPage = {
 					var rect = boundingRects.apply(this,arguments);
 					if (this === undefined || this === null) return rect;
 
-					if (location.host.includes("google")) return rect;
+					//if (location.host.includes("google")) return rect;
 
 					//window.top.postMessage("trace-protection::ran::clientrectsbounding::" + el + "get", '*');
 
@@ -665,23 +668,40 @@ var TPage = {
 		},
 		"Pref_FontFingerprint":function(frame, settings){
 			settings = {
-				blockMeasureText:true
+				blockMeasureText:true,
+				setAttr:true
 			};
 
-			if (settings["blockMeasureText"] && frame.CanvasRenderingContext2D){
-				let measText = frame.CanvasRenderingContext2D.measureText;
-				Object.defineProperty(frame.CanvasRenderingContext2D, "measureText",{
-					enumerable:true,
-					configurable:false,
-					value:function(){
-						console.log(this);
-						console.log(arguments);
-						console.log(measText.apply(this,arguments));
+			function doUpdateProp(obj, prop, updProp, newVal){
+				let props = Object.getOwnPropertyDescriptor(obj, prop) || {configurable:true};
 
-						return measText.apply(this,arguments);
+				if (!props["configurable"]) return;
+
+				props[updProp] = newVal;
+				Object.defineProperty(obj, prop, props);
+
+				return props;
+			}
+
+			if (settings["blockMeasureText"] && frame.CanvasRenderingContext2D){
+				let measText = frame.CanvasRenderingContext2D.prototype.measureText;
+				let offset = Math.random() * 1e-3;
+
+				doUpdateProp(frame.CanvasRenderingContext2D.prototype, "measureText","value",function(){
+					let result = measText.apply(this,arguments);
+					console.log(result);
+
+					let TextMetrics = function(){
+						this.__proto__ = frame.TextMetrics;
+					};
+					let fakeResult = new TextMetrics();
+					for (let b in result){
+						fakeResult[b] = result[b];
 					}
+					fakeResult.width = result.width + offset;
+
+					return fakeResult;
 				});
-				console.log("[measuretext]")
 			}
 		},
 		"Pref_HardwareSpoof":function(frame, settings){
@@ -965,6 +985,11 @@ var TPage = {
 			var randArr = function(arr){
 				return arr[Math.floor(Math.random() * arr.length)];
 			};
+
+			if (rand(1,3) === 2){
+				settings["ctx_vendor"] = "Mozilla";
+				settings["ctx_gpu"] = "Mozilla";
+			}
 
 			settings["offset"] = Math.random();
 

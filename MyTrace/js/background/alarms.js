@@ -43,7 +43,7 @@ var Alarms = {
 				gpuStr = rA(Prefs.Current.Pref_WebGLFingerprint.gpuList.list);
 			}
 
-			Vars.gpuChose = "ANGLE(" + gpuStr + " " + addDirectX + ")";
+			Vars.gpuChose = "ANGLE (" + gpuStr + " " + addDirectX + ")";
 		},
 
 		ChooseUserAgent:function(){
