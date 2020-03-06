@@ -558,8 +558,6 @@ var TPage = {
 					var rect = boundingRects.apply(this,arguments);
 					if (this === undefined || this === null) return rect;
 
-					//if (location.host.includes("google")) return rect;
-
 					//window.top.postMessage("trace-protection::ran::clientrectsbounding::" + el + "get", '*');
 
 					return updatedRect(rect,true,true);
@@ -668,8 +666,16 @@ var TPage = {
 		},
 		"Pref_FontFingerprint":function(frame, settings){
 			settings = {
-				blockMeasureText:true,
-				setAttr:true
+				appendChild:true,
+				elementOffset:true,
+				measureText:true
+			};
+			let offset = Math.random();
+			let fontKeywords = ["serif", "sans-serif", "monospace", "fantasy", "cursive", "courier", "system-ui"];
+			let cssKeywords = ["inherit", "auto"];
+
+			let randArr = function(arr){
+				return arr[Math.floor(Math.random() * arr.length)];
 			};
 
 			function doUpdateProp(obj, prop, updProp, newVal){
@@ -683,13 +689,17 @@ var TPage = {
 				return props;
 			}
 
-			if (settings["blockMeasureText"] && frame.CanvasRenderingContext2D){
+			if (settings["measureText"] && frame.CanvasRenderingContext2D){
 				let measText = frame.CanvasRenderingContext2D.prototype.measureText;
-				let offset = Math.random() * 1e-3;
 
+				// TODO: Access Canvas font property and remove certain fonts, recalc measureText
 				doUpdateProp(frame.CanvasRenderingContext2D.prototype, "measureText","value",function(){
 					let result = measText.apply(this,arguments);
-					console.log(result);
+					let origFont = this.font || "";
+					console.log(this.font);
+					//console.log(result);
+					//this.font = "72px sans-serif";
+					//console.log(measText.apply(this,arguments));
 
 					let TextMetrics = function(){
 						this.__proto__ = frame.TextMetrics;
@@ -701,6 +711,55 @@ var TPage = {
 					fakeResult.width = result.width + offset;
 
 					return fakeResult;
+				});
+			}
+
+			if (settings["elementOffset"] && frame.Element){
+				[["offsetHeight", "height"], ["offsetWidth", "width"]].forEach(function(meas){
+					console.log(meas, offset);
+					doUpdateProp(HTMLElement.prototype, meas[0], "get", function(){
+						//console.log(this.getBoundingClientRect().width, this.getBoundingClientRect().height);
+						return (this.getBoundingClientRect()[meas[1]] || 0) + Math.floor(offset*100)/10;
+					});
+				});
+			}
+
+			if (settings["appendChild"] && frame.Node){
+				let checkFonts = function(fontStr){
+					let fonts = fontStr.split(",");
+					console.log(fonts);
+					if (fonts.length > 1){
+						return randArr(fonts);
+					}
+					return fonts;
+				};
+
+				let originalCssFunc = frame.CSSStyleDeclaration.prototype.setProperty;
+				let modifyCssFonts = function(){
+					if(arguments[0].toLowerCase() !== 'font-family') return originalCssFunc.apply(this, arguments);
+
+					let currentFont = checkFonts(this.fontFamily);
+
+					return originalCssFunc.call(this, 'font-family', currentFont);
+				};
+
+				// A recursive function to help us modify elements
+				let modifyChildren = function(el){
+					if (!el) return;
+
+					// If element has font-family set, change it
+					if (el.style && el.style.fontFamily) modifyCssFonts.call(el.style, 'font-family', el.style.fontFamily);
+
+					// If an element has children, check them for font-family
+					if (el.childNodes) el.childNodes.forEach(modifyChildren);
+
+					return el;
+				};
+
+				let originalAppendChild = frame.Node.prototype.appendChild;
+				doUpdateProp(frame.Node.prototype, 'appendChild', 'value', function(){
+					modifyChildren(arguments[0]);
+					return originalAppendChild.apply(this, arguments);
 				});
 			}
 		},

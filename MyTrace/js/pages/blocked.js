@@ -36,7 +36,7 @@ var tBlock = {
 			}
 		});
 		$("#pause_trace").on("click enter",function(){
-			chrome.runtime.getBackgroundPage(function(bg){
+			TraceBg(function(bg){
 				var state = bg.Vars.paused;
 				var newState = !state;
 
@@ -123,7 +123,7 @@ var tBlock = {
 
 		$(this).text("Whitelisting...");
 
-		chrome.runtime.getBackgroundPage(function(bg){
+		TraceBg(function(bg){
 			bg.Whitelist.AddItem(url,ProtectionTemplate(false),function(){
 				Auth.SafePost({action:"ReloadList"});
 				tBlock.whitelistFinished();

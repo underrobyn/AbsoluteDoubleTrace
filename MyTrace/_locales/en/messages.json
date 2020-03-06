@@ -496,10 +496,10 @@
 	  	"message":"Options"
 	},
   	"mainCardCtrlSelect": {
-	  	"message":"Select"
+	  	"message":"Click to select this preset"
 	},
   	"mainCardCtrlSelected": {
-	  	"message":"Selected"
+	  	"message":"This preset is selected"
 	},
 
   	"mainSiteListSearchPlaceholder": {

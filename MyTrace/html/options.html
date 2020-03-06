@@ -17,7 +17,7 @@
 	<body>
 
 	<!--
-		Trace Version 3.0.0rc-2
+		Trace Version 3.0.3
 		By Jake Mcneill
 
 		Website:	https://absolutedouble.co.uk/
@@ -254,6 +254,20 @@
 										As well as this, the WebGL image data will be slightly randomised meaning that the image hash generated when using this protection will be randomised.<br />
 									</td>
 								</tr>
+								<!--<tr id="row_fontfingerprint">
+									<td class="setting_info" tabindex="0" data-info="info_fontfingerprint">Font Fingerprint Protection <strong>(Beta)</strong></td>
+									<td class="setting_toggle" tabindex="0" data-toggle="Pref_FontFingerprint">Fetching Status...</td>
+									<td class="setting_order" tabindex="0" data-order="Pref_FontFingerprint">Fetching Status...</td>
+									<td class="setting_config" tabindex="0" data-config="Pref_FontFingerprint">Configure</td>
+								</tr>
+								<tr id="info_fontfingerprint" class="hiddensettinginfo">
+									<td colspan="4">
+										<span>Font Fingerprinting Protection</span><br />
+										Tracking companies can detect which fonts you have installed available on your system and use this as a data point in your browsers fingerprint.<br />
+										They do this by creating many instances of a string of text with different fonts and measuring the change in width and height to detect the different fonts.<br />
+										Trace can protect against the different measuring methods and also block certain fonts from even being set depending on how you choose to configure it.
+									</td>
+								</tr>-->
 								<tr id="row_batteryapi">
 									<td class="setting_info" tabindex="0" data-info="info_batteryapi">Battery API Protection</td>
 									<td class="setting_toggle" tabindex="0" data-toggle="Pref_BatteryApi" colspan="2">Fetching Status...</td>
@@ -660,15 +674,6 @@
 							<button class="larger_button trace_toggle" tabindex="0" data-toggle="Main_Trace.DomainCache">Disabled</button>
 						</div>
 					</div>
-
-					<!--<div class="sect_adv">
-						<div class="sect_adv_header">&nbsp;Protect iFrames</div>
-						<div class="sect_adv_cont">
-							Enabling this will apply Trace's protection to iFrames. This setting is recommended as trackers often run code in iFrames to check that fingerprinting protection methods aren't being used.
-							<br /><br />
-							<button class="larger_button trace_toggle" tabindex="0" data-toggle="Main_Trace.AffectIframes">Disabled</button>
-						</div>
-					</div>-->
 				</div>
 			</section>
 		</div>

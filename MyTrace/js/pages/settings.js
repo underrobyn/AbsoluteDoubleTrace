@@ -225,39 +225,24 @@ var sTrace = {
 			// Protection levels
 			$("#prot_low").append(
 				$("<h3/>",{"class":"card_title"}).text(lang("mainCardTitleLow")),
-				$("<div/>",{"class":"card_desc"}).text(lang("mainCardDescLow")),
-				$("<div/>",{"class":"card_bottom"}).append(
-					$("<div/>",{"class":"card_control"}).text(lang("mainCardCtrlSelect"))
-				).on("click enter",sTrace.events.card)
-			);
+				$("<div/>",{"class":"card_desc"}).text(lang("mainCardDescLow"))
+			).on("click enter",sTrace.events.presetCard).attr("title",lang("mainCardCtrlSelect"));
 			$("#prot_med").append(
 				$("<h3/>",{"class":"card_title"}).text(lang("mainCardTitleMedium")),
-				$("<div/>",{"class":"card_desc"}).text(lang("mainCardDescMedium")),
-				$("<div/>",{"class":"card_bottom"}).append(
-					$("<div/>",{"class":"card_control"}).text(lang("mainCardCtrlSelect"))
-				).on("click enter",sTrace.events.card)
-			);
+				$("<div/>",{"class":"card_desc"}).text(lang("mainCardDescMedium"))
+			).on("click enter",sTrace.events.presetCard).attr("title",lang("mainCardCtrlSelect"));
 			$("#prot_high").append(
 				$("<h3/>",{"class":"card_title"}).text(lang("mainCardTitleHigh")),
-				$("<div/>",{"class":"card_desc"}).text(lang("mainCardDescHigh")),
-				$("<div/>",{"class":"card_bottom"}).append(
-					$("<div/>",{"class":"card_control"}).text(lang("mainCardCtrlSelect"))
-				).on("click enter",sTrace.events.card)
-			);
+				$("<div/>",{"class":"card_desc"}).text(lang("mainCardDescHigh"))
+			).on("click enter",sTrace.events.presetCard).attr("title",lang("mainCardCtrlSelect"));
 			$("#prot_extreme").append(
 				$("<h3/>",{"class":"card_title"}).text(lang("mainCardTitleExtreme")),
-				$("<div/>",{"class":"card_desc"}).text(lang("mainCardDescExtreme")),
-				$("<div/>",{"class":"card_bottom"}).append(
-					$("<div/>",{"class":"card_control"}).text(lang("mainCardCtrlSelect"))
-				).on("click enter",sTrace.events.card)
-			);
+				$("<div/>",{"class":"card_desc"}).text(lang("mainCardDescExtreme"))
+			).on("click enter",sTrace.events.presetCard).attr("title",lang("mainCardCtrlSelect"));
 			$("#prot_custom").append(
 				$("<h3/>",{"class":"card_title"}).text(lang("mainCardTitleCustom")),
-				$("<div/>",{"class":"card_desc"}).text(lang("mainCardDescCustom")),
-				$("<div/>",{"class":"card_bottom"}).append(
-					$("<div/>",{"class":"card_control"}).text(lang("mainCardCtrlSelect"))
-				).on("click enter",sTrace.events.card)
-			);
+				$("<div/>",{"class":"card_desc"}).text(lang("mainCardDescCustom"))
+			).on("click enter",sTrace.events.presetCard).attr("title",lang("mainCardCtrlSelect"));
 		},
 
 		createSiteAdd:function(){
@@ -325,12 +310,11 @@ var sTrace = {
 			if (!presetsEnabled) currPreset = "custom";
 
 			$(".card_active div.card_control").text(lang("mainCardCtrlSelect"));
-			$(".card_active").addClass("card_standard").removeClass("card_active");
+			$(".card_active").attr("title",lang("mainCardCtrlSelect")).addClass("card_standard").removeClass("card_active");
+			$(".card_title_bold").removeClass("card_title_bold");
 
-			$("[data-card='" + currPreset + "']").addClass("card_active").removeClass("card_standard");
-			$("[data-card='" + currPreset + "'] div.card_control").text(
-				lang("mainCardCtrlSelected")
-			);
+			$("[data-card='" + currPreset + "']").addClass("card_active").removeClass("card_standard").attr("title",lang("mainCardCtrlSelected"));
+			$("[data-card='" + currPreset + "'] h3.card_title").addClass("card_title_bold")
 		},
 
 		pauseState:function(paused,pauseEnd){
@@ -386,6 +370,15 @@ var sTrace = {
 				case "web":
 					chrome.tabs.create({url:"/html/options.html#view=wrc"});
 					break;
+				default:
+					break;
+			}
+		},
+
+		presetCard:function(){
+			let card = $(this).data("card");
+
+			switch (card){
 				case "low":
 				case "medium":
 				case "high":
@@ -397,8 +390,6 @@ var sTrace = {
 						"preset":card,
 						"level":sTrace.ui.sliderPresets.indexOf(card)
 					});
-					break;
-				default:
 					break;
 			}
 		},

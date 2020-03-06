@@ -259,7 +259,7 @@ let TPop = {
 		},
 		updateSection:function(data,tab,prefs){
 			// Web requests section
-			var	rTotal = 0;
+			let	rTotal = 0;
 			for (let i = 0;i<TPop.home.text.rTypes.length;i++){
 				$("#home_upd_r"+TPop.home.text.rTypes[i]).text(TPop.home.text.rNames[i] + ": " + data.data.webRequests[TPop.home.text.rTypes[i]]);
 				rTotal += data.data.webRequests[TPop.home.text.rTypes[i]];
@@ -267,9 +267,9 @@ let TPop = {
 			$("#home_requests_title").text("Web Requests (" + rTotal + " blocked)");
 
 			// HTTP Header section
-			var hTotal = 0, hTot = 0;
+			let hTotal = 0, hTot = 0;
 			for (let i = 0;i<TPop.home.text.hTypes.length;i++){
-				var cList = "home_sect_r";
+				let cList = "home_sect_r";
 				if (prefs[TPop.home.text.hPrefs[i]].enabled !== true){
 					cList += " hidden"; // home_sect_fade
 				} else {
@@ -282,7 +282,7 @@ let TPop = {
 				hTotal += data.data.headers[TPop.home.text.hTypes[i]];
 			}
 
-			var msg = "Headers (" + hTotal + " modified)";
+			let msg = "Headers (" + hTotal + " modified)";
 			if (hTot === 0) msg = lang("popHomeMsgNoHeaderEnabled");
 			if (hTotal === 0) msg = lang("popHomeMsgNoHeaderUsed");
 			$("#home_headers_title").text(msg);

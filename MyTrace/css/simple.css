@@ -29,7 +29,7 @@ nav#main_nav .nav_item:hover {
 }
 
 section.view div.sect_headers {
-	padding:5rem 0 0 4rem;
+	padding:3rem 0 0 4rem;
 }
 section.view div.sect_headers h1.sect_title {
 	margin:0;
@@ -44,16 +44,16 @@ section.view div.sect_headers h2.sect_subtitle {
 
 div.protection_cards {
 	margin:1rem 0 0 0;
+	display: flex;
 }
 
 div.protection_card {
 	position:relative;
 	box-sizing:border-box;
-	display:block;
 	float:left;
 	width:19%;
-	min-height:30vh;
-	padding:0.5rem;
+	flex: 1;
+	padding:0.5rem 0.5rem 2.5rem 0.5rem;
 	margin:0.5% 0.5%;
 	line-height:1em;
 
@@ -68,7 +68,11 @@ div.protection_card:hover {
 	background-color:rgba(0,0,0,0.3);
 }
 
-#prot_disabled, #prot_web, #prot_premium {
+div.enable_hover_cursor{
+	cursor:pointer;
+}
+
+.card_optional {
 	width:32.333% !important;
 	min-height:25vh !important;
 }
@@ -79,8 +83,17 @@ div.protection_card.card_active {
 	border:0.05em solid #fff;
 }
 
+h3.card_title, div.card_desc, div.card_bottom{
+	display:block;
+	width:100%;
+	float:left;
+}
+
 div.protection_card h3.card_title {
 	margin:1rem 0 1rem 0;
+}
+.card_title_bold {
+	font-weight:700;
 }
 /*div.protection_card h3.card_title {
 	display:block;
@@ -92,7 +105,6 @@ div.protection_card h3.card_title {
 	font-weight:600;
 }*/
 div.protection_card div.card_desc {
-	display:block;
 	max-height:50vh;
 }
 div.protection_card div.card_bottom {
@@ -242,6 +254,10 @@ div#sites_list div.list_ctrl button.list_button {
 		margin:1.5rem calc(4rem - 1vw);
 		width:calc(100% - 8rem + 2vw);
 	}
+
+	section.view div.sect_headers {
+		padding: 2rem 0 0 2rem;
+	}
 }
 
 @media (max-width:1368px){
@@ -263,5 +279,16 @@ div#sites_list div.list_ctrl button.list_button {
 @media (max-width:720px){
 	div#sites_list div.list_item {
 		width:98%;
+	}
+	div.protection_cards {
+		display:flex;
+		flex-direction:column;
+	}
+	div.protection_card, .card_optional {
+		width:100% !important;
+		min-height: unset;
+	}
+	.card_optional{
+		min-height:15vh !important;
 	}
 }
