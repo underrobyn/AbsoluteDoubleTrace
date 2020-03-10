@@ -471,9 +471,11 @@ var Trace = {
 };
 
 // Assign runtime events
-chrome.runtime.onInstalled.addListener(Trace.a.NewInstall);
-chrome.runtime.onMessage.addListener(Trace.a.ContentTalk);
-Trace.a.AssignRuntime();
+if (chrome.runtime){
+	chrome.runtime.onInstalled.addListener(Trace.a.NewInstall);
+	chrome.runtime.onMessage.addListener(Trace.a.ContentTalk);
+	Trace.a.AssignRuntime();
+}
 
 // Start Protection
 try {

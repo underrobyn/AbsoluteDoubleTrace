@@ -8,7 +8,7 @@
 "use strict";
 
 window.onerror = function(o,r,e,c,l) {
-	var n = {
+	let n = {
 		Title:(!document.title ? "" : document.title),
 		Msg:o,
 		Url:r,
@@ -25,8 +25,7 @@ window.onerror = function(o,r,e,c,l) {
 if (typeof window.chrome === "undefined" || !window.chrome.hasOwnProperty("extension")) window.chrome = (function (){ return window.msBrowser || window.browser || window.chrome; })();
 
 let _UserCrashReportService = function(d,o){
-	/*
-	var report = false;
+	let report = false;
 
 	// Check for premium override
 	if (o === false){
@@ -37,7 +36,7 @@ let _UserCrashReportService = function(d,o){
 		}
 	} else {
 		report = true;
-	}*/
+	}
 
 	let storage_type = (!window.chrome.storage.sync ? window.chrome.storage.local : window.chrome.storage.sync);
 	storage_type.get('userid',function(items){
@@ -59,7 +58,7 @@ let _UserCrashReportService = function(d,o){
 		function useToken(usr){
 			if (!navigator.onLine) return;
 
-			var dataStr = "type=error";
+			let dataStr = "type=error";
 			dataStr += "&dta=" + btoa(JSON.stringify(JSON.stringify(d)));
 			dataStr += "&typ=" + btoa((o === false ? "1" : "0"));
 			dataStr += "&ver=" + btoa(chrome.runtime.getManifest().version);

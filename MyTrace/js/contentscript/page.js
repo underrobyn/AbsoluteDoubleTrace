@@ -768,37 +768,32 @@ var TPage = {
 				return;
 			}
 
+			function doUpdateProp(obj, prop, newVal){
+				let props = Object.getOwnPropertyDescriptor(obj, prop) || {configurable:true};
+
+				if (!props["configurable"]) return;
+
+				props["value"] = newVal;
+				Object.defineProperty(obj, prop, props);
+
+				return props;
+			}
+
 			["hardwareConcurrency", "deviceMemory"].forEach(function(hw){
 				if (!settings["hardware"][hw]["enabled"]) return;
 
 				let newValue = settings["hardware"][hw]["value"] || 4;
 
-				Object.defineProperty(frame.navigator, hw,{
-					enumerable:true,
-					configurable:false,
-					value:newValue
-				});
+				doUpdateProp(frame.navigator, hw, newValue);
 			});
 
 			if (settings["hardware"]["hwVrDisplays"]["enabled"]) {
-				Object.defineProperty(frame.navigator, "getVRDisplays", {
-					enumerable: false,
-					configurable: false,
-					value: undefined
-				});
-				Object.defineProperty(frame.navigator, "activeVRDisplays", {
-					enumerable: false,
-					configurable: false,
-					value: undefined
-				});
+				doUpdateProp(frame.navigator, "getVRDisplays", undefined);
+				doUpdateProp(frame.navigator, "activeVRDisplays", undefined);
 			}
 
 			if (settings["hardware"]["hwGamepads"]["enabled"]){
-				Object.defineProperty(frame.navigator, "getGamepads",{
-					enumerable:false,
-					configurable:false,
-					value:undefined
-				});
+				doUpdateProp(frame.navigator, "getGamepads", undefined);
 			}
 		},
 		"Pref_NativeFunctions":function(frame, settings){
