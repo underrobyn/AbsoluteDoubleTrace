@@ -157,7 +157,7 @@ let Opts = {
 	},
 	Interface:{
 		Browsers:function(){
-			if (!/Chrome|Firefox|Edg/.test(navigator.userAgent)){
+			if (!/Chrome|Firefox|Edg/.test(navigator.userAgent) || /Iron/.test(navigator.userAgent)){
 				$("#home .sect_cont").append(
 					$("<div/>",{"class":"sect_adv"}).append(
 						$("<div/>",{"class":"sect_adv_header"}).html("&nbsp;Developer Message"),
@@ -179,6 +179,21 @@ let Opts = {
 			];
 			$("#trace_main_title").text(greetings[Math.floor(Math.random()*greetings.length)]);
 			$("#user_tip").html(traceTips[Math.floor(Math.random()*traceTips.length)]);
+
+			// Trace Pause Button
+			$("#trace_pause").empty().append(
+				$("<h3/>").text(lang("advHomePauseTitle")),
+				$("<div/>").text(lang("advHomePauseDesc")),
+				$("<button/>",{"id":"pause_trace"}).text(lang("advHomePausePause")).on("click enter",Opts.Protections.UpdatePause)
+			);
+			Opts.Protections.UpdatePause(true);
+
+			// Trace Browsing Session
+			$("#trace_session").empty().append(
+				$("<h3/>").text(lang("advHomeSessionTitle")),
+				$("<div/>").text(lang("advHomeSessionDesc")),
+				$("<button/>",{"id":"configure_session"}).text(lang("advHomeSessionConfig")).on("click enter",Opts.Protections.SessionView)
+			);
 		},
 		GetMainPage:function(refresh){
 			let plural = function(n){
@@ -198,7 +213,7 @@ let Opts = {
 					$("<span/>",{"id":"trace_info_protectdate"}).text("today."),
 
 					$("<div/>",{"id":"trace_info_alltime_stats"}),
-					$("<div/>",{"id":"trace_info_current_wrc"}),
+					$("<div/>",{"id":"trace_info_current_wrc"})
 				);
 			}
 
@@ -264,7 +279,6 @@ let Opts = {
 			TraceBg(function(bg){
 				if (bg.Prefs.Current.Main_Simple.presets.enabled){
 					$("#trace_preset_warn").show();
-
 				} else {
 					$("#trace_preset_warn").hide();
 				}
@@ -313,6 +327,36 @@ let Opts = {
 			}
 
 			window.location.hash = "";
+		}
+	},
+
+	Protections:{
+		SessionView:function(){
+			$("#drop_message").empty().append(
+				$("<h1/>").text(lang("advSessionTitle")),
+				$("<h1/>").text("Soon"),
+				$("<br />"),$("<br />"),
+				Overlay.CloseUI()
+			);
+			Overlay.AssignCloseEvent(true);
+		},
+		UpdatePause:function(uiOnly){
+			uiOnly = uiOnly === true || false;
+			TraceBg(function(bg){
+				let state = bg.Vars.paused;
+				let newState = state;
+
+				if (!uiOnly){
+					newState = !state;
+					bg.Vars.paused = newState;
+					bg.Vars.pauseEnd = 999999;
+					console.log("Updated pause state to "+newState);
+				} else {
+					console.log("Pause state: "+newState);
+				}
+
+				$("#pause_trace").text(newState === true ? lang("advHomePauseUnpause") : lang("advHomePausePause"));
+			});
 		}
 	},
 

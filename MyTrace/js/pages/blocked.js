@@ -5,7 +5,7 @@
  * 	https://absolutedouble.co.uk/
  */
 
-var tBlock = {
+let tBlock = {
 	blockedURL:"",
 	blockReason:0,
 	whitelistData:{},

@@ -148,6 +148,29 @@
 	"advHomeMsgWelcomeShort":{
 		"message":"Trace Dashboard"
 	},
+	
+	"advHomePauseTitle": {
+		"message": "Pause Trace"
+	},
+	"advHomePauseDesc": {
+		"message": "When paused, all of Trace's protections will be disabled. When you restart your browser they will be turned back on."
+	},
+	"advHomePausePause": {
+		"message":"Pause"
+	},
+	"advHomePauseUnpause": {
+		"message":"Unpause"
+	},
+	
+	"advHomeSessionTitle":{
+		"message": "Browsing Session"
+	},
+	"advHomeSessionDesc":{
+		"message": "Configure values that Trace will provide to websites for this browsing session."
+	},
+	"advHomeSessionConfig":{
+		"message": "Configure"
+	},
 
 	"advNavMenuToggle": {
 		"message": "Menu"
@@ -185,6 +208,10 @@
 	"advPremiumMsgRequired":{
 		"message":"This setting requires premium",
 		"description":"content text for when user does not have premium"
+	},
+	
+	"advSessionTitle": {
+		"message": "Trace Browsing Session"
 	},
 
 	"advSettingsCtrlEnabled":{

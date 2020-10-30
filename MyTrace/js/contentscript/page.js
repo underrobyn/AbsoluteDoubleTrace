@@ -394,7 +394,6 @@ var TPage = {
 					return Math.floor(Math.random()*(max-min)+min);
 				};
 				rgba = [rn(0, 3), rn(0, 3), rn(0, 3), rn(0, 2)];
-				console.log(rgba);
 			}
 
 
@@ -531,7 +530,9 @@ var TPage = {
 			}
 
 			function getClientRectsProtection(el){
-				var clientRects = frame[el].prototype.getClientRects;
+				if (window.location.host === "docs.google.com") return;
+
+				let clientRects = frame[el].prototype.getClientRects;
 				doUpdateProp(frame[el].prototype,"getClientRects",function(){
 					let rects = clientRects.apply(this,arguments);
 					let krect = Object.keys(rects);
@@ -553,9 +554,9 @@ var TPage = {
 				});
 			}
 			function getBoundingClientRectsProtection(el){
-				var boundingRects = frame[el].prototype.getBoundingClientRect;
+				let boundingRects = frame[el].prototype.getBoundingClientRect;
 				doUpdateProp(frame[el].prototype,"getBoundingClientRect",function(){
-					var rect = boundingRects.apply(this,arguments);
+					let rect = boundingRects.apply(this,arguments);
 					if (this === undefined || this === null) return rect;
 
 					//window.top.postMessage("trace-protection::ran::clientrectsbounding::" + el + "get", '*');
@@ -879,7 +880,6 @@ var TPage = {
 
 			doUpdateProp(frame.navigator,"sendBeacon",function() {
 				//window.top.postMessage("trace-protection::ran::sendbeacon::main", '*');
-				console.log("[Tr]->Blocked[SB] ");
 				return true;
 			});
 			doUpdateProp(frame.navigator.sendBeacon,"toString","function sendBeacon() { [native code] }");

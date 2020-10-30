@@ -148,6 +148,19 @@
 	"advHomeMsgWelcomeShort":{
 		"message":"Tableau de bord de Trace"
 	},
+	
+	"advHomePauseTitle": {
+		"message": "Pause Trace"
+	},
+	"advHomePauseDesc": {
+		"message": "When paused, all of Trace's protections will be disabled. When you restart your browser they will be turned back on."
+	},
+	"advHomePausePause": {
+		"message":"Pause"
+	},
+	"advHomePauseUnpause": {
+		"message":"Unpause"
+	},
 
 	"advNavMenuToggle": {
 		"message": ""

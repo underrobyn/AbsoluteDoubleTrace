@@ -244,6 +244,62 @@ a.dark{
 	background:rgba(0,0,0,0.2);
 	cursor:pointer;
 }
+
+div.info_squares {
+	margin:1rem 0;
+	display: flex;
+}
+#trace_session {
+	display: none;
+}
+
+div.square_sect {
+	position:relative;
+	box-sizing:border-box;
+	float:left;
+	width:100%;
+	flex:1;
+	line-height:1em;
+
+	text-align:center;
+	font-size:1.4rem;
+
+	background-color:rgba(0,0,0,0.2);
+	color:#fff;
+	transition:0.25s ease-in-out background-color;
+}
+div.square_sect:hover {
+	background-color:rgba(0,0,0,0.25);
+}
+div.square_sect h3 {
+	margin:0.75em 0;
+	font-weight:400;
+}
+div.square_sect div {
+	margin-bottom:3.25em;
+	padding:0 0.5em;
+}
+div.square_sect button {
+	position:absolute;
+	width:100%;
+	height:auto;
+	margin:0;
+	padding:0.1em 0;
+	bottom:0;
+	left:0;
+	line-height:2em;
+	font-size:1.5rem;
+	font-weight:400;
+	text-transform: uppercase;
+
+	color:#eee;
+	background-color:rgba(0,0,0,0.3);
+	box-shadow:none;
+}
+div.square_sect button:hover {
+	background-color:rgba(0,0,0,0.5);
+}
+
 .sect_header{
 	height:10vh;
 	line-height:10vh;
