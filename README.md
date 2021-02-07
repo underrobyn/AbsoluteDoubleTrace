@@ -1,3 +1,13 @@
+# Please Read!
+
+Trace has not been updated in a while due to personal circumstances.
+
+Once I am able to begin development again, I will be re-coding Trace using the new Manifest version 3 API.
+
+Updates will be posted on my telegram channel linked below.
+
+Thank you for your patience.
+
 
 # AbsoluteDoubleTrace
 
